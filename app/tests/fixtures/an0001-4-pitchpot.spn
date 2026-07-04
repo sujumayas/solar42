@@ -1,0 +1,36 @@
+; Spin AN-0001 program 4 — POT0-controlled pitch shift (-1..+1 octave).
+; Exercises live WRAX to RMP0_RATE, SKP GEZ with a forward label target.
+; Normalized from the app-note listing: empty CHO flag fields written as 0.
+delayl mem 4096 ; Left delay
+delayr mem 4096 ; Right delay
+temp mem 1 ; Temp location for partial calculations
+
+skp run,START
+wldr RMP0,0,4096
+
+START: ldax ADCL
+wra delayl,0
+ldax ADCR
+wra delayr,0
+cho rda,RMP0,REG|COMPC,delayl
+cho rda,RMP0,0,delayl+1
+wra temp,0
+cho rda,RMP0,RPTR2|COMPC,delayl
+cho rda,RMP0,RPTR2,delayl+1
+cho sof,RMP0,NA|COMPC,0
+cho rda,RMP0,NA,temp
+wrax DACL,0
+cho rda,RMP0,COMPC,delayr
+cho rda,RMP0,0,delayr+1
+wra temp,0
+cho rda,RMP0,RPTR2|COMPC,delayr
+cho rda,RMP0,RPTR2,delayr+1
+cho sof,RMP0,NA|COMPC,0
+cho rda,RMP0,NA,temp
+wrax DACR,0
+; Rate adjustment: POT0 -0.5..+0.5, negative side halved (-1 oct = -0.25)
+ldax POT0
+sof 1.0,-0.5
+skp GEZ,pos
+sof 0.5,0
+pos: wrax RMP0_RATE,0

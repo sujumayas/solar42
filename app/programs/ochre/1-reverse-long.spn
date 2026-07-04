@@ -1,0 +1,92 @@
+; OCHRE 1 — Reverse one-shot, long (~0.9 s buffer)
+; X = time (reverse sweep speed), Y = feedback, Z = trigger threshold
+;
+; Input is always recorded at the head; an envelope follower fires a
+; one-shot when it crosses the Z threshold (re-arm hysteresis at half the
+; threshold). The shot starts a software pointer (ADDR_PTR) *negative* —
+; muted while the window captures — so playback covers the audio recorded
+; AFTER the trigger, reversed: the classic swell-into-attack. Age grows
+; 1.5..3 samples per sample (X), i.e. playback at -0.5x..-2x; past the
+; window end it mutes until re-triggered. Y feeds the reversed output
+; back into the record head.
+
+mem buf 30720
+
+equ ctr     reg0
+equ incbase reg1
+equ env     reg2
+equ armed   reg3
+equ outv    reg4
+
+skp run,START
+clr
+or 384             ; 1.5 samples in ADDR_PTR units (x256)
+wrax incbase,0
+or $7FFFFF
+wrax armed,0
+or $7FFFF0
+wrax ctr,0         ; park the pointer at "done" until the first trigger
+START:
+
+; record head: input + reversed output * Y
+ldax outv
+mulx pot1
+rdax adcl,0.8
+wra buf,0
+
+; envelope follower (|x| into a slow one-pole)
+ldax adcl
+absa
+rdfx env,0.002
+wrax env,0
+
+; fire? acc = env - Z/2
+ldax pot2
+sof -0.5,-0.001
+rdax env,1.0
+skp neg,NOTRIG
+ldax armed
+skp zro,ADVANCE    ; already fired, wait for re-arm
+sof 0,-0.9155      ; park the pointer a full window in the future:
+wrax ctr,0         ; capture first, then play it back reversed
+clr
+wrax armed,0
+jmp ADVANCE
+NOTRIG:
+; re-arm once the envelope falls below Z/4
+ldax pot2
+sof -0.25,0
+rdax env,1.0
+skp gez,ADVANCE
+clr
+or $7FFFFF
+wrax armed,0
+ADVANCE:
+
+; pointer advance: age += 1.5 + X*1.5 samples per sample
+ldax incbase
+mulx pot0
+rdax incbase,1.0
+rdax ctr,1.0
+wrax ctr,1.0
+
+; read the reversed tap
+wrax addr_ptr,0
+rmpa 1.0
+wrax outv,0
+
+; mute while capturing (pointer still negative) and past the window end
+ldax ctr
+skp gez,CHKEND
+clr
+wrax outv,0
+jmp SEND
+CHKEND:
+sof 1.0,-0.9155
+skp neg,SEND
+clr
+wrax outv,0
+SEND:
+ldax outv
+wrax dacl,1.0
+wrax dacr,0

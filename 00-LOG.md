@@ -171,6 +171,48 @@ Newest entries at the bottom.
   seq→VCO A + env gate, VCO B FM pad, LFO B on filter CV, DIST warm, VOLT
   dirty-zone tail; RMS −14 dBFS, L/R corr 0.72). **Ear check pending.**
 
+### 2026-07-04 — app M4: FV-1 effector — fixed-point VM, SpinASM assembler, 12 cartridge programs
+- **Fixed-point FV-1 VM** (`fv1/Fv1Vm`): full documented ISA in S.23/int32 with
+  64-bit MACs and exact saturation; coefficients decoded at real widths
+  (S1.14/S1.9/S.10); PACC/LR pipeline semantics; auto-decrementing delay
+  pointer over 32768 words; SIN0/1 + RMP0/1 LFOs with complete CHO
+  RDA/SOF/RDAL flag semantics (REG latch, COS, COMPC/COMPA, RPTR2,
+  NA trapezoid crossfade). Primary sources fetched and mined this session:
+  Spin's instruction/architecture pages + AN-0001 ("Basics of the LFOs") for
+  the exact rate formulas and idioms. Two non-obvious facts locked by tests:
+  **positive ramp rate = pitch UP** (read pointer runs toward the incoming
+  samples — first implementation froze playback to DC), and **pot ADCs are
+  9-bit with hysteresis** (datasheet; the plan had guessed 10).
+- **SpinASM assembler** (`fv1/SpinAsm`, ~700 LOC, runtime): labels, EQU/MEM
+  (both orders, `#`/`^` modifiers, N+1 allocation), $/%/0x literals, full
+  expression grammar, SKP targets, all pseudo-ops, per-width clamping with
+  warnings. **Output is word-identical to asfv1 1.2.7** on the four AN-0001
+  programs (committed as .hex goldens + regen script) and on all 12 in-house
+  programs. `fv1asm` CLI assembles/diffs; runs any community FV-1 source.
+- **12 starter cartridge programs** (`app/programs/`, authored in-house from
+  the 06 X/Y/Z catalog): CATHEDRAL (shimmer with ±1-oct shifters in the tank
+  loop / oct-up delay / space reverb), TIME (delay-reverb / delay-chorus /
+  delay-vibrato), VIBROTREM (tremolo / vibrato / quadrature chorus), OCHRE
+  (reverse one-shots long+short / free-run reverse loop). Design note: the
+  one-shots are **capture-then-reverse** — the trigger parks the pointer a
+  window into the future, records, then plays that window backwards (first
+  cut played pre-trigger history, i.e. silence — caught by the trigger test).
+- **Infrastructure**: `PolyphaseResampler` (48-tap Kaiser β=10, 256 phases,
+  >90 dB round-trip SNR at 44.1/48/96k; the ~15 kHz band edge falls out of
+  the 32,768 Hz chip rate); `EffectorModule` — dual VMs, channel R clock
+  skewed ±0.05 % from the unit serial, POTn = knob + CV/20 with 20 ms RC,
+  equal-power BLEND, slotted between DIST and master; FxCvX/Y/Z jacks live.
+  Cartridge slot is **hardware-faithful**: flipping a 1-2-3 toggle loads that
+  program from the currently inserted cartridge; swapping the cartridge alone
+  changes nothing (UI note: pick a cartridge, then flip 1-2-3 to hear it).
+  ~203 APVTS params; EffectorSection UI replaces the M4 placeholder.
+- Gate green: 55/55 test cases (~523k assertions), pluginval SUCCESS, render.
+- Audition artifact: `renders/solar42n-m4-shimmerpath.wav` (24 s, the M3
+  scene now ending in CATHEDRAL shimmer on both channels — X=0.6 oct-up
+  bloom, Z=0.7 decay, BLEND 0.45; RMS −15.4 dBFS, L/R corr 0.74; the skewed
+  chips + tolerance seeds keep the tails alive in stereo). **Ear check
+  pending — supersedes the M3 render check.**
+
 ### ~~<pending> — first audition + bounce~~ (superseded 2026-07-03)
 The Drone Lab → sample-loop → ToneMatrixSynth bridge was superseded by the
 full native Solar 42N instrument (`app/`, see `08-implementation-plan.md`).

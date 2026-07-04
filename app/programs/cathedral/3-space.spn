@@ -1,0 +1,70 @@
+; CATHEDRAL 3 — Space reverb
+; X = feedback (of the pre-echo), Y = pre-delay, Z = reverb decay
+;
+; A pot-swept pre-echo feeding a big dark figure-8 tank: the "everything
+; drowns" patch. Wet out only.
+
+mem pre  12288
+mem api1 156
+mem api2 411
+mem ap1  2734
+mem del1 6598
+mem ap2  3122
+mem del2 5866
+
+equ ptap  reg0
+equ krt   reg1
+equ damp1 reg2
+equ damp2 reg3
+equ din   reg4
+equ echo  reg5
+
+START:
+; Z -> decay 0.50..0.97
+ldax pot2
+sof 0.47,0.50
+wrax krt,0
+
+; Y -> pre-delay tap 50..12050 samples (slewed)
+ldax pot1
+rdfx ptap,0.002
+wrax ptap,1.0
+sof 0.3662109,0.0015259
+wrax addr_ptr,0
+rmpa 1.0
+wrax echo,0
+
+; write head: input + echo * X
+ldax echo
+mulx pot0
+rdax adcl,0.75
+wra pre,0
+
+; diffuse the echo into the tank
+ldax echo
+rda api1#,0.55
+wrap api1,-0.55
+rda api2#,0.55
+wrap api2,-0.55
+wrax din,0
+
+rda del2#,1.0
+mulx krt
+rdax din,1.0
+rda ap1#,0.6
+wrap ap1,-0.6
+rdfx damp1,0.25
+wra del1,0
+
+rda del1#,1.0
+mulx krt
+rdax din,1.0
+rda ap2#,0.6
+wrap ap2,-0.6
+rdfx damp2,0.25
+wra del2,0
+
+rda del1^,0.8
+rda del2^,0.8
+wrax dacl,1.0
+wrax dacr,0

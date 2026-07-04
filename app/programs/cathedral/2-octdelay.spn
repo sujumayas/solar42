@@ -1,0 +1,69 @@
+; CATHEDRAL 2 — Octave-up delay
+; X = feedback, Y = delay time, Z = reverb
+;
+; Pot-swept delay line read through ADDR_PTR; the repeat is pitch-shifted
+; +1 octave before it re-enters the line, so each echo climbs. Z mixes a
+; small plate on the wet.
+
+mem dly  16384
+mem psu  4096
+mem tmp  1
+mem ap1  1156
+mem vd1  2800
+mem ap2  987
+mem vd2  2323
+
+equ dtap  reg0
+equ echo  reg1
+equ shift reg2
+equ damp1 reg3
+equ damp2 reg4
+equ wet   reg5
+
+skp run,START
+wldr rmp0,16384,4096
+START:
+
+; Y -> read tap 100..16100 samples, slewed to keep pointer moves tame
+ldax pot1
+rdfx dtap,0.002
+wrax dtap,1.0
+sof 0.48828125,0.0030518
+wrax addr_ptr,0
+rmpa 1.0
+wrax echo,0
+
+; shift the echo +1 octave through the psu window
+ldax echo
+wra psu,0
+cho rda,rmp0,reg|compc,psu
+cho rda,rmp0,0,psu+1
+wra tmp,0
+cho rda,rmp0,rptr2|compc,psu
+cho rda,rmp0,rptr2,psu+1
+cho sof,rmp0,na|compc,0
+cho rda,rmp0,na,tmp
+wrax shift,0
+
+; write head: input + shifted repeat * X
+ldax shift
+mulx pot0
+rdax adcl,0.8
+wra dly,0
+
+; small plate on the echo, mixed by Z
+ldax echo
+rda ap1#,0.63
+wrap ap1,-0.63
+rdfx damp1,0.3
+wra vd1,0
+rda vd2#,0.7
+rda ap2#,0.63
+wrap ap2,-0.63
+rdfx damp2,0.3
+wra vd2,0
+rda vd1#,0.7
+mulx pot2
+rdax echo,1.0
+wrax dacl,1.0
+wrax dacr,0

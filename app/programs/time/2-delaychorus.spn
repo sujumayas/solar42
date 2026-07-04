@@ -1,0 +1,46 @@
+; TIME 2 — Delay chorus
+; X = feedback, Y = delay time, Z = mod depth
+;
+; Pot-swept echo whose wet path runs through a SIN0 chorus; Z writes the
+; LFO amplitude register live.
+
+mem dly  24576
+mem chb  1200
+
+equ dtap reg0
+equ echo reg1
+equ wet  reg2
+
+skp run,START
+wlds sin0,14,200
+START:
+
+; Z -> chorus depth (SIN0_RANGE amplitude bits = acc[22:8])
+ldax pot2
+sof 0.0230,0.0004
+wrax sin0_range,0
+
+; Y -> tap 75..24075 samples (slewed)
+ldax pot1
+rdfx dtap,0.002
+wrax dtap,1.0
+sof 0.7324219,0.0022888
+wrax addr_ptr,0
+rmpa 1.0
+wrax echo,0
+
+; write head: input + echo * X
+ldax echo
+mulx pot0
+rdax adcl,0.8
+wra dly,0
+
+; chorus the echo through the small window
+ldax echo
+wra chb,0
+cho rda,sin0,sin|reg|compc,chb^
+cho rda,sin0,sin,chb^+1
+sof 0.5,0
+rdax echo,0.5
+wrax dacl,1.0
+wrax dacr,0

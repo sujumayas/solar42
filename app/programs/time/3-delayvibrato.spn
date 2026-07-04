@@ -1,0 +1,46 @@
+; TIME 3 — Delay vibrato
+; X = feedback, Y = delay time + vibrato rate (one knob), Z = mod depth
+;
+; Pot-swept echo, then a 100 % wet SIN0-modulated tap — the repeats warble.
+; Y steers the LFO rate along with the delay, as the catalog describes.
+
+mem dly  24576
+mem vib  1200
+
+equ dtap reg0
+equ echo reg1
+
+skp run,START
+wlds sin0,20,300
+START:
+
+; Z -> vibrato depth
+ldax pot2
+sof 0.0310,0.0004
+wrax sin0_range,0
+
+; Y -> tap 75..24075 samples and LFO rate ~0.6..9.4 Hz together
+ldax pot1
+sof 0.2196,0.0156
+wrax sin0_rate,0
+ldax pot1
+rdfx dtap,0.002
+wrax dtap,1.0
+sof 0.7324219,0.0022888
+wrax addr_ptr,0
+rmpa 1.0
+wrax echo,0
+
+; write head: input + echo * X
+ldax echo
+mulx pot0
+rdax adcl,0.8
+wra dly,0
+
+; vibrato stage: fully wet modulated tap
+ldax echo
+wra vib,0
+cho rda,sin0,sin|reg|compc,vib^
+cho rda,sin0,sin,vib^+1
+wrax dacl,1.0
+wrax dacr,0

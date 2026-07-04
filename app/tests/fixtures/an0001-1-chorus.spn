@@ -1,0 +1,22 @@
+; Spin AN-0001 program 1 — SIN LFO chorus (Spin Semiconductor example code,
+; free for product use per the app note). Fixture for assembler equivalence
+; vs asfv1 and for VM CHO SIN semantics.
+delayl mem 8193 ; Left delay
+delayr mem 8193 ; Right delay
+
+skp run,START
+; sin LFO 0: ~0.2 Hz, +/-4096 samples over an 8193 delay
+wlds SIN0,5,16384
+
+START: ldax ADCL
+wra delayl,0
+ldax ADCR
+wra delayr,0
+; (1-k)*sample[addr]
+cho rda,SIN0,SIN|REG|COMPC,delayl^
+; k*sample[addr+1] + ACC
+cho rda,SIN0,SIN,delayl^+1
+wrax DACL,0
+cho rda,SIN0,SIN|COMPC,delayr^
+cho rda,SIN0,SIN,delayr^+1
+wrax DACR,0

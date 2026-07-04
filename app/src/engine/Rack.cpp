@@ -55,6 +55,7 @@ void Rack::prepare(double sampleRate, int /*maxBlockSize*/)
     filterR_.setSampleRate(sampleRate);
     filterL_.seedNoise(tolerances_.serial() ^ 0x1EFFull);
     filterR_.seedNoise(tolerances_.serial() ^ 0x21617ull);
+    effector_.prepare(sampleRate, tolerances_);
     masterSm_.prepare(sampleRate, 0.01f, controls_.masterVol);
 
     bus_.clearAll();
@@ -93,6 +94,7 @@ void Rack::setControls(const Controls& c) noexcept
     filterR_.setRes(c.filter.resR * tolerances_.spread(Tolerances::id("filtR.res"), tuning::kFilterLrSkew));
     filterL_.setMode(c.filter.bpL);
     filterR_.setMode(c.filter.bpR);
+    effector_.setParams(c.fx);
 
     masterSm_.setTarget(c.masterVol);
 }
@@ -237,9 +239,13 @@ void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
         }
     }
 
-    // Mixer (pan = filter routing) -> dual Polivoks -> DIST/GAIN -> master.
+    // Mixer (pan = filter routing) -> dual Polivoks -> DIST/GAIN -> dual
+    // FV-1 effector -> master.
     const float* cvL = bus_.in(Inlet::FiltCvLIn);
     const float* cvR = bus_.in(Inlet::FiltCvRIn);
+    const float* fxX = bus_.in(Inlet::FxCvXIn);
+    const float* fxY = bus_.in(Inlet::FxCvYIn);
+    const float* fxZ = bus_.in(Inlet::FxCvZIn);
     const FilterParams& f = controls_.filter;
 
     for (int i = 0; i < n; ++i)
@@ -264,6 +270,8 @@ void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
         float r = filterR_.process(railClamp(busR), fcR);
         l = distGain(l, f.gain, f.dist);
         r = distGain(r, f.gain, f.dist);
+
+        effector_.process(l, r, railLimit(fxX[i]), railLimit(fxY[i]), railLimit(fxZ[i]));
 
         const float master = masterSm_.next();
         outL[i] = railClamp(l) * kVoltsToFs * master;

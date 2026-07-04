@@ -451,41 +451,48 @@ private:
     std::unique_ptr<LabeledKnob> pan[10], vol[10];
 };
 
-// Effector placeholder (FV-1 lands in M4). Hosts the shared MASTER VOLUME and
-// the digital-only room-light control until then.
+// DUAL EFFECTOR: cartridge slot, per-channel 1-2-3 program toggles, shared
+// X/Y/Z + BLEND, MASTER VOLUME. Room light rides along until the M5 layout
+// pass (it is digital-only and has no silk-screened home yet).
 class EffectorSection : public Section
 {
 public:
     explicit EffectorSection(Apvts& s) : Section("DUAL EFFECTOR")
     {
+        cart = std::make_unique<ChoiceBox>(s, "fx.cart", "CARTRIDGE");
+        progL = std::make_unique<ChoiceBox>(s, "fx.progL", "1-2-3 L");
+        progR = std::make_unique<ChoiceBox>(s, "fx.progR", "1-2-3 R");
+        x = std::make_unique<LabeledKnob>(s, "fx.x", "X", kKnobOrange);
+        y = std::make_unique<LabeledKnob>(s, "fx.y", "Y", kKnobOrange);
+        z = std::make_unique<LabeledKnob>(s, "fx.z", "Z", kKnobOrange);
+        blend = std::make_unique<LabeledKnob>(s, "fx.blend", "BLEND", kKnobOrange);
         master = std::make_unique<LabeledKnob>(s, "master.vol", "MASTER VOLUME", kKnobOrange);
         room = std::make_unique<LabeledKnob>(s, "room.light", "ROOM LIGHT", kKnobBlack);
         flicker = std::make_unique<SlideSwitch>(s, "room.flicker", "50 Hz");
-        addAndMakeVisible(*master);
-        addAndMakeVisible(*room);
-        addAndMakeVisible(*flicker);
-        note.setText("FV-1 cartridge effector lands in M4", juce::dontSendNotification);
-        note.setJustificationType(juce::Justification::centred);
-        note.setColour(juce::Label::textColourId, kInk.withAlpha(0.55f));
-        addAndMakeVisible(note);
+        for (juce::Component* c : std::initializer_list<juce::Component*> {
+                 cart.get(), progL.get(), progR.get(), x.get(), y.get(), z.get(),
+                 blend.get(), master.get(), room.get(), flicker.get() })
+            addAndMakeVisible(c);
     }
 
     void resized() override
     {
         auto r = content();
-        note.setFont(juce::FontOptions((float) r.getHeight() * 0.11f));
-        note.setBounds(r.removeFromBottom(r.getHeight() / 5));
-        auto right = r.removeFromRight(r.getWidth() / 3);
-        master->setBounds(right.reduced(8));
-        auto left = r.removeFromLeft(r.getWidth() / 2);
-        room->setBounds(left.reduced(left.getWidth() / 5, 8));
-        flicker->setBounds(r.reduced(r.getWidth() / 4, r.getHeight() / 3));
+        auto top = r.removeFromTop(r.getHeight() / 3);
+        cart->setBounds(col(top, 3, 0).reduced(4));
+        progL->setBounds(col(top, 3, 1).reduced(4));
+        progR->setBounds(col(top, 3, 2).reduced(4));
+        int i = 0;
+        for (juce::Component* c : std::initializer_list<juce::Component*> {
+                 x.get(), y.get(), z.get(), blend.get(), master.get(), room.get() })
+            c->setBounds(col(r, 7, i++).reduced(3));
+        flicker->setBounds(col(r, 7, 6).reduced(4, r.getHeight() / 4));
     }
 
 private:
-    std::unique_ptr<LabeledKnob> master, room;
+    std::unique_ptr<ChoiceBox> cart, progL, progR;
+    std::unique_ptr<LabeledKnob> x, y, z, blend, master, room;
     std::unique_ptr<SlideSwitch> flicker;
-    juce::Label note;
 };
 
 // ---------------------------------------------------------------- mod strip

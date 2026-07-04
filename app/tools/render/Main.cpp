@@ -62,7 +62,7 @@ void writeWav16(const std::string& path, const std::vector<float>& l,
 
 int main(int argc, char** argv)
 {
-    const std::string out = argc > 1 ? argv[1] : "solar42n-m3-fullpath.wav";
+    const std::string out = argc > 1 ? argv[1] : "solar42n-m4-fullpath.wav";
     const double seconds = argc > 2 ? std::atof(argv[2]) : 20.0;
 
     s42::Rack rack;
@@ -141,6 +141,16 @@ int main(int argc, char** argv)
     c.filter.modL = 0.25f;      // LFO B wobble (patched below)
     c.filter.dist = 0.35f;
     c.filter.gain = 0.45f;
+
+    // M4: dual FV-1 — CATHEDRAL shimmer on both channels, X = oct-up bloom,
+    // Z = long decay, blended behind the analog path.
+    c.fx.cartridge = 0;
+    c.fx.progL = c.fx.progR = 0;
+    c.fx.x = 0.6f;
+    c.fx.y = 0.15f;
+    c.fx.z = 0.7f;
+    c.fx.blend = 0.45f;
+
     c.roomLight = 0.25f;
     c.masterVol = 0.6f;
     rack.setControls(c);
@@ -170,8 +180,8 @@ int main(int argc, char** argv)
     }
 
     writeWav16(out, l, r);
-    std::printf("solar42n_render: wrote %s (%.1f s, M3 full path: drones + srapa + "
-                "sequenced VCOs -> Polivoks + dist)\n",
+    std::printf("solar42n_render: wrote %s (%.1f s, M4 full path: drones + srapa + "
+                "sequenced VCOs -> Polivoks + dist -> FV-1 shimmer)\n",
                 out.c_str(), seconds);
     return 0;
 }

@@ -20,9 +20,25 @@ target_include_directories(solar42n_dsp PUBLIC src)
 target_compile_features(solar42n_dsp PUBLIC cxx_std_20)
 
 # ---------------------------------------------------------------- fv1 (JUCE-free)
+file(GLOB_RECURSE S42_SPN_SOURCES CONFIGURE_DEPENDS programs/*.spn)
+set(S42_PROGRAMS_INC ${CMAKE_CURRENT_BINARY_DIR}/generated/CartridgePrograms.inc)
+add_custom_command(
+    OUTPUT ${S42_PROGRAMS_INC}
+    COMMAND ${CMAKE_COMMAND}
+        -DPROGRAM_DIR=${CMAKE_CURRENT_SOURCE_DIR}/programs
+        -DOUT=${S42_PROGRAMS_INC}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmbedPrograms.cmake
+    DEPENDS ${S42_SPN_SOURCES} cmake/EmbedPrograms.cmake
+    COMMENT "Embedding FV-1 cartridge programs"
+)
+
 add_library(solar42n_fv1 STATIC
     src/fv1/Fv1Vm.cpp
+    src/fv1/SpinAsm.cpp
+    src/fv1/CartridgeLibrary.cpp
+    ${S42_PROGRAMS_INC}
 )
+target_include_directories(solar42n_fv1 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_link_libraries(solar42n_fv1 PUBLIC solar42n_dsp)
 
 # ---------------------------------------------------------------- engine (JUCE-free)
@@ -81,8 +97,11 @@ if(SOLAR42N_BUILD_TESTS)
         tests/TestRouting.cpp
         tests/TestM3Voices.cpp
         tests/TestPolivoks.cpp
+        tests/TestFv1.cpp
     )
     target_link_libraries(solar42n_tests PRIVATE solar42n_engine Catch2::Catch2WithMain)
+    target_compile_definitions(solar42n_tests PRIVATE
+        S42_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
     include(Catch)
     catch_discover_tests(solar42n_tests)
 endif()

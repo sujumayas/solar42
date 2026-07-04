@@ -1,0 +1,96 @@
+; CATHEDRAL 1 — Shimmer reverb
+; X = octave-up level in the loop, Y = octave-down level, Z = decay
+; (06-manual-digest X/Y/Z catalog; internals are our approximation)
+;
+; Figure-8 tank with two pitch shifters (RMP0 = +1 oct, RMP1 = -1 oct)
+; regenerating inside the loop — the classic shimmer topology.
+
+mem api1 122
+mem api2 303
+mem ap1  1345
+mem del1 4457
+mem ap2  1876
+mem del2 3936
+mem psu  4096
+mem psd  4096
+mem tmp  1
+
+equ krt    reg0
+equ damp1  reg1
+equ damp2  reg2
+equ din    reg3
+equ shimup reg4
+equ shimdn reg5
+
+skp run,START
+wldr rmp0,16384,4096   ; +1 octave
+wldr rmp1,-8192,4096   ; -1 octave
+START:
+
+; Z -> loop decay 0.40..0.98
+ldax pot2
+sof 0.58,0.40
+wrax krt,0
+
+; input diffusion
+ldax adcl
+sof 0.75,0
+rda api1#,0.61
+wrap api1,-0.61
+rda api2#,0.61
+wrap api2,-0.61
+wrax din,0
+
+; tank branch 1 (+ shimmer-up return)
+rda del2#,1.0
+mulx krt
+rdax din,1.0
+rdax shimup,1.0
+rda ap1#,0.6
+wrap ap1,-0.6
+rdfx damp1,0.4
+wra del1,0
+
+; tank branch 2 (+ shimmer-down return)
+rda del1#,1.0
+mulx krt
+rdax din,1.0
+rdax shimdn,1.0
+rda ap2#,0.6
+wrap ap2,-0.6
+rdfx damp2,0.4
+wra del2,0
+
+; shimmer source: blend of both tank arms into the shifter windows
+rda del1,0.7
+rda del2,0.7
+wra psu,1.0
+wra psd,0
+
+; +1 octave read, scaled by X
+cho rda,rmp0,reg|compc,psu
+cho rda,rmp0,0,psu+1
+wra tmp,0
+cho rda,rmp0,rptr2|compc,psu
+cho rda,rmp0,rptr2,psu+1
+cho sof,rmp0,na|compc,0
+cho rda,rmp0,na,tmp
+mulx pot0
+wrax shimup,0
+
+; -1 octave read, scaled by Y
+cho rda,rmp1,reg|compc,psd
+cho rda,rmp1,0,psd+1
+wra tmp,0
+cho rda,rmp1,rptr2|compc,psd
+cho rda,rmp1,rptr2,psd+1
+cho sof,rmp1,na|compc,0
+cho rda,rmp1,na,tmp
+mulx pot1
+wrax shimdn,0
+
+; wet out (BLEND is analog, outside the chip)
+rda del1^,0.9
+rda del2^,0.7
+wrax dacl,1.0
+wrax dacr,0

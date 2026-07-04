@@ -1,0 +1,46 @@
+; OCHRE 3 — Free-run reverse loop
+; X = time (sweep speed), Y = feedback, Z = delay-mod LFO depth
+;
+; The reverse pointer runs forever over a half-second window, wrapping via
+; a power-of-two AND mask (the buffer sits at address 0 on purpose). Z adds
+; a SIN0 wobble to the read pointer — RMPA has no interpolation, so the
+; wobble steps whole samples: gritty on purpose. Y regenerates the loop.
+
+mem buf 16383
+
+equ ctr     reg0
+equ incbase reg1
+equ outv    reg2
+
+skp run,START
+clr
+or 320             ; 1.25 samples/sample = -0.25x floor
+wrax incbase,0
+wlds sin0,30,32767
+START:
+
+; record head: input + reversed output * Y
+ldax outv
+mulx pot1
+rdax adcl,0.8
+wra buf,0
+
+; age += 1.25 + X*2.5 samples per sample, wrapped to the 16384 window
+ldax incbase
+mulx pot0
+sof 1.999,0
+rdax incbase,1.0
+rdax ctr,1.0
+and $3FFFFF
+wrax ctr,1.0
+
+; Z -> pointer wobble (up to ~+-160 samples, sample-stepped)
+cho rdal,sin0
+mulx pot2
+sof 0.0048,0
+rdax ctr,1.0
+wrax addr_ptr,0
+rmpa 1.0
+wrax outv,1.0
+wrax dacl,1.0
+wrax dacr,0

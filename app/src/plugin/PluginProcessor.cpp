@@ -130,6 +130,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout Solar42NProcessor::createLay
     layout.add(std::make_unique<P>(juce::ParameterID("filt.dist", 1), "Filter · Dist", range01, 0.0f));
     layout.add(std::make_unique<P>(juce::ParameterID("filt.gain", 1), "Filter · Gain", range01, 0.3f));
 
+    // ---- Dual FV-1 effector (cartridge slot + shared X/Y/Z/BLEND).
+    layout.add(std::make_unique<C>(juce::ParameterID("fx.cart", 1), "FX · Cartridge",
+                                   juce::StringArray { "CATHEDRAL", "TIME", "VIBROTREM", "OCHRE" }, 0));
+    layout.add(std::make_unique<C>(juce::ParameterID("fx.progL", 1), "FX · Program L",
+                                   juce::StringArray { "1", "2", "3" }, 0));
+    layout.add(std::make_unique<C>(juce::ParameterID("fx.progR", 1), "FX · Program R",
+                                   juce::StringArray { "1", "2", "3" }, 0));
+    layout.add(std::make_unique<P>(juce::ParameterID("fx.x", 1), "FX · X", range01, 0.5f));
+    layout.add(std::make_unique<P>(juce::ParameterID("fx.y", 1), "FX · Y", range01, 0.5f));
+    layout.add(std::make_unique<P>(juce::ParameterID("fx.z", 1), "FX · Z", range01, 0.5f));
+    layout.add(std::make_unique<P>(juce::ParameterID("fx.blend", 1), "FX · Blend", range01, 0.35f));
+    layout.add(std::make_unique<B>(juce::ParameterID("fx.potq", 1), "FX · 9-bit Pots", true));
+
     // ---- Bottom modulation strip (manual pp10-12).
     const char* lfoIds[] = { "lfoA", "lfoB" };
     const char* lfoNames[] = { "LFO A", "LFO B" };
@@ -266,6 +279,15 @@ s42::Rack::Controls Solar42NProcessor::controlsFromParams() const noexcept
     c.filter.link = bparam("filt.link");
     c.filter.dist = fparam("filt.dist");
     c.filter.gain = fparam("filt.gain");
+
+    c.fx.cartridge = (int) param("fx.cart") % 4;
+    c.fx.progL = (int) param("fx.progL") % 3;
+    c.fx.progR = (int) param("fx.progR") % 3;
+    c.fx.x = param("fx.x");
+    c.fx.y = param("fx.y");
+    c.fx.z = param("fx.z");
+    c.fx.blend = param("fx.blend");
+    c.fx.potQuantize = param("fx.potq") > 0.5f;
 
     static const float rangeMul[] = { 1.0f, 6.0f, 10.0f };
     c.lfoA.wave = param("lfoA.wave");

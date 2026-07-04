@@ -7,6 +7,7 @@
 #include "engine/CommandQueue.h"
 #include "engine/VoltBus.h"
 #include "engine/modules/ClassicDroneVoice.h"
+#include "engine/modules/Effector.h"
 #include "engine/modules/EnvelopeModule.h"
 #include "engine/modules/Mixer.h"
 #include "engine/modules/ModStrip.h"
@@ -20,11 +21,11 @@ namespace s42 {
 // patch edits arrive through a lock-free command queue and are applied at
 // sub-block boundaries.
 //
-// M3 module set = the full analog path: LFO A/B, joystick, sequencer, preamp
-// + follower, DRONE 1/2/4/5 (classic, with photo-sensors), DRONE 3/6 (Papa
-// Srapa), VCO A/B + Envelope A/B, 10-channel mixer (pan = filter routing),
-// dual nonlinear Polivoks filter + shared DIST/GAIN, master. The FV-1
-// effector slots between DIST and master in M4; touch keyboard lands in M6.
+// Module set: LFO A/B, joystick, sequencer, preamp + follower, DRONE 1/2/4/5
+// (classic, with photo-sensors), DRONE 3/6 (Papa Srapa), VCO A/B + Envelope
+// A/B, 10-channel mixer (pan = filter routing), dual nonlinear Polivoks
+// filter + shared DIST/GAIN, dual FV-1 effector (M4), master. The touch
+// keyboard lands in M6.
 class Rack
 {
 public:
@@ -58,6 +59,7 @@ public:
         PreampFollowerModule::Params preamp {};
         MixerModule::Params mixer {};
         FilterParams filter {};
+        EffectorModule::Params fx {};
         float roomLight = 0.35f;              // ambient light on the photo-sensors
         bool mainsFlicker = false;
         float masterVol = 0.7f;
@@ -102,6 +104,7 @@ private:
     MixerModule mixer_;
     PolivoksFilter filterL_, filterR_;
     float filterFreqL_ = 900.0f, filterFreqR_ = 900.0f; // tolerance-skewed base cutoffs
+    EffectorModule effector_;
     Smoother masterSm_;
 };
 

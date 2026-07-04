@@ -1,0 +1,59 @@
+; VIBROTREM 1 — Tremolo
+; X = depth, Y = rate, Z = reverb
+;
+; SIN0 amplitude chop with a small plate behind it. The LFO rate register
+; is written live from Y every sample.
+
+mem api 141
+mem vd1 2153
+mem vd2 1867
+
+equ inp   reg0
+equ gain  reg1
+equ trem  reg2
+equ damp1 reg3
+equ damp2 reg4
+equ din   reg5
+
+skp run,START
+wlds sin0,40,32767
+START:
+
+ldax adcl
+wrax inp,0
+
+; Y -> rate ~0.5..12 Hz
+ldax pot1
+sof 0.5625,0.0234
+wrax sin0_rate,0
+
+; gain = 1 - X*(0.5 + 0.5*sin), kept non-negative at full depth
+cho rdal,sin0
+sof 0.499,0.4995
+mulx pot0
+sof -1.0,0.9990
+wrax gain,0
+
+ldax gain
+mulx inp
+wrax trem,0
+
+; Z -> plate mix
+ldax trem
+rda api#,0.6
+wrap api,-0.6
+wrax din,0
+rda vd2#,0.7
+rdax din,1.0
+rdfx damp1,0.35
+wra vd1,0
+rda vd1#,0.7
+rdax din,1.0
+rdfx damp2,0.35
+wra vd2,0
+rda vd1^,0.7
+rda vd2^,0.7
+mulx pot2
+rdax trem,1.0
+wrax dacl,1.0
+wrax dacr,0

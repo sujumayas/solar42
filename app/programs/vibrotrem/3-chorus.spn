@@ -1,0 +1,68 @@
+; VIBROTREM 3 — Chorus
+; X = depth, Y = rate, Z = reverb
+;
+; Two quadrature voices (SIN and COS taps off the same latched LFO) around
+; the dry signal, plus the small plate on the sum.
+
+mem chb 1400
+mem api 141
+mem vd1 2153
+mem vd2 1867
+
+equ mix   reg0
+equ damp1 reg1
+equ damp2 reg2
+equ din   reg3
+
+skp run,START
+wlds sin0,16,200
+START:
+
+; X -> depth (up to ~+-160 samples)
+ldax pot0
+sof 0.0190,0.0004
+wrax sin0_range,0
+
+; Y -> rate ~0.2..4.5 Hz
+ldax pot1
+sof 0.2109,0.0117
+wrax sin0_rate,0
+
+ldax adcl
+wra chb,1.0
+sof 0.5,0
+wrax mix,0
+
+; voice 1: SIN tap
+cho rda,sin0,sin|reg|compc,chb^
+cho rda,sin0,sin,chb^+1
+sof 0.35,0
+rdax mix,1.0
+wrax mix,0
+
+; voice 2: COS tap (quadrature, same latch)
+cho rda,sin0,cos|compc,chb^
+cho rda,sin0,cos,chb^+1
+sof 0.35,0
+rdax mix,1.0
+wrax mix,0
+
+; Z -> plate mix
+ldax mix
+rda api#,0.6
+wrap api,-0.6
+wrax din,0
+rda vd2#,0.7
+rdax din,1.0
+rdfx damp1,0.35
+wra vd1,0
+rda vd1#,0.7
+rdax din,1.0
+rdfx damp2,0.35
+wra vd2,0
+rda vd1^,0.7
+rda vd2^,0.7
+mulx pot2
+rdax mix,1.0
+wrax dacl,1.0
+wrax dacr,0

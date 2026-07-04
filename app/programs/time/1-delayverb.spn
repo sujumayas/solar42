@@ -1,0 +1,61 @@
+; TIME 1 — Delay reverb
+; X = feedback, Y = delay time, Z = reverb (mix)
+;
+; Clean pot-swept echo with a tight plate mixed in behind the repeats.
+
+mem dly  20480
+mem api1 141
+mem ap1  1523
+mem vd1  3217
+mem ap2  1713
+mem vd2  2988
+
+equ dtap  reg0
+equ echo  reg1
+equ damp1 reg2
+equ damp2 reg3
+equ din   reg4
+
+START:
+; Y -> tap 75..20075 samples (slewed)
+ldax pot1
+rdfx dtap,0.002
+wrax dtap,1.0
+sof 0.6103516,0.0022888
+wrax addr_ptr,0
+rmpa 1.0
+wrax echo,0
+
+; write head: input + echo * X
+ldax echo
+mulx pot0
+rdax adcl,0.8
+wra dly,0
+
+; tight tank fed by the echo
+ldax echo
+rda api1#,0.6
+wrap api1,-0.6
+wrax din,0
+
+rda vd2#,0.75
+rdax din,1.0
+rda ap1#,0.62
+wrap ap1,-0.62
+rdfx damp1,0.35
+wra vd1,0
+
+rda vd1#,0.75
+rdax din,1.0
+rda ap2#,0.62
+wrap ap2,-0.62
+rdfx damp2,0.35
+wra vd2,0
+
+; Z mixes the plate behind the echo
+rda vd1^,0.7
+rda vd2^,0.7
+mulx pot2
+rdax echo,1.0
+wrax dacl,1.0
+wrax dacr,0

@@ -95,6 +95,17 @@ inline constexpr float kVcoSubMix = 0.7f;          // -1 sub square level relati
 inline constexpr float kVcoPwMin = 0.05f, kVcoPwMax = 0.95f;
 inline constexpr float kVcoToleranceCents = 3.0f;  // per-unit 3340 trim error (precision chip, tiny)
 
+// ---- FV-1 effector interface (chip levels are documented; the analog
+// scaling around the chip is not). ADC full scale mapped to +-8 V so the
+// post-DIST signal drives the converters like the hardware line level does;
+// unity ADC->DAC keeps a bypass program transparent. WET-out max ~2 V (spec
+// p4) emerges from program levels — calibrate in M8 against SOUND DEMO 3.
+inline constexpr float kFv1FullScaleVolts = 8.0f;
+inline constexpr float kFv1ClockSkew = 0.0005f;   // channel R crystal +-0.05 %
+inline constexpr float kFv1PotSmoothSec = 0.02f;  // RC on the pot/CV line
+inline constexpr float kFv1CvPerPot = 1.0f / 20.0f; // POTn = knob + CV/20 (X/Y/Z CV -10..+10 V)
+inline constexpr float kBlendSmoothSec = 0.01f;
+
 // ---- Keyboard slews (0-255 / 0-127 firmware units -> seconds, unspecified)
 inline constexpr float kPortamentoMaxSec = 2.5f;  // at 255
 inline constexpr float kPressureSlewMaxSec = 4.0f;// rise/fall at 255

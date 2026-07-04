@@ -1,0 +1,54 @@
+; VIBROTREM 2 — Vibrato
+; X = depth, Y = rate, Z = reverb
+;
+; 100 % wet SIN0-modulated tap on a short line — true pitch wobble.
+
+mem vib 1200
+mem api 141
+mem vd1 2153
+mem vd2 1867
+
+equ wet   reg0
+equ damp1 reg1
+equ damp2 reg2
+equ din   reg3
+
+skp run,START
+wlds sin0,30,120
+START:
+
+; X -> depth (up to ~+-150 samples)
+ldax pot0
+sof 0.0180,0.0003
+wrax sin0_range,0
+
+; Y -> rate ~0.3..6.5 Hz
+ldax pot1
+sof 0.2969,0.0156
+wrax sin0_rate,0
+
+ldax adcl
+wra vib,0
+cho rda,sin0,sin|reg|compc,vib^
+cho rda,sin0,sin,vib^+1
+wrax wet,0
+
+; Z -> plate mix
+ldax wet
+rda api#,0.6
+wrap api,-0.6
+wrax din,0
+rda vd2#,0.7
+rdax din,1.0
+rdfx damp1,0.35
+wra vd1,0
+rda vd1#,0.7
+rdax din,1.0
+rdfx damp2,0.35
+wra vd2,0
+rda vd1^,0.7
+rda vd2^,0.7
+mulx pot2
+rdax wet,1.0
+wrax dacl,1.0
+wrax dacr,0

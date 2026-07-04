@@ -1,0 +1,37 @@
+; Spin AN-0001 program 3 — fixed +1 octave pitch shift via RMP0 with the
+; REG/COMPC + RPTR2 + NA-crossfade idiom (the acceptance-test program).
+; Normalized from the app-note listing: empty CHO flag fields written as 0.
+delayl mem 4096 ; Left delay
+delayr mem 4096 ; Right delay
+temp mem 1 ; Temp location for partial calculations
+
+skp run,START
+; +1 octave: rate 16384, range 4096
+wldr 0,16384,4096
+
+START: ldax ADCL
+wra delayl,0
+ldax ADCR
+wra delayr,0
+; (1-k)*sample[addr]
+cho rda,RMP0,REG|COMPC,delayl
+; k*sample[addr+1] + ACC
+cho rda,RMP0,0,delayl+1
+wra temp,0
+; (1-k)*sample[addr + half ramp]
+cho rda,RMP0,RPTR2|COMPC,delayl
+; k*sample[addr + half ramp + 1] + ACC
+cho rda,RMP0,RPTR2,delayl+1
+; ACC*(1-XFADE) + 0
+cho sof,RMP0,NA|COMPC,0
+; memory[addr] * XFADE + ACC
+cho rda,RMP0,NA,temp
+wrax DACL,0
+cho rda,RMP0,COMPC,delayr
+cho rda,RMP0,0,delayr+1
+wra temp,0
+cho rda,RMP0,RPTR2|COMPC,delayr
+cho rda,RMP0,RPTR2,delayr+1
+cho sof,RMP0,NA|COMPC,0
+cho rda,RMP0,NA,temp
+wrax DACR,0

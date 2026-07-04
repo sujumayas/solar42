@@ -12,9 +12,9 @@
 | M0 — Skeleton + knowledge capture | ✅ done | commit `4eb9724`; check.sh green; pluginval SUCCESS; `07-42n-panel-inventory.md` |
 | M1 — First sound: classic drone voice | ✅ done | commit `e2f1c05`; 13/13 tests; 4-point BLEP −61 dBc; `renders/solar42n-m1-drone1.wav` |
 | M2 — Rack & patching core | ✅ done | commit `c80f612`; 21/21 tests incl. feedback + patch fuzz |
-| M3 — Full voice complement + Polivoks filters | ✅ done | commit `0cdc662` (2026-07-04); 41/41 tests (5 srapa modes, filter self-osc/no-bass-loss, VCO sync/sub/alias, pan-routing); pluginval SUCCESS; panel UI phase 1 (all top-half + mod-strip sections live); `renders/solar42n-m3-fullpath.wav` — **ear check pending** |
-| M4 — FV-1 VM + starter cartridges | ⬜ next | |
-| M5 — Full panel UI + cable layer | ⬜ | |
+| M3 — Full voice complement + Polivoks filters | ✅ done | commit `0cdc662` (2026-07-04); 41/41 tests (5 srapa modes, filter self-osc/no-bass-loss, VCO sync/sub/alias, pan-routing); pluginval SUCCESS; panel UI phase 1 (all top-half + mod-strip sections live); `renders/solar42n-m3-fullpath.wav` — ear check superseded by the M4 render |
+| M4 — FV-1 VM + starter cartridges | ✅ done | commit *(pending)* (2026-07-04); 55/55 tests (per-opcode fixed-point goldens, assembler word-identical to asfv1 on AN-0001 + all 12 programs, octave-up pitch-shift FFT, shimmer bloom, OCHRE one-shot trigger/re-arm, resampler >90 dB SNR, effector unity round-trip); pluginval SUCCESS; `renders/solar42n-m4-shimmerpath.wav` — **ear check pending** |
+| M5 — Full panel UI + cable layer | ⬜ next | |
 | M6 — Touch keyboard + drone keypad | ⬜ | |
 | M7 — State, presets, conveniences | ⬜ | |
 | M8 — Calibration by ear | ⬜ | first user verdict logged 2026-07-03 (00-LOG); criteria to be co-developed |
@@ -82,7 +82,7 @@ Targets:
 
 - **Fixed-point core** (the character lives in the math): ACC/regs/RAM 24-bit S.23 in `int32_t`, 64-bit MAC intermediates, exact saturation; coefficients decoded at real widths (S1.14 / S1.9 / S.10) from genuine 32-bit opcode words → the VM also runs **any community-assembled FV-1 binary** (huge for validation). Float build flag kept as a debug reference.
 - Full documented ISA: RDA/RMPA/WRA/WRAP/RDAX/RDFX/WRAX/WRHX/WRLX/MAXX/MULX/LOG/EXP/SOF/AND/OR/XOR/SKP(flags)/WLDS/WLDR/JAM/CHO RDA·SOF·RDAL/CLR/NOT/ABSA/LDAX; SIN0/1 + RMP0/1 LFOs with full CHO semantics (**the ramp + NA-crossfade pitch-shifter idiom is the acceptance test** — CATHEDRAL shimmer and OCHRE reverse depend on it); 32768-word delay RAM with auto-decrementing pointer.
-- **POTs**: POTn = clamp01(knob + CV/20), one-pole ~20 ms smoothing, optional 10-bit quantize (character toggle, default on). X/Y/Z + BLEND shared across both channels; program per channel via the 1‑2‑3 toggles.
+- **POTs**: POTn = clamp01(knob + CV/20), one-pole ~20 ms smoothing, optional 9-bit quantize (character toggle, default on; the FV-1 architecture doc specifies the pot ADCs are deliberately 9-bit with hysteresis — corrected from the plan's original 10-bit guess during M4). X/Y/Z + BLEND shared across both channels; program per channel via the 1‑2‑3 toggles.
 - **Rate conversion**: host ↔ 32,768 Hz via custom Kaiser-windowed polyphase sinc resampler (~32 taps, JUCE-free, unit-tested) — the ~15 kHz brickwall is part of the tone. **Channel R clock skewed ±~0.05 %** from the tolerance seed (two slightly-different chips = live stereo).
 - **Programs**: runtime **SpinASM assembler** (~600 LOC: labels, EQU, MEM, literals, SKP offsets) compiling embedded `.spn` sources; `fv1asm` CLI for cross-checking binaries against reference assemblers (asfv1). Starter cartridges authored in-house from the digest's X/Y/Z catalog: **CATHEDRAL** (shimmer / oct-up delay / space reverb), **TIME** (delay-reverb / delay-chorus / delay-vibrato), **VIBROTREM** (tremolo / vibrato / chorus), **OCHRE** (reverse one-shot long/short / free-run loop).
 - **Cartridge slot semantics (hardware-faithful)**: flipping a channel's 1‑2‑3 switch loads that program from the currently-inserted cartridge into that channel's VM (RAM cleared, LFOs JAMmed); removing the cartridge changes nothing until a switch flips; L and R can hold programs from different cartridges; persists in state.
