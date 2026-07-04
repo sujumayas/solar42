@@ -43,6 +43,43 @@ juce::AudioProcessorValueTreeState::ParameterLayout Solar42NProcessor::createLay
     layout.add(std::make_unique<B>(juce::ParameterID("d1.hold", 1), "Drone 1 · Hold", false));
     layout.add(std::make_unique<B>(juce::ParameterID("d1.gate", 1), "Drone 1 · Gate (Keypad 1)", false));
 
+    // Bottom modulation strip (manual pp10-12).
+    const char* lfoIds[] = { "lfoA", "lfoB" };
+    const char* lfoNames[] = { "LFO A", "LFO B" };
+    for (int li = 0; li < 2; ++li)
+    {
+        const juce::String id(lfoIds[li]), name(lfoNames[li]);
+        layout.add(std::make_unique<P>(juce::ParameterID(id + ".wave", 1),
+                                       name + " · Wave", range01, 0.5f));
+        layout.add(std::make_unique<P>(juce::ParameterID(id + ".rate", 1),
+                                       name + " · Rate", range01, 0.4f));
+        layout.add(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(id + ".range", 1), name + " · Range",
+            juce::StringArray { "x1", "x6", "x10" }, 0));
+    }
+    layout.add(std::make_unique<P>(juce::ParameterID("joy.x", 1), "Joystick · X",
+                                   juce::NormalisableRange<float>(-1.0f, 1.0f, 0.0f), 0.0f));
+    layout.add(std::make_unique<P>(juce::ParameterID("joy.y", 1), "Joystick · Y",
+                                   juce::NormalisableRange<float>(-1.0f, 1.0f, 0.0f), 0.0f));
+    layout.add(std::make_unique<P>(juce::ParameterID("joy.xoff", 1), "Joystick · X Offset",
+                                   juce::NormalisableRange<float>(-1.0f, 1.0f, 0.0f), 0.0f));
+    layout.add(std::make_unique<P>(juce::ParameterID("joy.yoff", 1), "Joystick · Y Offset",
+                                   juce::NormalisableRange<float>(-1.0f, 1.0f, 0.0f), 0.0f));
+    layout.add(std::make_unique<P>(juce::ParameterID("seq.pulser", 1), "Seq · Pulser Rate", range01, 0.4f));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID("seq.stages", 1), "Seq · Stages",
+        juce::StringArray { "3", "4", "5" }, 2));
+    for (int s = 1; s <= 5; ++s)
+    {
+        layout.add(std::make_unique<P>(juce::ParameterID("seq.step" + juce::String(s), 1),
+                                       "Seq · Step " + juce::String(s), range01, 0.0f));
+        layout.add(std::make_unique<B>(juce::ParameterID("seq.gate" + juce::String(s), 1),
+                                       "Seq · Gate " + juce::String(s), true));
+    }
+    layout.add(std::make_unique<P>(juce::ParameterID("pre.gain", 1), "Preamp · Gain", range01, 0.25f));
+    layout.add(std::make_unique<P>(juce::ParameterID("envf.att", 1), "Env Follower · Attack", range01, 0.2f));
+    layout.add(std::make_unique<P>(juce::ParameterID("envf.rel", 1), "Env Follower · Release", range01, 0.4f));
+
     // Placeholder filter + master (final Polivoks bank in M3).
     layout.add(std::make_unique<P>(juce::ParameterID("filt.freq", 1), "Filter · Freq", range01, 0.55f));
     layout.add(std::make_unique<P>(juce::ParameterID("filt.res", 1), "Filter · Res", range01, 0.30f));
@@ -73,7 +110,32 @@ s42::Rack::Controls Solar42NProcessor::controlsFromParams() const noexcept
     c.drone1.attackSec = expMap(param("d1.att"), tn::kDroneAttMin, tn::kDroneAttMax);
     c.drone1.releaseSec = expMap(param("d1.rls"), tn::kDroneRlsMin, tn::kDroneRlsMax);
     c.drone1.hold = param("d1.hold") > 0.5f;
-    c.drone1Gate = param("d1.gate") > 0.5f;
+    c.drone1Key = param("d1.gate") > 0.5f;
+
+    static const float rangeMul[] = { 1.0f, 6.0f, 10.0f };
+    c.lfoA.wave = param("lfoA.wave");
+    c.lfoA.rateHz = expMap(param("lfoA.rate"), tn::kLfoAMin, tn::kLfoAMax)
+                    * rangeMul[(int) param("lfoA.range") % 3];
+    c.lfoB.wave = param("lfoB.wave");
+    c.lfoB.rateHz = expMap(param("lfoB.rate"), tn::kLfoBMin, tn::kLfoBMax)
+                    * rangeMul[(int) param("lfoB.range") % 3];
+
+    c.joy.x = param("joy.x");
+    c.joy.y = param("joy.y");
+    c.joy.xOffset = param("joy.xoff");
+    c.joy.yOffset = param("joy.yoff");
+
+    c.seq.pulserHz = expMap(param("seq.pulser"), tn::kPulserMin, tn::kPulserMax);
+    c.seq.stages = 3 + (int) param("seq.stages") % 3;
+    for (int s = 0; s < 5; ++s)
+    {
+        c.seq.cv[s] = param(("seq.step" + juce::String(s + 1)).toRawUTF8()) * 5.0f;
+        c.seq.gateOn[s] = param(("seq.gate" + juce::String(s + 1)).toRawUTF8()) > 0.5f;
+    }
+
+    c.preamp.gain = std::pow(100.0f, param("pre.gain")); // 0..40 dB
+    c.preamp.attackSec = expMap(param("envf.att"), 0.001f, 0.5f);
+    c.preamp.releaseSec = expMap(param("envf.rel"), 0.01f, 2.0f);
 
     c.filterFreqHz = expMap(param("filt.freq"), tn::kFilterFreqMin, tn::kFilterFreqMax);
     c.filterRes = param("filt.res");

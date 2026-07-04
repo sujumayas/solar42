@@ -1,9 +1,11 @@
 #pragma once
 
 #include "PluginProcessor.h"
+#include "ui/PatchMatrixDebug.h"
 
-// M1 debug editor: branded strip + auto-generated parameter list. The real
-// skeuomorphic PanelEditor replaces this from M3 onward.
+// M2 debug editor: branded strip + auto-generated parameter list (left) +
+// patch matrix (right). The real skeuomorphic PanelEditor replaces this from
+// M3/M5 onward.
 class Solar42NEditor : public juce::AudioProcessorEditor
 {
 public:
@@ -14,6 +16,8 @@ public:
 
 private:
     juce::GenericAudioProcessorEditor params_;
+    PatchMatrixDebug matrix_;
+    juce::Viewport matrixView_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Solar42NEditor)
 };

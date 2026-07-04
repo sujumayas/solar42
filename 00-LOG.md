@@ -103,6 +103,23 @@ Newest entries at the bottom.
   cluster → VOLT dirty-zone creep; RMS/zcr profile verified). **Ear check
   pending** — open the WAV or the standalone app, tune the cluster, log verdict.
 
+### 2026-07-03 — app M2: rack & patching core green
+- `Jacks.h`: the full 42N jack census as one X-macro registry (27 outlets,
+  34 inlets incl. hidden VCO A internal out) — engine, UI and state all
+  consume this table; ids are frozen from here on.
+- `VoltBus`: one 64-sample volt buffer per outlet, fixed process order =
+  hardware causality; backward cables read the previous sub-block (~1.3 ms)
+  → feedback patches behave like hardware, no double-buffering needed.
+  Normals resolve automatically (incl. 42N CV L→CV R follow + Internal/Host
+  kinds); cable presence = jack-switch semantics (seq ext-clock auto-switch).
+- Lock-free SPSC `CommandQueue` for patch edits; patch-storm fuzz test clean.
+- Mod strip live: LFO A/B (square→tri slew morph, unipolar 0..10 V), joystick
+  (offset-window law), 5-step sequencer + pulser (±10 V) with stages 3/4/5,
+  preamp (+40 dB, rail clip) + envelope follower (env 0-10 V, gate hysteresis).
+- Debug patch-matrix UI (combo per inlet) beside the generic param list.
+- 21/21 tests; pluginval SUCCESS. Patch LFO A→drone1 CV with gen MOD on =
+  first *modulated* drone from the patch bus.
+
 ### <pending> — first audition + bounce
 - [ ] Open Drone Lab in Chrome, confirm it plays and the scope moves.
 - [ ] Tune toward SOUND DEMO 3; export a loop to `renders/`.

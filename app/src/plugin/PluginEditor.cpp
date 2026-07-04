@@ -10,12 +10,16 @@ constexpr int kHeader = 44;
 } // namespace
 
 Solar42NEditor::Solar42NEditor(Solar42NProcessor& p)
-    : juce::AudioProcessorEditor(p), params_(p)
+    : juce::AudioProcessorEditor(p), params_(p), matrix_(p.rack())
 {
     addAndMakeVisible(params_);
+    matrixView_.setViewedComponent(&matrix_, false);
+    matrixView_.setScrollBarsShown(true, false);
+    addAndMakeVisible(matrixView_);
+
     setResizable(true, true);
-    setResizeLimits(420, 480, 900, 1400);
-    setSize(560, 820);
+    setResizeLimits(700, 480, 1400, 1400);
+    setSize(940, 860);
 }
 
 void Solar42NEditor::paint(juce::Graphics& g)
@@ -29,11 +33,16 @@ void Solar42NEditor::paint(juce::Graphics& g)
 
     g.setColour(kAccentRed);
     g.setFont(juce::FontOptions(12.0f));
-    g.drawText("M1 debug rig — DRONE 1 · gate = keypad button, hold = latch",
+    g.drawText("M2 debug rig — params left · patch matrix right",
                header, juce::Justification::centredRight);
 }
 
 void Solar42NEditor::resized()
 {
-    params_.setBounds(getLocalBounds().withTrimmedTop(kHeader));
+    auto r = getLocalBounds().withTrimmedTop(kHeader);
+    auto right = r.removeFromRight(juce::jmin(420, r.getWidth() / 2));
+    params_.setBounds(r);
+    matrixView_.setBounds(right);
+    matrix_.setSize(right.getWidth() - matrixView_.getScrollBarThickness(),
+                    matrix_.preferredHeight());
 }
