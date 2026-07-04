@@ -88,6 +88,21 @@ Newest entries at the bottom.
   normal, full control/jack census, normals list, unspecified-values list).
 - Milestones M0–M9 tracked in-session; M0 = scaffold + this knowledge capture.
 
+### 2026-07-03 — app M0+M1: skeleton green, first drone voice sounding
+- **M0**: `app/` builds Standalone+AU+VST3 (JUCE 8.0.8 pinned, CMake, C++20);
+  JUCE-free libs (dsp/fv1/engine); Catch2 suite; `scripts/check.sh` =
+  configure+build+ctest+pluginval(strictness 5, SUCCESS)+render smoke.
+- **M1**: `ClassicDroneVoice` — 5 free-running saws with factory ranges
+  (C0-G2 … G5-D7), per-gen MUTE/MOD hooks, VOLT transpose→cross-FM dirty zone,
+  AR+VCA+HOLD; 4-point B-spline polyBLEP (upgraded from 2-point after the
+  alias gate measured −45 dBc audible-band; now −61 dBc, test-enforced);
+  RC envelope with overshoot-clip attack + LOOP; placeholder ZDF SVF with
+  L/R tolerance skew ("live stereo" from day one); APVTS params (final ID
+  scheme `d1.gen3.tune`…); debug editor. 13/13 tests, gate green.
+- Audition artifact: `renders/solar42n-m1-drone1.wav` (15 s: swell → beating
+  cluster → VOLT dirty-zone creep; RMS/zcr profile verified). **Ear check
+  pending** — open the WAV or the standalone app, tune the cluster, log verdict.
+
 ### <pending> — first audition + bounce
 - [ ] Open Drone Lab in Chrome, confirm it plays and the scope moves.
 - [ ] Tune toward SOUND DEMO 3; export a loop to `renders/`.

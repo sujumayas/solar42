@@ -33,10 +33,16 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    juce::AudioProcessorValueTreeState& apvts() noexcept { return apvts_; }
     s42::Rack& rack() noexcept { return rack_; }
 
 private:
+    static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
+    s42::Rack::Controls controlsFromParams() const noexcept;
+    float param(const char* id) const noexcept;
+
     s42::Rack rack_;
+    juce::AudioProcessorValueTreeState apvts_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Solar42NProcessor)
 };

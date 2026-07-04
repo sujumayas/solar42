@@ -28,6 +28,7 @@ target_link_libraries(solar42n_fv1 PUBLIC solar42n_dsp)
 # ---------------------------------------------------------------- engine (JUCE-free)
 add_library(solar42n_engine STATIC
     src/engine/Rack.cpp
+    src/engine/modules/ClassicDroneVoice.cpp
 )
 target_link_libraries(solar42n_engine PUBLIC solar42n_dsp solar42n_fv1)
 
@@ -73,6 +74,8 @@ if(SOLAR42N_BUILD_TESTS)
     enable_testing()
     add_executable(solar42n_tests
         tests/TestSanity.cpp
+        tests/TestDsp.cpp
+        tests/TestDroneVoice.cpp
     )
     target_link_libraries(solar42n_tests PRIVATE solar42n_engine Catch2::Catch2WithMain)
     include(Catch)

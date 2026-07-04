@@ -41,7 +41,7 @@ fi
 
 echo "== render regression =="
 if [ -x "$BUILD_DIR/solar42n_render" ]; then
-    "$BUILD_DIR/solar42n_render"
+    "$BUILD_DIR/solar42n_render" "$BUILD_DIR/render-smoke.wav" 2
 else
     echo "solar42n_render not built — skipped."
 fi

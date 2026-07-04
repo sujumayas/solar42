@@ -44,6 +44,11 @@ inline constexpr float kVoltTransposeOct = 2.5f;  // full downward transpose spa
 inline constexpr float kVoltDirtyStart = 0.5f;    // knob travel where cross-FM begins
 inline constexpr float kVoltCrossFmMax = 0.35f;   // cross-mod index at full travel
 
+// ---- Classic drone generators
+inline constexpr float kGenToleranceCents = 8.0f; // fixed per-unit detune spread
+inline constexpr float kGenLevelVolts = 2.0f;     // one generator's peak, volts
+inline constexpr float kDroneCvOctPerVolt = 0.08f;// CV-jack pitch-mod depth (free-run gens, no V/oct law)
+
 // ---- Photo sensor (LDR/vactrol behavior; no numbers in manual)
 inline constexpr float kSensorAttack = 0.005f;    // light up: fast
 inline constexpr float kSensorDecay = 0.120f;     // light down: LDR memory
