@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Drone Lab — Solar 42 sound design (Tone Matrix Synth experiment)</title>
+<style>
+  :root {
+    --bg:#0e0b1e; --panel:#171331; --panel2:#1f1a40; --line:#2c2760;
+    --ink:#e9e6ff; --dim:#9a93c9; --cyan:#49e6ff; --mag:#ff6ad5; --yellow:#ffd166;
+    --accent:#8b7bff;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:radial-gradient(1200px 800px at 70% -10%, #241a52 0%, var(--bg) 60%);
+    color:var(--ink); font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    min-height:100vh; padding-bottom:20px;
+  }
+  header { padding:16px 22px; border-bottom:1px solid var(--line); }
+  header h1 { margin:0; font-size:16px; letter-spacing:.3px; }
+  header p { margin:4px 0 0; color:var(--dim); font-size:12px; }
+  header .cyan { color:var(--cyan); } header .mag { color:var(--mag); }
+  .wrap { display:grid; grid-template-columns:1fr 340px; gap:18px; padding:18px 22px; align-items:start; }
+  @media (max-width:960px){ .wrap{ grid-template-columns:1fr; } }
+  .cols { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  @media (max-width:640px){ .cols{ grid-template-columns:1fr; } }
+  fieldset {
+    border:1px solid var(--line); border-radius:12px; background:var(--panel);
+    margin:0; padding:12px 14px 14px;
+  }
+  legend { padding:0 8px; color:var(--cyan); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+  .row { display:grid; grid-template-columns:96px 1fr 52px; align-items:center; gap:10px; margin:9px 0; }
+  .row label { color:var(--dim); font-size:12px; }
+  .row output { font-variant-numeric:tabular-nums; text-align:right; color:var(--ink); font-size:12px; }
+  input[type=range]{ width:100%; accent-color:var(--accent); }
+  select, .chip {
+    background:var(--panel2); color:var(--ink); border:1px solid var(--line);
+    border-radius:8px; padding:6px 8px; font:inherit;
+  }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { cursor:pointer; user-select:none; }
+  .chip.on { background:var(--accent); border-color:var(--accent); color:#0d0a1c; font-weight:600; }
+  .toggle { display:flex; align-items:center; gap:8px; color:var(--dim); }
+  .side { position:sticky; top:18px; display:flex; flex-direction:column; gap:14px; }
+  .transport { display:flex; gap:10px; }
+  button.big {
+    flex:1; padding:14px; font-size:14px; font-weight:700; border-radius:12px; cursor:pointer;
+    border:1px solid var(--line); background:var(--panel2); color:var(--ink);
+  }
+  button.play.on { background:linear-gradient(180deg,#28e0a8,#12b98a); color:#04241b; border-color:#28e0a8; }
+  button.export { background:linear-gradient(180deg,#6f5cff,#8b7bff); color:#0b0820; border:none; }
+  button.export.alt { background:var(--panel2); color:var(--ink); border:1px solid var(--line); }
+  button.ghost { flex:0 0 auto; padding:8px 12px; font-size:12px; font-weight:600; border-radius:10px; cursor:pointer; background:var(--panel2); color:var(--dim); border:1px solid var(--line); }
+  button:disabled{ opacity:.5; cursor:not-allowed; }
+  canvas { width:100%; height:120px; background:#0a0818; border:1px solid var(--line); border-radius:12px; display:block; }
+  .status { font-size:11px; color:var(--dim); min-height:32px; white-space:pre-line; }
+  .status b { color:var(--yellow); }
+  .hint { font-size:11px; color:var(--dim); }
+  a { color:var(--cyan); }
+  .tag { display:inline-block; font-size:10px; color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:1px 6px; margin-left:6px; }
+
+  /* ---- playable keyboard ---- */
+  .pianobar { margin:0 22px; padding:14px 16px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+  .pianobar .head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+  .pianobar h2 { margin:0; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--cyan); }
+  .octctl { display:flex; align-items:center; gap:8px; color:var(--dim); font-size:12px; }
+  .octctl b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  .piano { position:relative; height:130px; user-select:none; touch-action:none; }
+  .wkey { position:absolute; top:0; bottom:0; border:1px solid var(--line); border-top:none; border-radius:0 0 7px 7px;
+          background:linear-gradient(#efeaff,#cfc7ec); box-sizing:border-box; cursor:pointer; transition:background .04s; }
+  .wkey .lbl { position:absolute; bottom:8px; left:0; right:0; text-align:center; color:#2a2350; font-size:11px; font-weight:600; }
+  .wkey .lbl small { display:block; color:#6b62a0; font-weight:700; font-size:10px; margin-top:2px; text-transform:uppercase; }
+  .wkey.on { background:linear-gradient(#9b8cff,#6f5cff); }
+  .wkey.on .lbl, .wkey.on .lbl small { color:#fff; }
+  .bkey { position:absolute; top:0; height:64%; border:1px solid #000; border-radius:0 0 6px 6px; z-index:2;
+          background:linear-gradient(#2a2450,#0c0a1c); box-sizing:border-box; cursor:pointer; }
+  .bkey .lbl { position:absolute; bottom:6px; left:0; right:0; text-align:center; color:#d7d0ff; font-size:9px; font-weight:700; text-transform:uppercase; }
+  .bkey.on { background:linear-gradient(#c3b8ff,#8b7bff); }
+  .bkey.on .lbl { color:#160f36; }
+  .kbdhint { color:var(--dim); font-size:11px; margin-top:10px; }
+  .kbdhint kbd { background:var(--panel2); border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:0 5px; font:inherit; font-size:11px; color:var(--ink); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛰️ Drone Lab <span class="tag">Tone Matrix Synth · experiment</span></h1>
+  <p>Stack detuned oscillators the app can't (yet) — dial a <span class="mag">Solar 42</span>–style drone by ear, <b>play it with your keyboard</b>, then
+     <span class="cyan">Export</span> a seamless loop + patch. Reference: <a href="https://youtu.be/dzU8T2lKUhs" target="_blank" rel="noreferrer">SOLAR 42 · SOUND DEMO 3</a>.</p>
+</header>
+
+<div class="wrap">
+  <div class="cols">
+    <!-- OSCILLATOR STACK -->
+    <fieldset>
+      <legend>Oscillator stack</legend>
+      <div class="row"><label>Chord root</label>
+        <select id="root"></select><output></output></div>
+      <div class="row"><label>Osc / voice</label>
+        <input type="range" id="oscCount" min="1" max="7" step="1" value="5"><output id="oscCountV"></output></div>
+      <div class="row"><label>Waveform</label>
+        <select id="wave">
+          <option value="sawtooth">saw</option>
+          <option value="triangle">triangle</option>
+          <option value="square">square</option>
+          <option value="sine">sine</option>
+        </select><output></output></div>
+      <div class="row"><label>Detune spread</label>
+        <input type="range" id="spread" min="0" max="35" step="1" value="14"><output id="spreadV"></output></div>
+      <div class="row"><label>Stereo spread</label>
+        <input type="range" id="stereo" min="0" max="100" step="1" value="70"><output id="stereoV"></output></div>
+      <div class="row"><label>Uneven</label>
+        <div class="toggle"><input type="checkbox" id="uneven" checked><span class="hint">microtonal detune (richer beating)</span></div><output></output></div>
+      <div class="row"><label>Sub voice</label>
+        <div class="toggle"><input type="checkbox" id="sub"><span class="hint">add root −12 (chord only)</span></div><output></output></div>
+    </fieldset>
+
+    <!-- CHORD / CLUSTER -->
+    <fieldset>
+      <legend>Background chord (Play button)</legend>
+      <div class="chips" id="chords" style="margin-bottom:10px"></div>
+      <div class="hint">Semitone offsets from root (fractions = microtonal):</div>
+      <div class="row" style="grid-template-columns:1fr; margin-top:6px">
+        <input type="text" id="intervals" value="0, 7, 12" style="width:100%; padding:8px; background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:8px; font:inherit"></div>
+      <div class="row"><label>Noise level</label>
+        <input type="range" id="noise" min="0" max="30" step="1" value="6"><output id="noiseV"></output></div>
+      <div class="hint">Noise gets a slow sample-&amp;-hold wobble (Papa-Srapa texture). Noise is added to the background chord only.</div>
+    </fieldset>
+
+    <!-- FILTER -->
+    <fieldset>
+      <legend>Polivoks filter</legend>
+      <div class="row"><label>Slope</label>
+        <select id="ftype"><option value="12">LP 12 dB</option><option value="24">LP 24 dB</option></select><output></output></div>
+      <div class="row"><label>Cutoff</label>
+        <input type="range" id="cutoff" min="100" max="6000" step="10" value="900"><output id="cutoffV"></output></div>
+      <div class="row"><label>Resonance</label>
+        <input type="range" id="res" min="0" max="100" step="1" value="55"><output id="resV"></output></div>
+      <div class="row"><label>Drive</label>
+        <input type="range" id="drive" min="0" max="100" step="1" value="35"><output id="driveV"></output></div>
+    </fieldset>
+
+    <!-- MOVEMENT -->
+    <fieldset>
+      <legend>Movement (slow)</legend>
+      <div class="row"><label>Cutoff LFO</label>
+        <input type="range" id="clfoRate" min="0.02" max="0.5" step="0.01" value="0.05"><output id="clfoRateV"></output></div>
+      <div class="row"><label>· depth</label>
+        <input type="range" id="clfoDepth" min="0" max="100" step="1" value="30"><output id="clfoDepthV"></output></div>
+      <div class="row"><label>Pitch drift</label>
+        <input type="range" id="driftRate" min="0.02" max="0.4" step="0.01" value="0.08"><output id="driftRateV"></output></div>
+      <div class="row"><label>· depth</label>
+        <input type="range" id="driftDepth" min="0" max="15" step="0.5" value="6"><output id="driftDepthV"></output></div>
+      <div class="hint">Each voice's drift starts at a random phase → independent movement.</div>
+    </fieldset>
+
+    <!-- SPACE -->
+    <fieldset>
+      <legend>Space</legend>
+      <div class="row"><label>Reverb mix</label>
+        <input type="range" id="revMix" min="0" max="100" step="1" value="40"><output id="revMixV"></output></div>
+      <div class="row"><label>· decay</label>
+        <input type="range" id="revDecay" min="1" max="7" step="0.1" value="4"><output id="revDecayV"></output></div>
+      <div class="row"><label>Delay mix</label>
+        <input type="range" id="delMix" min="0" max="60" step="1" value="16"><output id="delMixV"></output></div>
+      <div class="row"><label>· time</label>
+        <input type="range" id="delTime" min="120" max="600" step="10" value="380"><output id="delTimeV"></output></div>
+      <div class="row"><label>Chorus depth</label>
+        <input type="range" id="chDepth" min="0" max="100" step="1" value="50"><output id="chDepthV"></output></div>
+    </fieldset>
+
+    <!-- AMP -->
+    <fieldset>
+      <legend>Amp</legend>
+      <div class="row"><label>Attack</label>
+        <input type="range" id="attack" min="0" max="6" step="0.1" value="1.5"><output id="attackV"></output></div>
+      <div class="row"><label>Release</label>
+        <input type="range" id="release" min="0.1" max="8" step="0.1" value="4"><output id="releaseV"></output></div>
+      <div class="row"><label>Loop length</label>
+        <input type="range" id="loopLen" min="6" max="16" step="1" value="10"><output id="loopLenV"></output></div>
+      <div class="hint">Keyboard notes use a snappier attack (≤0.4 s) so melodies speak; the background chord uses the full Attack. Loop length is used only when exporting.</div>
+    </fieldset>
+  </div>
+
+  <!-- SIDE / TRANSPORT -->
+  <div class="side">
+    <canvas id="scope" width="640" height="120"></canvas>
+    <div class="transport">
+      <button class="big play" id="play">▶︎ Drone (hold chord)</button>
+    </div>
+    <div class="transport">
+      <button class="big export" id="expWav">⬇︎ Export WAV loop</button>
+    </div>
+    <div class="transport">
+      <button class="big export alt" id="expPatch">⬇︎ Export patch JSON</button>
+    </div>
+    <div class="status" id="status">Ready. Press Play, or just start playing the keyboard below (a click/keypress is needed to start audio).</div>
+    <div class="hint">
+      <b>Solar 42 workflow:</b> hold the background <b>Drone</b> (chord) and play a
+      <b>melody on the keyboard</b> over it → drones in movement. Tune by ear →
+      Export WAV → install as a <code>synth-sampler</code>. See <code>../04-drone-lab.md</code>.
+    </div>
+  </div>
+</div>
+
+<!-- PLAYABLE KEYBOARD -->
+<div class="pianobar">
+  <div class="head">
+    <h2>🎹 Playable keyboard <span class="hint" style="text-transform:none; letter-spacing:0">— polyphonic; play the drone in movement</span></h2>
+    <div class="octctl">
+      <button class="ghost" id="octDown">◀ Oct</button>
+      <span>Octave <b id="octLbl">4</b></span>
+      <button class="ghost" id="octUp">Oct ▶</button>
+      <button class="ghost" id="allOff">All notes off</button>
+    </div>
+  </div>
+  <div class="piano" id="piano"></div>
+  <div class="kbdhint">
+    Computer keys: <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd>F</kbd><kbd>G</kbd><kbd>H</kbd><kbd>J</kbd><kbd>K</kbd> = white,
+    <kbd>W</kbd><kbd>E</kbd><kbd>T</kbd><kbd>Y</kbd><kbd>U</kbd> = black,
+    <kbd>Z</kbd>/<kbd>X</kbd> = octave down/up. Hold several at once. (Click keys with the mouse too.)
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function midiFromName(n){ const m=n.match(/^([A-G]#?)(-?\d)$/); return NOTES.indexOf(m[1]) + (parseInt(m[2])+1)*12; }
+function freqFromMidi(m){ return 440*Math.pow(2,(m-69)/12); }
+
+// ---- root note dropdown (C1..C3, default C2) ----
+(function(){ const s=$('root'); for(let oct=1;oct<=3;oct++) for(const n of NOTES){ const nm=n+oct; const o=document.createElement('option'); o.value=nm; o.textContent=nm; s.appendChild(o);} s.value='C2'; })();
+
+// ---- chord presets ----
+const CHORDS = {
+  'Root':'0', 'Fifth':'0, 7', 'Cinematic':'0, 7, 12',
+  'Eerie (micro)':'0, 7, 14.55', 'Cluster':'0, 3, 7, 10', 'Wide':'0, 12, 19'
+};
+(function(){ const c=$('chords'); for(const k in CHORDS){ const b=document.createElement('div'); b.className='chip'; b.textContent=k; b.onclick=()=>{ $('intervals').value=CHORDS[k]; markChord(); if(playingChord) retriggerChord(); }; c.appendChild(b);} })();
+function markChord(){ const v=$('intervals').value.replace(/\s/g,''); [...$('chords').children].forEach(ch=>ch.classList.toggle('on', CHORDS[ch.textContent].replace(/\s/g,'')===v)); }
+
+// ---- read all params ----
+function P(){
+  return {
+    root: $('root').value,
+    oscCount:+$('oscCount').value, wave:$('wave').value,
+    spread:+$('spread').value, stereo:+$('stereo').value/100,
+    uneven:$('uneven').checked, sub:$('sub').checked,
+    intervals: $('intervals').value.split(',').map(x=>parseFloat(x.trim())).filter(x=>!isNaN(x)),
+    noise:+$('noise').value/100,
+    ftype:+$('ftype').value, cutoff:+$('cutoff').value, res:+$('res').value/100, drive:+$('drive').value/100,
+    clfoRate:+$('clfoRate').value, clfoDepth:+$('clfoDepth').value/100,
+    driftRate:+$('driftRate').value, driftDepth:+$('driftDepth').value,
+    revMix:+$('revMix').value/100, revDecay:+$('revDecay').value,
+    delMix:+$('delMix').value/100, delTime:+$('delTime').value/1000,
+    chDepth:+$('chDepth').value/100,
+    attack:+$('attack').value, release:+$('release').value, loopLen:+$('loopLen').value,
+  };
+}
+
+// ---- reflect slider values into the little output boxes ----
+const FMT = {
+  oscCount:v=>v, spread:v=>'±'+v+'¢', stereo:v=>v+'%', noise:v=>v+'%',
+  cutoff:v=>v+' Hz', res:v=>v+'%', drive:v=>v+'%',
+  clfoRate:v=>(+v).toFixed(2)+'Hz', clfoDepth:v=>v+'%', driftRate:v=>(+v).toFixed(2)+'Hz', driftDepth:v=>'±'+v+'¢',
+  revMix:v=>v+'%', revDecay:v=>v+'s', delMix:v=>v+'%', delTime:v=>v+'ms', chDepth:v=>v+'%',
+  attack:v=>v+'s', release:v=>v+'s', loopLen:v=>v+'s'
+};
+function refresh(){ for(const id in FMT){ const el=$(id+'V'); if(el && $(id)) el.textContent=FMT[id]($(id).value); } }
+document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{ refresh(); onParamChange(el); }));
+refresh(); markChord();
+
+// structural sets decide what a change does while the engine is running
+const ENGINE_STRUCTURAL = new Set(['ftype','revDecay']);            // rebuild whole chain
+const VOICE_STRUCTURAL  = new Set(['oscCount','wave','spread','stereo','uneven','sub','intervals','root','driftRate','driftDepth','noise']); // affects new voices; re-trigger chord
+function onParamChange(el){
+  if(!engine) return;
+  if(ENGINE_STRUCTURAL.has(el.id)) rebuildEngine();
+  else if(VOICE_STRUCTURAL.has(el.id)){ if(playingChord) retriggerChord(); }
+  else applyLive(P());
+}
+
+// =====================================================================
+//  AUDIO ENGINE  (persistent filter + FX; voices spawn into it)
+// =====================================================================
+let ctx=null, engine=null, playingChord=false, chordVoices=[], rafId=null;
+const activeNotes=new Map(); // midi -> { voice, el }
+
+// tanh-ish soft-clip curve (matches the app's driveCurve intent)
+function driveCurve(amount){
+  const k = 1 + amount*24; const n=1024; const c=new Float32Array(n);
+  for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; c[i]=Math.tanh(k*x)/Math.tanh(k); }
+  return c;
+}
+// decaying-noise reverb impulse (like previewEngine.makeImpulse)
+function makeImpulse(ac, decay){
+  const len=Math.max(1,Math.floor(ac.sampleRate*decay)); const b=ac.createBuffer(2,len,ac.sampleRate);
+  for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<len;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5); } }
+  return b;
+}
+function scheduleSampleHold(param, ac, base, depth, rateHz, t0, t1){
+  const step=1/rateHz; param.setValueAtTime(base, t0);
+  for(let t=t0; t<t1; t+=step){ const v=Math.max(0, base*(1-depth) + base*depth*Math.random()*1.6); param.setValueAtTime(v, t); }
+}
+
+// Build the persistent filter + FX + master into `ac`, connected to `out`.
+function buildEngineInto(ac, out, p, offline){
+  const now=ac.currentTime, nyq=ac.sampleRate/2;
+  const master=ac.createGain(); master.gain.value = offline?1:0.0001;
+  const limiter=ac.createDynamicsCompressor();
+  limiter.threshold.value=-3; limiter.knee.value=6; limiter.ratio.value=12; limiter.attack.value=0.003; limiter.release.value=0.25;
+  master.connect(limiter); limiter.connect(out);
+  if(!offline){ master.gain.setValueAtTime(0.0001,now); master.gain.exponentialRampToValueAtTime(0.9, now+0.05); }
+
+  // FX bus: dry + delay + chorus + reverb -> master
+  const fxIn=ac.createGain();
+  const dry=ac.createGain(); dry.gain.value=1; fxIn.connect(dry); dry.connect(master);
+  const dl=ac.createDelay(1.0); dl.delayTime.value=p.delTime;
+  const fb=ac.createGain(); fb.gain.value=Math.min(0.5,0.15+p.delMix*0.5);
+  const dlTone=ac.createBiquadFilter(); dlTone.type='lowpass'; dlTone.frequency.value=2600;
+  const dlMix=ac.createGain(); dlMix.gain.value=p.delMix;
+  fxIn.connect(dl); dl.connect(dlTone); dlTone.connect(fb); fb.connect(dl); dlTone.connect(dlMix); dlMix.connect(master);
+  const ch=ac.createDelay(0.05); ch.delayTime.value=0.012;
+  const chLfo=ac.createOscillator(); chLfo.frequency.value=0.35;
+  const chLfoG=ac.createGain(); chLfoG.gain.value=0.006*p.chDepth; chLfo.connect(chLfoG); chLfoG.connect(ch.delayTime); chLfo.start(now);
+  const chMix=ac.createGain(); chMix.gain.value=p.chDepth*0.6; fxIn.connect(ch); ch.connect(chMix); chMix.connect(master);
+  const conv=ac.createConvolver(); conv.buffer=makeImpulse(ac,p.revDecay);
+  const revMix=ac.createGain(); revMix.gain.value=p.revMix; fxIn.connect(conv); conv.connect(revMix); revMix.connect(master);
+
+  // shared filter (Polivoks-ish): drive -> biquad(s) -> fxIn
+  const shaper=ac.createWaveShaper(); shaper.curve=driveCurve(p.drive); shaper.oversample='2x';
+  const f1=ac.createBiquadFilter(); f1.type='lowpass'; f1.frequency.value=p.cutoff; f1.Q.value=0.5+p.res*9.5; shaper.connect(f1);
+  let last=f1, f2=null;
+  if(p.ftype===24){ f2=ac.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=p.cutoff; f2.Q.value=0.5+p.res*3; f1.connect(f2); last=f2; }
+  last.connect(fxIn);
+  const cLfo=ac.createOscillator(); cLfo.type='triangle'; cLfo.frequency.value=p.clfoRate;
+  const cLfoG=ac.createGain(); cLfoG.gain.value=p.clfoDepth*Math.min(p.cutoff*0.9,nyq-p.cutoff-100);
+  cLfo.connect(cLfoG); cLfoG.connect(f1.frequency); if(f2) cLfoG.connect(f2.frequency); cLfo.start(now);
+
+  return { ac, input:shaper, shaper, f1, f2, cLfo, cLfoG, revMix, dlMix, dl, fb, chMix, master, nyq };
+}
+
+// Spawn one unison voice (a detuned oscillator stack) at `midi` into `eng`.
+function spawnVoice(eng, p, midi, opt){
+  opt=opt||{}; const ac=eng.ac, now=ac.currentTime, offline=!!opt.offline;
+  const level = 0.8/Math.sqrt(Math.max(1,p.oscCount));
+  const vGain=ac.createGain(); vGain.gain.value = offline?level:0.0001; vGain.connect(eng.input);
+  const nodes=[];
+  const drift=ac.createOscillator(); drift.type='sine'; drift.frequency.value=p.driftRate*(0.85+0.3*Math.random());
+  const driftG=ac.createGain(); driftG.gain.value=p.driftDepth; drift.connect(driftG); drift.start(now); nodes.push(drift);
+  for(let i=0;i<p.oscCount;i++){
+    const o=ac.createOscillator(); o.type=p.wave; o.frequency.value=freqFromMidi(midi);
+    const t=p.oscCount===1?0:(i/(p.oscCount-1)-0.5)*2;
+    let cents=t*p.spread; if(p.uneven) cents+=((Math.sin(i*12.9898+midi*4.1)*43758.5453)%1)*p.spread*0.35;
+    o.detune.value=cents; driftG.connect(o.detune);
+    const pan=ac.createStereoPanner(); pan.pan.value = p.oscCount===1?0:t*p.stereo;
+    o.connect(pan); pan.connect(vGain); o.start(now); nodes.push(o);
+  }
+  if(!offline){
+    const a=Math.max(0.01, opt.attack!=null?opt.attack:p.attack);
+    vGain.gain.setValueAtTime(0.0001,now); vGain.gain.exponentialRampToValueAtTime(level, now+a);
+  }
+  return {
+    level,
+    release(rt){
+      const t=ac.currentTime;
+      vGain.gain.cancelScheduledValues(t);
+      vGain.gain.setValueAtTime(Math.max(vGain.gain.value,0.0001),t);
+      vGain.gain.exponentialRampToValueAtTime(0.0001, t+Math.max(0.02,rt));
+      setTimeout(()=>{ try{ nodes.forEach(n=>n.stop()); }catch(e){} }, (rt+0.25)*1000);
+    }
+  };
+}
+
+// ---- engine lifecycle ----
+function startEngine(){
+  if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)();
+  if(ctx.state==='suspended') ctx.resume();
+  if(engine) return engine;
+  const an=ctx.createAnalyser(); an.fftSize=2048; an.connect(ctx.destination);
+  engine=buildEngineInto(ctx, an, P(), false); engine.analyser=an;
+  drawScope();
+  return engine;
+}
+function rebuildEngine(){
+  // tear down everything and rebuild (used for filter-slope / reverb-decay changes)
+  const wasChord=playingChord;
+  allNotesOff(true); if(playingChord) stopChord();
+  try{ engine.cLfo.stop(); }catch(e){}
+  engine=null; cancelAnimationFrame(rafId);
+  startEngine();
+  if(wasChord) playChord();
+}
+function applyLive(p){
+  if(!engine) return; const t=ctx.currentTime+0.02;
+  engine.f1.frequency.setTargetAtTime(p.cutoff,t,0.05); engine.f1.Q.setTargetAtTime(0.5+p.res*9.5,t,0.05);
+  if(engine.f2){ engine.f2.frequency.setTargetAtTime(p.cutoff,t,0.05); engine.f2.Q.setTargetAtTime(0.5+p.res*3,t,0.05); }
+  engine.shaper.curve=driveCurve(p.drive);
+  engine.cLfo.frequency.setTargetAtTime(p.clfoRate,t,0.1);
+  engine.cLfoG.gain.setTargetAtTime(p.clfoDepth*Math.min(p.cutoff*0.9, ctx.sampleRate/2-p.cutoff-100),t,0.1);
+  engine.revMix.gain.setTargetAtTime(p.revMix,t,0.1);
+  engine.dlMix.gain.setTargetAtTime(p.delMix,t,0.1); engine.dl.delayTime.setTargetAtTime(p.delTime,t,0.1);
+  engine.fb.gain.setTargetAtTime(Math.min(0.5,0.15+p.delMix*0.5),t,0.1);
+  engine.chMix.gain.setTargetAtTime(p.chDepth*0.6,t,0.1);
+}
+
+// ---- background chord (Play/Hold) ----
+function playChord(){
+  startEngine(); const p=P();
+  const intervals = p.intervals.length? p.intervals.slice() : [0]; if(p.sub) intervals.push(-12);
+  const rootMidi=midiFromName(p.root);
+  chordVoices = intervals.map(iv=>spawnVoice(engine, p, rootMidi+iv, {attack:p.attack}));
+  // add a bit of noise texture to the bed
+  if(p.noise>0) chordVoices.push(spawnNoise(engine, p));
+  playingChord=true; $('play').classList.add('on');
+  status('Drone held — now play a melody on the keyboard over it.');
+}
+function stopChord(){
+  const p=P(); chordVoices.forEach(v=>v.release(p.release)); chordVoices=[];
+  playingChord=false; $('play').classList.remove('on');
+}
+function retriggerChord(){ if(!playingChord) return; chordVoices.forEach(v=>v.release(0.15)); chordVoices=[]; setTimeout(()=>{ if(engine) playChord(); }, 40); }
+$('play').onclick=()=>{ playingChord? stopChord() : playChord(); };
+
+function spawnNoise(eng, p){
+  const ac=eng.ac, now=ac.currentTime;
+  const nb=ac.createBuffer(1, ac.sampleRate*2, ac.sampleRate); const nd=nb.getChannelData(0);
+  for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+  const nsrc=ac.createBufferSource(); nsrc.buffer=nb; nsrc.loop=true;
+  const nLP=ac.createBiquadFilter(); nLP.type='lowpass'; nLP.frequency.value=2000;
+  const nG=ac.createGain(); nG.gain.value=0.0001;
+  nsrc.connect(nLP); nLP.connect(nG); nG.connect(eng.input);
+  nG.gain.exponentialRampToValueAtTime(p.noise, now+Math.max(0.05,p.attack));
+  scheduleSampleHold(nG.gain, ac, p.noise, 0.7, 0.5, now+p.attack, now+p.attack+60);
+  nsrc.start(now);
+  return { release(rt){ const t=ac.currentTime; nG.gain.cancelScheduledValues(t); nG.gain.setValueAtTime(Math.max(nG.gain.value,0.0001),t); nG.gain.exponentialRampToValueAtTime(0.0001,t+rt); setTimeout(()=>{ try{nsrc.stop();}catch(e){} },(rt+0.25)*1000); } };
+}
+
+// ---- keyboard notes (polyphonic) ----
+function noteOn(midi, el){
+  startEngine(); if(activeNotes.has(midi)) return;
+  const p=P();
+  const v=spawnVoice(engine, p, midi, { attack: Math.min(p.attack, 0.4) });
+  activeNotes.set(midi,{ voice:v, el }); if(el) el.classList.add('on');
+}
+function noteOff(midi){
+  const a=activeNotes.get(midi); if(!a) return;
+  a.voice.release(Math.min(P().release, 2.5)); activeNotes.delete(midi);
+  if(a.el) a.el.classList.remove('on');
+}
+function allNotesOff(silent){
+  activeNotes.forEach((a,midi)=>{ a.voice.release(0.15); if(a.el) a.el.classList.remove('on'); });
+  activeNotes.clear(); if(!silent) status('All keyboard notes released.');
+}
+$('allOff').onclick=()=>allNotesOff(false);
+
+function status(s){ $('status').innerHTML=s; }
+
+// ---- scope ----
+const cv=$('scope'), cx=cv.getContext('2d');
+function drawIdle(){ cx.fillStyle='#0a0818'; cx.fillRect(0,0,cv.width,cv.height); cx.strokeStyle='#2c2760'; cx.beginPath(); cx.moveTo(0,cv.height/2); cx.lineTo(cv.width,cv.height/2); cx.stroke(); }
+drawIdle();
+function drawScope(){
+  if(!engine||!engine.analyser){ return; }
+  const an=engine.analyser, buf=new Uint8Array(an.fftSize); an.getByteTimeDomainData(buf);
+  cx.fillStyle='rgba(10,8,24,0.35)'; cx.fillRect(0,0,cv.width,cv.height);
+  cx.lineWidth=2; const grad=cx.createLinearGradient(0,0,cv.width,0); grad.addColorStop(0,'#49e6ff'); grad.addColorStop(1,'#ff6ad5');
+  cx.strokeStyle=grad; cx.beginPath();
+  for(let i=0;i<buf.length;i++){ const x=i/buf.length*cv.width, y=(buf[i]/255)*cv.height; i?cx.lineTo(x,y):cx.moveTo(x,y); }
+  cx.stroke(); rafId=requestAnimationFrame(drawScope);
+}
+
+// =====================================================================
+//  PLAYABLE KEYBOARD UI + INPUT
+// =====================================================================
+let baseOct = 4;
+const WHITES=[{semi:0,name:'C',key:'a'},{semi:2,name:'D',key:'s'},{semi:4,name:'E',key:'d'},{semi:5,name:'F',key:'f'},{semi:7,name:'G',key:'g'},{semi:9,name:'A',key:'h'},{semi:11,name:'B',key:'j'},{semi:12,name:'C',key:'k'}];
+const BLACKS=[{semi:1,name:'C#',key:'w',after:0},{semi:3,name:'D#',key:'e',after:1},{semi:6,name:'F#',key:'t',after:3},{semi:8,name:'G#',key:'y',after:4},{semi:10,name:'A#',key:'u',after:5}];
+const KEY2SEMI={}; [...WHITES,...BLACKS].forEach(k=>KEY2SEMI[k.key]=k.semi);
+const semiEls={};
+function baseMidi(){ return (baseOct+1)*12; }
+
+(function buildPiano(){
+  const piano=$('piano'); const nW=WHITES.length; const wPct=100/nW; const bW=wPct*0.62;
+  WHITES.forEach((k,i)=>{
+    const el=document.createElement('div'); el.className='wkey';
+    el.style.left=(i*wPct)+'%'; el.style.width=wPct+'%';
+    el.innerHTML=`<span class="lbl">${k.name}<small>${k.key}</small></span>`;
+    bindKeyEl(el,k.semi); piano.appendChild(el); semiEls[k.semi]=el;
+  });
+  BLACKS.forEach(k=>{
+    const el=document.createElement('div'); el.className='bkey';
+    el.style.left=((k.after+1)*wPct - bW/2)+'%'; el.style.width=bW+'%';
+    el.innerHTML=`<span class="lbl">${k.key}</span>`;
+    bindKeyEl(el,k.semi); piano.appendChild(el); semiEls[k.semi]=el;
+  });
+})();
+function bindKeyEl(el, semi){
+  const down=e=>{ e.preventDefault(); noteOn(baseMidi()+semi, el); };
+  const up=e=>{ e.preventDefault(); noteOff(baseMidi()+semi); };
+  el.addEventListener('mousedown',down); el.addEventListener('mouseup',up);
+  el.addEventListener('mouseleave',e=>{ if(e.buttons) up(e); });
+  el.addEventListener('touchstart',down,{passive:false}); el.addEventListener('touchend',up,{passive:false});
+}
+function setOct(o){ baseOct=Math.max(1,Math.min(7,o)); $('octLbl').textContent=baseOct; }
+$('octDown').onclick=()=>setOct(baseOct-1); $('octUp').onclick=()=>setOct(baseOct+1);
+
+// computer-keyboard input
+const heldKeys=new Set();
+window.addEventListener('keydown', e=>{
+  const tag=(document.activeElement&&document.activeElement.tagName)||'';
+  if(tag==='INPUT'||tag==='SELECT'||e.metaKey||e.ctrlKey||e.altKey) return;
+  const k=e.key.toLowerCase();
+  if(k==='z'){ setOct(baseOct-1); return; }
+  if(k==='x'){ setOct(baseOct+1); return; }
+  if(!(k in KEY2SEMI) || heldKeys.has(k)) return;
+  heldKeys.add(k); const semi=KEY2SEMI[k]; noteOn(baseMidi()+semi, semiEls[semi]); e.preventDefault();
+});
+window.addEventListener('keyup', e=>{
+  const k=e.key.toLowerCase(); if(!(k in KEY2SEMI)) return;
+  heldKeys.delete(k); noteOff(baseMidi()+KEY2SEMI[k]);
+});
+window.addEventListener('blur', ()=>{ heldKeys.clear(); allNotesOff(true); });
+
+// =====================================================================
+//  EXPORT — offline render → seamless mono loop → WAV
+// =====================================================================
+async function exportWav(){
+  const p=P(); const sr=44100, settle=1.0, xfade=0.5, len=p.loopLen; const total=settle+len+xfade;
+  status('Rendering '+len+'s loop…');
+  const oac=new OfflineAudioContext(1, Math.ceil(sr*total), sr);
+  const eng=buildEngineInto(oac, oac.destination, p, true);
+  const intervals=p.intervals.length? p.intervals.slice():[0]; if(p.sub) intervals.push(-12);
+  const rootMidi=midiFromName(p.root);
+  intervals.forEach(iv=>spawnVoice(eng, p, rootMidi+iv, {offline:true}));
+  if(p.noise>0) spawnNoise(eng, p); // steady-ish noise bed
+  const rendered=await oac.startRendering();
+  const src=rendered.getChannelData(0);
+  const s0=Math.floor(settle*sr), L=Math.floor(len*sr), xf=Math.floor(xfade*sr);
+  const out=new Float32Array(L);
+  for(let n=0;n<L;n++) out[n]=src[s0+n];
+  for(let k=0;k<xf;k++){ const w=k/xf, fin=Math.sin(w*Math.PI/2), fout=Math.cos(w*Math.PI/2); out[k]=src[s0+k]*fin + src[s0+L+k]*fout; }
+  let peak=1e-6; for(let n=0;n<L;n++) peak=Math.max(peak,Math.abs(out[n]));
+  const g=Math.pow(10,-1/20)/peak; for(let n=0;n<L;n++) out[n]*=g;
+  const name='Solar42Drone_'+p.root+'_'+len+'s';
+  download(encodeWav(out,sr), name+'.wav','audio/wav');
+  status('Exported <b>'+name+'.wav</b> — seamless mono loop @ '+sr+'Hz, root '+p.root+'.\nNext: Export patch JSON, then install per ../04-drone-lab.md.');
+}
+$('expWav').onclick=()=>exportWav().catch(e=>status('Render error: '+e.message));
+
+function encodeWav(f32, sr){
+  const n=f32.length, buf=new ArrayBuffer(44+n*2), v=new DataView(buf);
+  const w=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+  w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  w(36,'data'); v.setUint32(40,n*2,true);
+  let o=44; for(let i=0;i<n;i++){ let s=Math.max(-1,Math.min(1,f32[i])); v.setInt16(o,s<0?s*0x8000:s*0x7fff,true); o+=2; }
+  return new Blob([buf],{type:'audio/wav'});
+}
+function download(blob, filename){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
+// ---- export patch JSON (raw params + synth-osc recipe + sampler instrument.json) ----
+$('expPatch').onclick=()=>{
+  const p=P(); const wavName='Solar42Drone_'+p.root+'_'+p.loopLen+'s.wav';
+  const patch={
+    _tool:'Drone Lab (experiments/solar42)', _reference:'ELTA Solar 42 · SOUND DEMO 3',
+    params:p,
+    synthOscRecipe:{
+      type:'synth-osc',
+      oscillator:{ waveform:p.wave==='sawtooth'?'saw':p.wave, octave:0, detune:0, level:1,
+        unison:{ voices:p.oscCount, detuneCents:p.spread, stereoSpread:p.stereo } },
+      envelope:{ attack:p.attack, hold:0, decay:0, sustain:1, release:p.release },
+      filters:[{ type:p.ftype===24?'lowpass24':'lowpass12', cutoff:p.cutoff, resonance:p.res, drive:p.drive }],
+      modulators:[
+        { wave:'triangle', rate:p.clfoRate, amount:p.clfoDepth, destination:'filter-cutoff' },
+        { wave:'sine', rate:p.driftRate, amount:p.driftDepth/100, destination:'pitch' }
+      ],
+      effects:[ {type:'reverb',params:{size:0.7,mix:p.revMix}}, {type:'chorus',params:{rate:0.3,depth:p.chDepth,mix:0.5}} ],
+      chordIntervals:p.intervals
+    },
+    samplerInstrumentJson:{
+      name:'Solar42 Drone', title:'Solar42 Drone', category:'synth', type:'synth-sampler',
+      gain:1.0, userCreated:true,
+      samples:[{ file:wavName, note:p.root, range:'C-2,C8', gain:1.0, loop:true, time:{start:0,end:p.loopLen}, loopTime:0 }],
+      envelope:{ attack:Math.max(0.2,p.attack), hold:0, decay:0, sustain:1, release:Math.max(1.5,p.release) },
+      filters:[{ type:p.ftype===24?'lowpass24':'lowpass12', cutoff:p.cutoff, resonance:p.res, drive:p.drive }],
+      modulators:[
+        { wave:'triangle', rate:p.clfoRate, amount:p.clfoDepth, offset:0, destination:'filter-cutoff' },
+        { wave:'sine', rate:p.driftRate, amount:Math.min(1,p.driftDepth/40), offset:0, destination:'pitch' }
+      ],
+      effects:[ {type:'reverb',params:{size:0.7,mix:p.revMix}}, {type:'chorus',params:{rate:0.3,depth:p.chDepth,mix:0.5}} ]
+    }
+  };
+  download(new Blob([JSON.stringify(patch,null,2)],{type:'application/json'}), 'Solar42Drone_'+p.root+'.patch.json');
+  status('Exported patch JSON (raw params + synth-osc recipe + synth-sampler instrument.json).');
+};
+</script>
+</body>
+</html>

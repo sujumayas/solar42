@@ -1,0 +1,1516 @@
+USER MANUAL
+
+SOLAR 42F is a unique experimental electronic music instrument, analogue
+microtonal ambient drone machine and semi-modular stand-alone synthesizer. Perfect for live performances, creating soundtracks for movies or theatrical
+productions, atmospheric soundscapes, microtonal and background music.
+This is an improved version of its predecessor Elta Music SOLAR 42 model. The
+SOLAR 42F oﬀers a vast array of sounds that can be created. The instrument
+is created with the inspiration taken from early electronic musical instruments
+of the 1920s and 1950s, particularly Leo Theremin's instrument called “Harmonium”, and from the soundtrack of science ﬁction movie "Blade Runner 2049"
+
+PAN
+
+L
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+R L
+VOL
+
+R
+VOL
+
+SOLAR 42F does not look like a classic synthesizer which may confuse the
+user due to complicated design. In fact, it is easy to use and program. It has 8
+voices as separate blocks, a mixer with pan and double eﬀector and various
+blocks of CV sources. The instrument is made in such a way that you can create
+full-blown drone or ambient tracks on it without multitrack recording.
+
+3
+
+FEATURES
+
+Two volt octave VCO voices with diﬀerent waveform variations, morphing
+and touch sensitive keypad controller for volt octave voices.
+Six drone voices with separate push-button keypad
+Two white noise generators,
+Two S&H generators
+Five LFO generators,
+5 step sequencer,
+Joystick
+Preamp for contact mic + envelope follower
+Stereo mixer with panoramic left and right channels
+Dual 12 dB Polivoks ﬁlter + dual distortion after ﬁlter
+Dual cartridge eﬀector combiner with CV control. Now you can load a
+diﬀerent eﬀect on each channel also bypass on each channel.
+Stereo audio output. Dry audio outputs volt octave voices. External audio
+input.
+OUTS VOLTAGE SPECIFICATION
+DRY V4 V5: max. 1 V
+
+JOYSTICK: -10V…+10V
+
+WET: max. 2 V
+
+left: -10V…-5V…0V
+
+VCO: 10 V ( -5V…+5V)
+
+middle: -5V…0...+5V
+
+EG: 0…8 V
+
+right: 0…+5V…+10V
+
+ENV VOICES 1,2,3,6,7,8: -10 V…+ 10 V
+
+S&H: -5V…+5V
+
+LFOs: 0…+10V
+
+VOICE 3, 5 MODULATOR: 0….+12V
+
+PULSERL: -10V…+10V
+
+5 STEP SEQ CV: 0…+5V
+
+ENV FOLLOWER CV: 0…+10V
+
+5 STEP SEQ GATE: 0…+10V
+
+ENV FOLLOWER GATE: 0…+8V
+
+POWER SUPPLY: DC 12V 1A…2A
+WEIGHT: 5,4 KG (11,9 lb)
+SIZE: 49,5 cm x 32 cm x 2,9 cm (5,6 cm height including potentiometer knobs).
+
+4
+
+TABLE OF CONTENTS
+
+BLOCK SCHEME
+
+6
+
+DRON VOICEs “CLASSIC”
+
+7
+
+DRON VOICEs “NEW”
+
+8
+
+VOICEs “VCO”
+
+9
+
+LFOs
+
+10
+
+JOYSTICK
+
+10
+
+SEQUENCER
+
+11
+
+CONTACT MIC + ENVELOPE FOLLOWER
+
+12
+
+SENSOR KEYBOARD | IN - OUT
+
+13
+
+SENSOR KEYBOARD | CONTROL
+
+14
+
+KEYBOARD’S FUNCTIONALITY
+
+15
+
+KEYBOARD’S CALIBRATION
+
+20
+
+MIXER
+
+21
+
+FILTERS
+
+21
+
+EFFECTOR
+
+22
+
+EFFECTOR’S CARTRIGES
+
+23
+
+WARRANTY
+
+25
+
+42
+is the answer to the ultimate
+question of life, the universe
+and all things......
+5
+
+BLOCK SCHEME
+
+AUDIO ROUTING
+DRY OUT
+
+WET OUT L/R
+L
+
+DRY OUT
+
+R
+
+DUAL EFFECTOR
+L
+
+R
+
+DISTORTION
+L
+
+R
+
+DUAL LP/BP VCF
+L
+
+VCO A
+
+VOICE 1
+
+VOICE 2
+
+R
+
+VCO B
+
+MIX / PAN
+
+VOICE3
+
+VOICE 4
+
+EXT IN
+
+VOICE 5
+
+VOICE 6
+
+PIEZZO
+PREAMP
+
+CONTROL SIGNAL SOURCES
+CV
+
+CV
+
+CV · GATE
+CLOCK
+
+LFOs
+
+JOYSTICK
+
+SEQUENCER
+
+CV · GATE
+CLOCK
+
+CV
+
+CV · GATE
+
+EGs
+
+VOICEs
+
+CV · GATE
+
+1,2,3,6,7,8
+
+GATE
+JOYSTICK
+
+TOUCHPLATE KEYBOARD
+
+DRONE KEYS
+
+PIEZZO SIGNAL
+PREAMP
+
+ENVELOPE
+FOLLOWER
+
+6
+
+DRON VOICES 1, 2, 4, 5 «CLASSIC SOLAR 50»
+Each voice consists of 5 simple sawtooth oscillators (NO VOLT OCTAVE), which have no logarithmic or linear voltage control like standard VCOs. The circuit of each drone oscillator includes a
+negistor oscillator. It is implemented on a single transistor.
+The ﬁrst and second oscillators are low pitched, the third medium, the fourth and ﬁfth high
+pitched.
+Between drone oscillators in diﬀerent voices can vary slightly.
+deviations in capacitors and transistors.
+Attention!
+
+As the pitch is aﬀected by
+
+This is an approximate data. It may vary slightly in one direction or another.
+
+So if you've tuned a chord, after a while it may get a little out of sync and you'll need to adjust it a
+bit. This is normal, as these are very primitive drone oscillators.
+
+OSC STATUS
+
+PHOTO-SENSITIVE
+DETECTOR
+
+MUTE
+TUNE
+MOD
+
+Each of the 5 generators in one voice can be turned oﬀ or on by MUTE
+BUTTONS allowing you to create diﬀerent variations of chords and triads.
+Two-sounds mode or using one generator. You can modulate the pitch of
+the oscillators using the MOD BUTTONS by sending any CV source to the
+input of CV MOD or by using a light-sensitive eye that changes the frequency of the oscillators. User surrounding light atmosphere also inﬂuences on
+a PHOTO-SENSITIVE DETECTOR of the instrument, when activating a MOD
+BUTTON on any generator the frequency (pitch) of a generator is changed
+depending on the level of surrounding light.
+If the MOD buttons are not switched on, the generators run stably,
+without deviations!
+
+ATT
+
+O env
+out
+
+RLS
+
+The VOLT KNOB transposes down all 5 voice generators at the same time.
+After half the stroke of the knob, generators start to modulate each other
+creating FM synthesis eﬀect.
+Voices are triggered using the pushbutton keyboard, buttons 1,2, 4 and
+5, creating a 5V gate that triggers the Attack/Release envelope, opening the
+VCA in the voice. External CV sources can be used to trigger the voice,
+driving the envelope. The output of the envelope can be used to trigger the
+next voice or to modulate the voltage on the ﬁlter or the eﬀector.
+
+7
+
+DRONE VOICES 3, 6 «PAPA SRAPA»
+New drone voices 3 and 6 are based on the DIY noise synthesizers created by Russian electro-shaman artist Papa Srapa, who made electronic devices with similar sounds in the early 2000s.
+Sirens, bird cries, sounds of space monsters and ﬁrearms volleys, as well as the sounds of surf and
+wind can be imitated with these drone voices.
+Voices are triggered using a
+pushbutton keyboard, particularly buttons 3 and 6, creating a
+5V gate that triggers the
+Attack/Release
+envelope,
+opening the VCA in the voice.
+External CV sources can be
+used to trigger the voice,
+driving the envelope. The
+output of the envelope can be
+used to trigger the next voice
+or to modulate the voltage on
+the ﬁlter or the eﬀector.
+
+ATT
+
+RLS
+
+env out
+
+Combining positions of four potentiometers and four switches provides great possibilities for
+creating such kinds of sounds. The "sound machine" circuit consists of two Trigger-Schmidt oscillators. One of them which operates at low frequency is used as a square wave modulator (RATE
+CONTROL, RATE SWITCH and CV OUT), while the other oscillator operates in the audio frequency
+range between notes C0 and E7 (approximately) are used for tone generation. It has PITCH
+KNOBS and RANGE SWITCH. Control knobs are used to adjust the frequency, depth and modulation mode of the oscillator.
+Switches can connect generators in one voice with four diﬀerent combinations:
+1
+
+Continuous drone sound. FM button oﬀ in up position, AM button oﬀ in up position
+
+2
+
+Frequency modulation drone sound. FM switched on in the down position, AM switched oﬀ in the up
+position
+
+3
+
+Amplitude modulation drone sound. FM oﬀ in the up position, AM on in the down position
+
+4
+
+Amplitude and frequency modulation of drone sound. FM is switched on in the down position, AM
+is switched on in the down position
+
+5
+
+To get a clean noise sound. FM is switched oﬀ in the up position, AM is switched oﬀ in the up position.
+PITCH control to zero, MOD and DIVIDER control to the right maximum position and set NOISE control
+to maximum.
+
+Attention!
+
+Earlier versions may have incorrect position of these buttons. Which does not aﬀect
+the operation of the device. Switching on/oﬀ the modulation generator in these
+devices can be heard by ear.
+
+The white noise in these voices is additionally fed to the Sample and Hold generator through IN
+jack. To start it you need to send any LFO or modulator source to the clock socket, which will set
+the speed of operation.
+
+8
+
+VOICES «VCO A - VCO B»
+Voices A and B Triangle core analog voltage controlled oscillator based around the famous AS3340
+VCO chip. Alongside traditional wave shapes there are two more variable, morphing waveforms
+(saw to inverted saw, sine to triangle). There are 6 waveforms in total.
+
+Envelope:
+
+Features:
+pulse width control (SHAPE) with
+CV input and attenuator;
+linear FM input with attenuator;
+lin/exp mode switch for CV control;
+
+A
+
+D Decay. Setting the time of output signal
+
+amplitude decay from the maximum
+level to the level set by the -sustain
+knob.
+
+octave switch +3 / low;
+sub-generator switch -1 octave;
+tune knob controls the pitch
+continuously over one octave;
+
+S
+
+Sustain. Setting the level of the output
+signal, which is maintained from the
+moment the decline ends until the keys
+are released.
+
+R
+
+Release. Setting the time during which
+the output signal amplitude decreases
+from the sustain level to zero after
+releasing the keys. HOLD - VCA is always
+open.
+
+external sync input;
+six waveform outputs;
+V/O input.
+VCO dry out.
+
+Attack. Sets the time of the output
+signal amplitude increase from zero
+level to the maximum value.
+
+Self-generation. Mode in which the
+envelope generator operates like an
+LFO. The Attack and Release controls
+should be in the minimum to 9 o'clock
+position
+VCO A
+
+sync
+
+VCO B
+
+VCO A and VCO B mirror each other except for two things. VCO A
+has a SYNC input and VCO B has a VCO output. In VCO B, the output
+from VCO A is normalised to the CV input jack, which can be adjusted
+using the CV AMT knob.
+
+cv
+
+By default, the V/O voltage and Gate from the touch keyboard goes the same on both 4 and 5
+voices.
+
+9
+
+LFOs
+There are two independent LFO A and LFO B on board, with the waveform tunable from square
+to triangle and a knob set to the center position that adjusts the mix of triangle and square waves.
+They are slightly diﬀerent LFO speeds. LFO A is slow while LFO B is fast. These LFOs were
+intentionally designed to produce positive voltage swing only, in order to connect them to the
+photosensors of DRONE VOICES 1, 2, 6, 7 (since those are using red LEDs, which only work with
+positive voltage levels).
+
+JOYSTICK
+This unit has a small position-locking built in JOYSTICK made with a style of game consoles. The
+position by X and Y is also led-indicated.
+It has two voltage oﬀset regulators and two CV outputs of X and Y axes. Maximum value of CV
+voltages at extreme positions of X and Y axes -10V..0V.. +10V.
+And with zero volts in the center!
+
+offset X
+
+-10
+
+offset Y
+
+Oﬀseft left
+
+Oﬀseft center
+
+Oﬀseft right
+
+0
+
++5
+
++10
+
+-5
+
+0
+
+-10
+
+offset X
+
+0
+
+-5
+
++5
+
+0
+
+-5
+
+offset Y
+
+offset X
+
++5
+
++10
+
+0
+
+offset Y
+
+offset X
+
+offset Y
+
+10
+
+SEQUENCER
+A classic, Buchla inspired 5-stage sequential voltage source. The output of each step can be
+adjusted continuously from 0V to 5V with the corresponding potentiometer.
+
+The sequential voltage generates sequences of gates and stored control voltages. It's equipped
+with an internal clock, the PULSER that sets the speed of the sequencer, but you can use any other
+external clock/trigger source through the EXT. CLOCK input jack to run the sequencer (for example the LFOs or the CV outputs from the touch keyboard).
+To create diﬀerent articulations, the GATE switches turns oﬀ the GATE output for each step. This
+does not aﬀect the CV voltage output.
+The STAGES switch sets the maximum number of steps in the sequence (3, 4, or 5). The PULSER
+potentiometer sets the speed of the internal clock generator, this periodic signal is available at the
+CLOCK OUT jack.
+Touch keyboard also has a built-in sequencer (up to 16 steps). But this sequencer is physically
+more convenient to adjust while playing.
+To get a Buchla style, use the trigger output of the touch keyboard. Connect this sequencer's
+PULSER pulse generator to the keyboard's CLOCK input. Alternatively, connect the keyboard's
+internal pulse generator to the sequencer's EXT CLOCK jack.
+There are many options for starting the sequencer from external sources.
+
+11
+
+CONTACT MIC + ENVELOPE FOLLOWER
+Built-in (internal) contact microphone (PIEZZO) soldered right under the sensor keyboard (mounted under the sun), turning the case of SOLAR 42 into a microphone.
+A large palette of organic and physical sounds can be produced by scratching, tapping and more
+generally by collecting any acoustic waves using the built-in eﬀector with the cartridges. Ampliﬁcation stage is suitable for external contact microphones, electro-acoustic instruments like guitars or
+plain line-level signals. With its built-in envelope follower and gate detector it can also be the
+gateway between external audio sources and CV.
+To mute the preamp, set GAIN to minimum or remove the volume knob on the mixer.
+Envelope
+follower
+level
+
+Gate
+detector
+activity
+
+Ampliﬁer
+clipping
+indicator
+
+Audio ampliﬁer with 1M input impedance, up to 40dB of gain. This large gain ranges covers
+everything - from the ampliﬁcation of line- level instruments, to the magniﬁcation of tiny
+sonic details captured by external contact microphones.
+Ext. Source 3,5 mm jack connector.
+External input bypassing the built-in contact microphone.
+Envelope follower with attack and release and Envelope CV output
+Gate +8V output.
+
+12
+
+SENSOR KEYBOARD | IN - OUT
+The Solar keyboard is a performance oriented touch controller featuring 12 capacitively sensitive
+plates, equipped with highly accurate Volt/octave outputs, ready to connect to your modular setup
+also.
+
+CLOCK
+
+V/OCT
+
+Volt/octave output, ranges over 8 octaves from 0V to +8V. By default the
+signal present on this output is normalized to the Volt/octave input of the
+VCOs (VCO A and VCO B)
+
+GATE LEFT
+
+0 to 10V gate output. By default the signal present on this output is
+normalized to the gate input of the envelope generators controlling the
+voltage controlled ampliﬁers of VCO A and VCO B.
+
+GATE RIGHT
+
+0 to 10V gate output.
+
+(MAIN)
+
+PRESSURE
+
+RESET
+
+13
+
+External clock input. When a clock pulse is received the keyboard
+automatically switches to external clock source. Recommended level: 0 to
++5V, though higher voltages are accepted.
+
+Control voltage or Volt/octave output, ranges over 8 octaves from 0V to
++8V. The signal on this output is determind by ‘Behaviour’ and ‘Pressure
+output’ parameters.
+Arpeggiato reset input. A raising edge on this input resets the arpeggiator
+to its ﬁrst step. Recommended level 0 to +5V, though higher voltages are
+accepted.
+
+SENSOR KEYBOARD | CONTROL
+
+BUTTONS
+
+ENCODER
+
+KEYBOARD
+PLATES
+
+The pushbuttons are used to transpose the output of the keyboard. Their
+behaviour depends on some settings.
+In ‘Single behaviour’ when quantiser is enabled the pushbuttons set the
+active octave range of the keyboard. In ‘Single behaviour’ when quantiser is
+disabled the pushbuttons add an oﬀset to the signal present at the Volt/
+octave output. In ‘Twin and split behaviour’ pressing the pushbutton will
+enable or disable the oﬀset of the corresponding side of the keyboard.
+When quantiser is enabled the amount of oﬀset can be altered by
+semitones over 5 octaves. When quantiser is disabled the amount of oﬀset
+can be ﬁnetuned in 0.0025V steps over 5V.
+To change the value of the oﬀset press and hold the button and rotate the
+encoder (just make sure that currently no parameter is highlighted for
+editing).
+Rotate the encoder to scroll through the list of parameters, click the
+encoder to to select a parameter for editing.
+To activate a plate’s designated note or voltage level, simply press it. This
+value will be present on the Volt/octave output as analog voltage. For
+tuning a note plate, press and hold it while rotating the encoder to adjust
+its value. For successful adjustment, ensure that no parameter is currently
+highlighted for editing.
+The signal level present on the pressure output is directly proportional
+to the readings of the capacitive sensors connected to the plates. It’s essential to note that the Solar keyboard is not force-sensitive but responds to
+the surface area of ﬂesh applied directly to the plates. The capacitive
+sensor’s output increases with more ﬁnger surface area placed on the
+plate.
+
+14
+
+KEYBOARD’S FUNCTIONALITY
+
+The keyboard’s functionality is determined by certain parameters. These parameters can be
+grouped as follows:
+BEHAVIOUR
+
+VIBRATO
+
+PLATE/BUTTON EDITOR
+
+PRESSURE
+
+MODE
+
+QUANTISER
+
+ARPEGGIATOR
+
+CLOCK
+
+SEQUENCER
+
+PRESETS
+
+PORTAMENTO
+
+BEHAVIOUR
+SINGLE
+
+TWIN
+
+SPLIT
+
+12 key mode, the signal present on the pressure output is determined by the
+‘Pressure output’ parameter (see below).
+In this mode, the keyboard separates into two distinct controllers, each equipped
+with 6 note plates. In this conﬁguration, the pressure output functions as the
+Volt/octave output for the right side. While the two sides share the same parameters, they can be played independently.
+Similar to the twin mode, the keyboard can also operate in a split mode with two
+sides, each having separate parameters. This conﬁguration enables various
+possibilities, such as having an arpeggiator on the left side and a simple keyboard
+on the right side.
+PAN
+
+L
+
+PAN
+
+R L
+
+VOL
+
+PAN
+
+R L
+
+VOL
+
+PAN
+
+R L
+
+VOL
+
+PAN
+
+R L
+
+VOL
+
+PAN
+
+R L
+
+VOL
+
+PAN
+
+R L
+
+VOL
+
+PAN
+
+PAN
+
+R L
+
+VOL
+
+PAN
+
+R L
+
+VOL
+
+R L
+
+VOL
+
+R
+
+VOL
+
+Connection in SPLIT and TWIN mode
+
+PLATE/BUTTON EDITOR
+EDITOR
+
+15
+
+While highlighted you’re able to modify the value of buttons and plates. To
+change the value of the buttons press and hold the button and rotate the encoder. For tuning a note plate, press and hold it while rotating the encoder to adjust
+its value.
+
+KEYBOARD’S FUNCTIONALITY
+MODE
+Sets the operation mode of the keyboard controller. In split mode each side can operate in
+diﬀerent mode.
+KEYBOARD
+
+Touch controlled keyboard, pressing a plate triggers a note corresponding to the
+plate.
+
+ARPEGGIATOR
+
+Arpeggiation is a common synthesizer feature that generates a looping sequence
+(arpeggio) when you press down a chord.
+
+SEQUENCER
+
+A 16-step sequencer, transposed by the active note plate values.
+
+ARPEGGIATOR
+HOLD
+
+CLOCK
+DIRECTION
+
+When enabled the arpeggiator will continue to play the arpeggiated sequence
+even when note plates are not held.
+Sets the clock multiplication/division ratio for the arpeggiator.
+Synthesizers with traditional piano keys will generate the order of the arpeggiated
+sequence based on the incoming notes. Solar creates an arpeggio based on the
+sequence number of pressed plates and
+The direction parameter.
+forward [eg.: 1, 2, 5, 8, 1, 2, 5, 8...]
+backward [eg.: 8, 5, 2, 1, 8, 5, 2, 1...]
+ping-pong [eg.: 1, 2, 5, 8, 5, 2, 1, 2...]
+random
+
+VARIATION
+
+INTERVAL
+
+RHYTHM
+
+LENGTH
+
+When enabled the arpeggiated progression will be played again transposed by
+the selected intervall. The possible number of repeated variations can be: OFF
+(no variation), x1, x2, x3
+Sets the interval of repeated variations from 1 to 12 semitones.
+Applies a rhythmic pattern to the arpeggiators clock source. Think of it as a gate
+sequencer between the clock source and the arpeggiators clock input. Steps that
+are enabled will let through the incoming clock signal, while the steps that are
+disabled will mute it.
+Sets the length of the rhythm sequencer from 1 to 8 steps
+
+16
+
+KEYBOARD’S FUNCTIONALITY
+SEQUENCER
+RUN
+
+Sets the way that the sequencer moves its index. When free mode is selected the
+sequencer is clocked continously. In keyboard controlled mode the sequencer
+moves its index only while a note plate is held.
+
+LENGTH
+
+Sets the number of steps in the sequence from 2 to 16 steps.
+
+CLOCK
+
+Sets the clock multiplication/division ratio for the arpeggiator.
+
+DIRECTION
+
+Sets the direction of the sequencer, the available options are in the following
+order:
+forward: This is the default playback direction. The sequence plays forward
+from left to right.
+backward: The sequence plays in reverse, beginning with the ﬁnal note of the
+sequence.
+ping-pong: The sequence plays forward in its entirety, then backward in its
+entirety.
+random: The sequence plays in continuously varying random order.
+
+EDITOR
+
+CV OUTPUT
+
+RHYTHM
+
+LENGTH
+
+Press the encoder to enter the editor, rotate the encoder to select a step. When
+a gate is selected simply press the encoder to enable disable that. When a
+note/value fader is selected press the encoder to highlight it in order to edit. To
+exit the editor press and hold the encoder for 1 second.
+Has two options: continuous or gated. In gated mode the CV output will be
+updated only if the step’s gate is enabled. In continuous mode the CV output
+always corresponds to the note value of the currently active step.
+Applies a rhythmic pattern to the sequencers clock source. Think of it as a gate
+sequencer between the clock source and the sequencers clock input. Steps that
+are enabled will let through the incoming clock signal, while the steps that are
+disabled will mute it.
+Sets the length of the rhythm sequencer from 1 to 8 steps.
+
+PORTAMENTO
+PORTAMENTO
+
+LEGATO
+
+17
+
+Set the speed of gliding (0 - 255), i.e. how much time it takes to transition from
+one pitch to the next. This creates slew limiting eﬀect on the CV output.
+oﬀ - Portamento is always on.
+on - Gliding happens only when two or more note plates are touched simultaneously (this parameter has no eﬀect when arpeggiator is enabled).
+
+KEYBOARD’S FUNCTIONALITY
+VIBRATO
+SPEED
+
+Sets (0 - 127) of the LFO that’s modulating the pitch (Volt/octave) output, thereby
+creating vibrato eﬀect.
+
+DEPTH
+
+Sets the amount of modulation (0 - 127).
+
+DELAY
+
+Speciﬁes a time delay (0 - 127) before vibrato begins to apply until it reaches the
+full strength determined by the depth parameter.
+
+PRESSURE
+CONTROL
+
+When enabled, the modulation amount is altered by the pressure applied to
+keys.
+
+PRESSURE
+OUTPUT
+
+pressure - The voltage on the pressure output will continuously follow the
+pressure applied to key plates.
+ASR - Attack/sustain/release envelope generator.
+AD - Attack/decay envelope generator.
+LOOP - Looped AD envelope generator.
+random - Outputs a random voltage whenever a plate is pressed.
+
+RISE
+
+Creates slew limiting eﬀect on rising edge in pressure and random modes, sets
+attack time in envelope modes (0 - 255).
+
+FALL
+
+Creates slew limiting eﬀect on falling edge in pressure and random modes, sets
+decay/release time in envelope modes (0 - 255).
+
+QUANTISER
+SCALE
+EDITOR
+
+LOAD
+SCALE
+
+Turn notes on/oﬀ of the scale applied by the note quantiser. When all notes are
+disabled, the keyboard functions as a microtonal keyboard. In this mode, it allows
+for the exploration and performance of microtonal music, where pitches and
+intervals can be ﬁnely tuned beyond the standard 12-tone equal temperament
+system. This feature enables musicians to access a wider range of scales and
+tonalities, opening up new possibilities for creative expression and experimentation in their compositions and performances.
+Select and load a preset scale/mode to the quantiser and to the keyboard also.
+(Semitones, Ionian, Dorian, Phrygian, Lydian, Mixolydian, Aeolian, Locrian, Blues
+major, Blues minor, Pentatonic major, Pentatonic minor, Folk, Japanese,
+Gamelan, Gypsy, Arabian, Flamenco, Whole tone).
+
+18
+
+KEYBOARD’S FUNCTIONALITY
+
+ROOT NOTE
+
+Sets the root note of the scale applied by the note quantiser from C to H.
+The scale is a sequence of notes arranged in ascending order within an octave,
+that follows a speciﬁc pattern of intervals (distances between notes). The root
+note of a scale is the starting note, the foundational pitch from which the scale is
+built and named. The root note anchors the other notes in the scale, giving them
+context and deﬁning the key of the music. When you alter the root note, you
+eﬀectively transpose the scale to a diﬀerent key, by shifting its entire structure.
+This ability to change the root note allows musicians to explore various tonalities
+and adapt the scale to ﬁt diﬀerent musical contexts.
+The adjustable root note is especially useful when playing a synthesizer in a
+precise musical context, where staying in tune with other instruments is critical.
+In these situations, setting the root note ensures that the oscillators (VCOs) are
+tuned correctly relative to the rest of the ensemble, maintaining harmony and
+consistency across instruments.
+However, if the synthesizer is being used on its own, without the need to align
+with other tuned instruments, the root note parameter becomes less essential. In
+this case, you can achieve the same eﬀect by manually tuning
+the VCOs to transpose the base pitch along with the entire scale. This manual
+adjustment eﬀectively shifts the scale’s pitch center, making the root note parameter redundant for solo performances or experimental setups where strict tuning
+isn’t necessarily required.
+Adjusting the scale and root note can lead to duplicate notes on the controller
+keyboard because both parameters aﬀect the output of the quantizer. When the
+scale or root note is shifted, the quantizer remaps incoming notes to ﬁt the new
+settings, which can cause certain notes on the keyboard to produce the same
+pitch, resulting in duplicates. After making adjustments to the scale and root note,
+users may need to ﬁne-tune the pre-programmed notes on the keyboard controller to eliminate these duplicates. By reprogramming or reassigning notes, users
+can ensure that each key corresponds uniquely to a pitch within the new scale.
+
+CLOCK
+CLOCK
+
+Sets the tempo of the keyboards internal clock within a range of 10 to 300 BPM
+(Beats Per Minute). While this range might seem limited at ﬁrst, it can be signiﬁcantly extended by utilizing the arpeggiator’s clock multiplication/ division parameter.
+When a clock pulse is received through the CLOCK INPUT jack, the keyboard will
+automatically switch to using the external clock source for synchronization. To
+revert back to the internal clock, all you need to do is modify the BPM setting. By
+adjusting the tempo value manually, the keyboard will resume using its internal
+clock for tempo generation.
+
+PRESETS
+PRESETS
+
+19
+
+The keyboard can save 4 presets, containing the values of all the parameters
+listed above, except the clock tempo. Rotate the encoder to scroll through presets
+A to D, click the encoder to enter a sub-selection page where you can load, save
+or initialise a preset.
+
+KEYBOARD’S CALIBRATION
+To enter calibration settings press and hold the encoder while powering up the synthesizer.
+VOLT/OCTAVE OUTPUT CALIBRATION
+Connect a multimeter to the Volt/octave output jack, scroll through the calibration points
+(0V, 2V, 5V and 8V), by rotating the encoder adjust the output so that is as close to the
+displayed value as possible.
+PRESSURE OUTPUT CALIBRATION
+Connect a multimeter to the Pressure output jack, scroll through the calibration points (0V,
+2V, 5V and 8V), by rotating the encoder adjust the output so that is as close to the displayed
+value as possible.
+INIT CALIBRATION VALUES
+Press and hold the encoder knob for 1 second to revert DAC calibration values to an initial
+state.
+DAC VOLTAGE REFERENCE SOURCE
+Enables/disables the internal voltage reference of the DAC (digital-to-analog converter). Set
+VREF to INTERNAL if using DAC8562 or DAC8563, set VREF to EX if using AD5663.
+TOUCH THRESHOLD
+Setting when the touch sensor will respond to a touch. The default setting is 650 # Release
+threshold - Sensor post-touch threshold. The default setting is 690
+PRESSURE MINIMUM
+Sets the minimum threshold for the pressure sensitivity. The voltage on the Pressure
+output should start to rise after a plate is touched and just a small amount of pressure is
+applied.
+PRESSURE MAXIMUM
+Sets the maximum threshold for the pressure sensitivity, that is at which pressure level
+should the voltage at Pressure output reach its maximum level.
+MPR121 CHARGE/DISCHARGE & DEBOUNCE
+If the keyboard behaves unpredictably, as if it’s a sequencer clocked by a Geiger counter,
+try increasing DEBOUNCE and/or lowering CHARGE/ DISCHARGE parameters. The best
+practice is to keep CHARGE/DISCHARGE as high as possible and DEBOUNCE as low as
+possible. By default the initial values should work ﬂawlessly.
+ENCODER DIRECTION
+Determines the direction of encoder rotation. It has two states: normal or reversed.
+SAVE CALIBRATION SETTINGS
+Press and hold the encoder knob for 1 second to save calibration data and settings.
+
+20
+
+MIXER
+All audio signals from the devices are fed to the panoramic mixer.
+PAN
+
+L
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+PAN
+
+PAN
+
+R L
+VOL
+
+PAN
+
+R L
+VOL
+
+R L
+VOL
+
+R
+VOL
+
+FILTER
+Double 12 dB ﬁlter. The new circuit on the POLIVOKS FILTER is more stable and does not require
+tuning, unlike the previous circuit on the classic UD12 chips. Still, you will not lose low frequencies
+when increasing resonance.
+
+FREQ – manual ﬁlter cutoﬀ frequency RESONANCE - Filter resonance (boost the frequency near
+cutoﬀ point)
+CV – you can control/automate ﬁlter cutoﬀ via CV using CV in.
+LINK – when switched on links CV on ﬁlter 1 to control both ﬁlters 1 and 2
+BP-LP – ﬁlter mode
+DIST-GAIN – distortion eﬀect control. DIST knob controls the balance between normal and distorted signal, GAIN knob controls the amount of distortion. Please use MASTER VOLUME knob or
+PHONE VOLUME knob to reduce distrotion volume.
+
+21
+
+EFFECTOR
+Audio signals enter the eﬀector (with cartridges) which is controlled by CV as well - the same
+circuit is used in ELTA music CONSOLE pedal and SOLAR 50. Here the BLEND knob sets the eﬀect
+level. The MASTER VOLUME knob sets the overall volume WET OUT L and R channel. X, Y, Z
+parameters controlled by CV -10V..+10V. SOLAR 42F now has one such block per left and right
+channel. X Y Z, Blend and Master controls are shared.
+Added two new switches - ‘bypass’ to each channel. Now you can switch the eﬀect on or oﬀ on the
+right or left channel.
+DUAL EFFECTOR
+cv x
+
+cv y
+
+cv z
+
+X
+
+Y
+
+Z
+
+BLEND
+
+MASTER
+VOLUME
+
+Each eﬀect has its own parameters on the X, Y, Z knobs. Each cartridge has three eﬀects. To use
+it, just insert a cartridge on any side into the slot and press reset/load button according to the left
+or right channel.
+1-2-3 program selector – switches active eﬀect from the cartridge. Press the L/R button when it
+is OFF in order to load left channel eﬀects. Press the L/R button when it is ON to load right channel
+eﬀects. You can also load diﬀerent eﬀects and cartridges on each channel of the eﬀector. If you
+remove the cartridge from the slot and switch the eﬀect toggle or press the load button in the
+selected channel, the eﬀect will be erased from memory.
+You can save the eﬀect in the memory by switching to another channel. For example you load an
+eﬀect from a cartridge to the left channel then switch the L/R button to the right channel, now you
+can insert another cartridge into the slot and load it to the right channel.
+Insert the cartridge into the slot, either side. Select the eﬀect loading channel with the L/R FX
+button and the eﬀect number with the 1-2-3 toggle switch, then press the RESET button of the
+corresponding channel.
+
+L/R
+fx
+
+R CHANNEL
+
+PRESS RESET R
+
+L/R
+fx
+
+L CHANNEL
+
+PRESS RESET L
+
+R
+
+L
+
+22
+
+EFFECTOR’S CARTRIGES
+CATHEDRAL
+Various reverbs
+
+TIME
+Classic Mod delays
+
+Program 1: Shimmer
+X Octave up
+Y Octave down
+Z Decay
+
+Program1: Pitch delay
+X Feedback
+Y Delay
+Z Pitch
+
+Program 1: Delay reverb
+X Feedback
+Y Delay
+Z Reverb
+
+Program 2: Oct up delay
+X Feedback
+Y Delay
+Z Reverb
+
+Program 2: Reverse Pitch
+delay
+X Feedback
+Y Delay
+Z Pitch
+
+Program 2: Delay chorus
+X Feedback
+Y Delay
+Z Mod depth
+
+Program 3: Space reverb
+X Feedback
+Y Delay
+Z Reverb
+
+VIBROTREM
+Modulation eﬀects
+
+23
+
+MAGIC
+Pitched delays
+
+Program 3: Bell pitchdelay
+X Feedback
+Y Delay
+Z Pitch
+
+FILTER
+Filter and Wah
+
+Program 3: Delay Vibrato
+X Feedback
+Y Delay/vibratorate
+Z Mod depth
+
+VIBE
+Rotary phase mods
+
+Program 1: Tremolo
+X Depth
+Y Rate
+Z Reverb
+
+Program1: Auto Wah
+X Filter amount
+Y Evelope
+Z Reverb
+
+Program 1: Phaser
+X Depth
+Y Rate
+Z Reverb
+
+Program 2: Vibrato
+X Depth
+Y Rate
+Z Reverb
+
+Program 2: HP/LP ﬁlter
+X HP cutoﬀ
+Y LP cutoﬀ
+Z Resonance
+
+Program 2: Flanger
+X Depth
+Y Rate
+Z Reverb
+
+Program 3: Chorus
+X Depth
+Y Rate
+Z Reverb
+
+Program 3: Notch ﬁlter
+X Cut 1
+Y Cut 2
+Z Resonance
+
+Program 3: Resonance
+ﬂanger
+X Resonance
+Y Rate
+Z Mod depth
+
+EFFECTOR’S CARTRIGES
+PITCH SHIFTER
+Octave and pitch
+
+INFINITY
+Big Ambient eﬀects
+
+STRING RINGER
+Audio rate modulation
+
+Program 1: SynthTaver
+X Octave down
+Y Octave up
+Z Direct
+
+Program 1: Resonance
+Reveb
+X Pre delay
+Y Pre delay mod
+Z Decay
+
+Program 1: Synthetic Ring
+X Frequency
+Y Resonance
+Z Sub
+
+Program 2: Octaver
+X Octave down
+Y Octave up
+Z Direct
+Program 3: Pitch
+Harmonizer
+X Pitch 1
+Y Pitch 2
+Z Voice mix
+
+SYNTEX-1
+Bass synth
+
+Program 2: O.D.D (oscillating dirte delay)
+X Feedback
+Y Delay
+Z Pitch
+Program 3: Resonance
+Delay
+X Feedback
+Y Delay
+Z Pitch
+
+Program 2: Ring Mod
+X Frequency
+Y Rate
+Z Reverb
+Program 3: S&H Ring Mod
+X Pitch Speed
+Y S&H Rate
+Z Freq Ring Mod
+
+DIGITAL
+Sample rate crusher
+
+GENERATOR
+Noise mini synth
+
+Program 1: Vibe Synth
+X Vibrato Rate
+Y Resonance
+Z Sub
+
+Program1: Filter DAC
+X Sample rate
+Y Cutoﬀ
+Z Input gain
+
+Program 1: FM tone
+X Pitch 1
+Y Pitch 2
+Z FM 2-1
+
+Program 2: Pulse Synth
+X Tremolo Rate
+Y Resonance
+Z Sub
+
+Program 2: LFO DAC
+(oscillatingdirty delay)
+X Sample rate
+Y LFO speed
+Z LFO amount
+
+Program 2: Ramp
+X LFO rate
+Y Pitch
+Z Pitch mod +/-
+
+Program 3: Acid Synth
+X Tone
+Y Color
+Z Sub
+
+Program 3: Envelope
+crusher
+X Sample rate
+Y Envelope amount
+Z Input gain
+
+Program 3: Voice
+X Cutoﬀ
+Y Pitch
+Z LP/HP
+
+ORCHE
+Reverse delay
+Program 1: One-shot Long
+X Delay time
+Y Feedback amount
+Z Trigger threshold
+
+Program 1: One-shot Short
+X Delay time
+Y Feedback amount
+Z Trigger threshold
+
+Program 1: Free-run Loop
+X Delay time
+Y Feedback amount
+Z Delay mod LFO/RND
+
+24
+
+WARRANTY
+Please follow the instructions while operating with SOLAR 42F , because only this will guarantee
+the proper work of the module and ensure the warranty from Elta Music.
+Use the SOLAR 42F exclusively with the power supply unit (PSU) supplied with the system.
+Powering it with other PSU units may cause permanent damage to the device.
+Water is lethal for most electric devices unless they have been rendered waterproof. The
+SOLAR 42F is NOT intended for use in a humid or wet environment. No liquids or other conducting
+substances should be allowed into the module. If it happens, the module should be disconnected
+from the main power supply immediately, then dried, examined and cleaned by a qualiﬁed technician.
+Do not expose the instrument to temperatures above +50°C or below -20°C. If you have
+transported the instrument in extremely low temperatures, leave it at room temperature for an
+hour before plugging it in. Transport the instrument carefully.
+Never let it drop or fall over. The Warranty does not apply to instruments with visual damage.
+SOLAR 42F must be shipped in the original packaging only. Any instrument shipped to us for
+return, exchange and/or warranty repair must be in its original packaging. All other deliveries will
+be rejected and returned to you. Ensure that you keep the original packaging and technical
+documentation.
+
+If you discover any faults within 14 days, you have the right to return the product and
+receive a new one. But only if the packaging is intact and has the original cosmetic
+appearance.
+After the 14 day period has expired, you are entitled to receive free servicing of the
+instrument for one year.
+Delivery is at the expense of the customer.
+
+SOLAR 42 team:
+Arseniy Tokarev – idea, design, development
+Szabo Mate «DOBOZ» – PCB design, development multitouch sensor keyboard, ﬁrmware
+Dmitry Churikov «mdr.MODULAR» – user manual
+Timur Krekov – graphics, render images
+Grygoriy Ryazanov – housing development
+NA company, Marupe,Latvia – production, assembly, packaging
+
+25
+
+NUANCES AND PECULIARITIES
+You may still ﬁnd some nuances. Please let us know!
+SOLAR 42F is a fully analogue instrument, except for the touch-sensitive multifunctional
+keyboard and eﬀector which are semi-digital. All oscillators, drones, mixer, preamp and
+ﬁlter are analogue.
+Since SOLAR 42F has two eﬀector circuits, some eﬀects on the left and right channels may
+diﬀer slightly from each other, creating a "live" stereo sound.
+When GAIN is maxed out in the Preamp you'll hear a touch keyboard operation noise.
+You will hear a click when you switch the LP/BP button in the ﬁlter unit. This is normal.
+Do not use the maximum position of the MASTER knob or headphones. You will hear
+eﬀector noise. Use the maximum volume on the mixer. And use the MASTER or headphone
+volume control at the maximum 3 o'clock position. Since there is no VCA on the eﬀector
+output.
+
+Advantages over the old SOLAR 42 model:
+low/band switches in the ﬁlter;
+double distortion after the ﬁlter;
+LED indication in the joystick unit;
+new graphics, output connectors are marked in red colour, input connectors in black
+colour;
+colour coding of potentiometer knobs by blocks;
+sub generators in voices with volt bounce;
+most toggle switches in the blocks have been replaced by more convenient push-button switches;
+VCO A / VCO B voices dry outputs moved to the front panel;
+internal noise is minimised as much as possible.
+
+26
+
+Designer and engineered
+by Arseny Tokarev
+Made in Riga, LV
+eltamusic.com
+
+

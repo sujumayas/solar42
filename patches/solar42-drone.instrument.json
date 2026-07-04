@@ -1,0 +1,72 @@
+{
+  "name": "solar42-drone",
+  "title": "Solar42 Drone",
+  "category": "synth",
+  "type": "synth-sampler",
+  "gain": 1,
+  "supportsPump": true,
+  "userCreated": true,
+  "envelope": {
+    "attack": 1.2,
+    "hold": 0,
+    "decay": 0,
+    "sustain": 1,
+    "release": 4
+  },
+  "samples": [
+    {
+      "file": "base.wav",
+      "note": "A2",
+      "gain": 1,
+      "loop": true,
+      "time": {
+        "start": 0,
+        "end": 8
+      },
+      "loopTime": 0.01
+    }
+  ],
+  "filters": [
+    {
+      "type": "lowpass12",
+      "cutoff": 900,
+      "resonance": 0.55,
+      "drive": 0.35
+    }
+  ],
+  "modulators": [
+    {
+      "wave": "triangle",
+      "rate": 0.05,
+      "amount": 0.12,
+      "offset": 0,
+      "destination": "filter-cutoff"
+    },
+    {
+      "wave": "sine",
+      "rate": 0.08,
+      "amount": 0.006,
+      "offset": 0,
+      "destination": "pitch"
+    }
+  ],
+  "effects": [
+    {
+      "type": "chorus",
+      "timing": 0,
+      "params": {
+        "rate": 0.3,
+        "depth": 0.5,
+        "mix": 0.5
+      }
+    },
+    {
+      "type": "reverb",
+      "timing": 0,
+      "params": {
+        "size": 0.7,
+        "mix": 0.42
+      }
+    }
+  ]
+}
