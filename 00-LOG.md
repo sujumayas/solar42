@@ -120,9 +120,22 @@ Newest entries at the bottom.
 - 21/21 tests; pluginval SUCCESS. Patch LFO A→drone1 CV with gen MOD on =
   first *modulated* drone from the patch bus.
 
-### <pending> — first audition + bounce
-- [ ] Open Drone Lab in Chrome, confirm it plays and the scope moves.
-- [ ] Tune toward SOUND DEMO 3; export a loop to `renders/`.
-- [ ] Install as `synth-sampler` in the user library; play in a song with a
-      melody track on top.
-- [ ] A/B verdict logged here. Human ear is the final gate.
+### 2026-07-03 — first user audition of the app (M1/M2 build) + session handoff
+- **User verdict**: standalone app works; `renders/solar42n-m1-drone1.wav`
+  "sounds kinda good"; **the app sounded better than the render**. No formal
+  criteria yet — to be co-developed once the instrument is more complete
+  (full voices + filter + FX). Verdict class: ITERATE-with-promise.
+- Housekeeping for cross-session continuity: plan of record copied to
+  `08-implementation-plan.md` with a live **milestone status table** (M0-M2 ✅,
+  M3 next); `CLAUDE.md` created with build/run commands, engine conventions,
+  and the **end-of-feature ritual** (gate green → update plan table → log →
+  tasks → audition render → doc prune → local commit).
+- Next session starts at **M3**: Papa Srapa voices, VCO A/B + envelopes,
+  10-ch mixer with pan-as-filter-routing, nonlinear Polivoks filter, panel
+  UI phase 1.
+
+### ~~<pending> — first audition + bounce~~ (superseded 2026-07-03)
+The Drone Lab → sample-loop → ToneMatrixSynth bridge was superseded by the
+full native Solar 42N instrument (`app/`, see `08-implementation-plan.md`).
+drone-lab stays as a historical experiment only. "Human ear is the final
+gate" carries over — see the Listening protocol in `CLAUDE.md`.
