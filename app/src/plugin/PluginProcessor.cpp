@@ -24,6 +24,7 @@ Solar42NProcessor::Solar42NProcessor()
           .withOutput("Wet Out", juce::AudioChannelSet::stereo(), true)),
       apvts_(*this, nullptr, "PARAMS", createLayout())
 {
+    patchBay_.rebind();
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout Solar42NProcessor::createLayout()
@@ -359,7 +360,8 @@ juce::AudioProcessorEditor* Solar42NProcessor::createEditor()
 
 void Solar42NProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    // M7 adds cables/keyboard/cartridges/unit-serial; params round-trip already.
+    // Params + cables (the CABLES child rides in the APVTS tree). M7 adds
+    // keyboard/cartridges/unit-serial.
     if (auto xml = apvts_.copyState().createXml())
         copyXmlToBinary(*xml, destData);
 }
@@ -368,7 +370,10 @@ void Solar42NProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary(data, sizeInBytes))
         if (xml->hasTagName(apvts_.state.getType()))
+        {
             apvts_.replaceState(juce::ValueTree::fromXml(*xml));
+            patchBay_.rebind();
+        }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

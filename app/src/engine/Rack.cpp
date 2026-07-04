@@ -220,6 +220,17 @@ void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
             bOut[i] = vcoB_.process(voct[i], cv[i], pwm[i], 0.0f); // no sync jack on B
     }
 
+    // DRY OUT jacks (spec p4: max 1 V from the +-5 V oscillators).
+    {
+        float* aDry = bus_.out(Outlet::VcoADryOut);
+        float* bDry = bus_.out(Outlet::VcoBDryOut);
+        for (int i = 0; i < n; ++i)
+        {
+            aDry[i] = aOut[i] * 0.2f;
+            bDry[i] = bOut[i] * 0.2f;
+        }
+    }
+
     // Envelope A/B: the VCAs that carry the VCOs into the mixer.
     float vcoAMix[kSubBlock], vcoBMix[kSubBlock];
     {
@@ -247,6 +258,7 @@ void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
     const float* fxY = bus_.in(Inlet::FxCvYIn);
     const float* fxZ = bus_.in(Inlet::FxCvZIn);
     const FilterParams& f = controls_.filter;
+    float peakL = 0.0f, peakR = 0.0f;
 
     for (int i = 0; i < n; ++i)
     {
@@ -276,7 +288,44 @@ void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
         const float master = masterSm_.next();
         outL[i] = railClamp(l) * kVoltsToFs * master;
         outR[i] = railClamp(r) * kVoltsToFs * master;
+        peakL = std::max(peakL, std::abs(outL[i]));
+        peakR = std::max(peakR, std::abs(outR[i]));
     }
+
+    publishTelemetry(peakL, peakR, n);
+}
+
+void Rack::publishTelemetry(float peakL, float peakR, int n) noexcept
+{
+    TelemetryData t;
+    for (int v = 0; v < kClassicVoices; ++v)
+    {
+        const float env = drones_[v].envOutVolts() * 0.1f;
+        for (int g = 0; g < ClassicDroneVoice::kNumGens; ++g)
+            t.droneGen[v][g] = drones_[v].genLevel(g) * env;
+        t.droneEnv[v] = env;
+        t.sensor[v] = sensors_[v].brightness();
+    }
+    for (int s = 0; s < kSrapaVoices; ++s)
+    {
+        t.srapaCv[s] = srapas_[s].cvOutVolts() * (1.0f / 12.0f);
+        t.srapaEnv[s] = srapas_[s].envOutVolts() * 0.1f;
+    }
+    t.envA = envA_.envOutVolts() * (1.0f / 8.0f);
+    t.envB = envB_.envOutVolts() * (1.0f / 8.0f);
+    t.lfoA = bus_.outRead(Outlet::LfoAOut)[n - 1] * 0.1f;
+    t.lfoB = bus_.outRead(Outlet::LfoBOut)[n - 1] * 0.1f;
+    t.seqStep = seq_.currentStep();
+    t.seqGate = bus_.outRead(Outlet::SeqGateOut)[n - 1] > 1.0f ? 1.0f : 0.0f;
+    float preampPeak = 0.0f;
+    for (int i = 0; i < n; ++i)
+        preampPeak = std::max(preampPeak, std::abs(preamp_.preampBus[i]));
+    t.preampClip = preampPeak > 4.9f ? 1.0f : 0.0f;
+    t.follower = bus_.outRead(Outlet::EnvFEnvOut)[n - 1] * 0.1f;
+    t.followerGate = bus_.outRead(Outlet::EnvFGateOut)[n - 1] > 1.0f ? 1.0f : 0.0f;
+    t.outL = peakL;
+    t.outR = peakR;
+    telemetry_.publish(t);
 }
 
 } // namespace s42

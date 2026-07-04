@@ -143,16 +143,20 @@ struct PreampFollowerModule
     }
 
     // hostIn: external source (nullptr when silent). Writes the preamp bus
-    // (mixer channel, M3) and the follower's env/gate outs.
+    // (mixer channel, M3) and the follower's env/gate outs. A cable in the
+    // "ext. source" jack overrides the host input (hardware: overrides the
+    // internal piezo) and is already in volts.
     void process(VoltBus& bus, const float* hostIn, int n) noexcept
     {
         float* env = bus.out(Outlet::EnvFEnvOut);
         float* gate = bus.out(Outlet::EnvFGateOut);
+        const float* jack = bus.isPatched(Inlet::PreampExtIn) ? bus.in(Inlet::PreampExtIn) : nullptr;
         for (int i = 0; i < n; ++i)
         {
             const float g = gainSm.next();
             // Host samples (+-1 fs) -> volts, then preamp gain, then rail clip.
-            float v = (hostIn != nullptr ? hostIn[i] : 0.0f) * 5.0f * g;
+            float v = (jack != nullptr ? jack[i]
+                                       : (hostIn != nullptr ? hostIn[i] : 0.0f) * 5.0f) * g;
             v = v > 5.0f ? 5.0f : (v < -5.0f ? -5.0f : v); // preamp rails
             preampBus[i] = v;
 

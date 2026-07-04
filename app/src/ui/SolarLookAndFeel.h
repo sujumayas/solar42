@@ -93,19 +93,24 @@ public:
         if ((int) b.getProperties().getWithDefault("switch", 0) != 0)
         {
             // Slide switch: label to the right of a small vertical track.
-            const float trackW = juce::jmin(r.getHeight() * 0.55f, 14.0f);
+            // Everything is in LOGICAL panel units (0.1 mm) — the editor
+            // scales the whole panel, so "hardware print" sizes apply.
+            const float trackW = juce::jmin(r.getHeight() * 0.55f, 34.0f);
             auto track = r.removeFromLeft(trackW).reduced(1.0f);
             g.setColour(kInk);
             g.fillRoundedRectangle(track, trackW * 0.3f);
-            auto thumb = track.reduced(2.0f);
+            auto thumb = track.reduced(4.0f);
             thumb = on ? thumb.removeFromTop(thumb.getHeight() * 0.45f)
                        : thumb.removeFromBottom(thumb.getHeight() * 0.45f);
             g.setColour(highlighted ? kCream : kCream.darker(0.1f));
             g.fillRoundedRectangle(thumb, trackW * 0.25f);
 
             g.setColour(kInk);
-            g.setFont(juce::FontOptions(juce::jmin(12.0f, r.getHeight() * 0.5f)));
-            g.drawText(b.getButtonText(), r.withTrimmedLeft(3), juce::Justification::centredLeft);
+            const float fitW = 1.8f * r.getWidth()
+                               / (float) juce::jmax(3, b.getButtonText().length());
+            g.setFont(juce::FontOptions(juce::jmin(30.0f, r.getHeight() * 0.5f, fitW),
+                                        juce::Font::bold));
+            g.drawText(b.getButtonText(), r.withTrimmedLeft(8), juce::Justification::centredLeft);
             return;
         }
 
@@ -125,14 +130,22 @@ public:
                       ledR * 2.0f, ledR * 2.0f);
 
         g.setColour(kInk);
-        g.setFont(juce::FontOptions(juce::jmin(11.0f, r.getHeight() * 0.3f)));
+        const float fitW = 2.0f * r.getWidth()
+                           / (float) juce::jmax(3, b.getButtonText().length());
+        g.setFont(juce::FontOptions(juce::jmin(26.0f, r.getHeight() * 0.3f, fitW),
+                                    juce::Font::bold));
         g.drawText(b.getButtonText(), r.withTop(circle.getBottom()),
                    juce::Justification::centredTop);
     }
 
     juce::Font getComboBoxFont(juce::ComboBox& box) override
     {
-        return juce::Font(juce::FontOptions(juce::jmin(13.0f, (float) box.getHeight() * 0.6f)));
+        return juce::Font(juce::FontOptions(juce::jmin(34.0f, (float) box.getHeight() * 0.55f)));
+    }
+
+    juce::Font getPopupMenuFont() override
+    {
+        return juce::Font(juce::FontOptions(15.0f)); // popups live in desktop space, not panel space
     }
 };
 

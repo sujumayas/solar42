@@ -10,6 +10,10 @@
 //
 // Modules that don't exist yet simply never write their outlets (which then
 // read 0 V) — the census is complete from M2 so jack ids never change.
+// Census corrections are APPEND-ONLY (existing enum values stay frozen):
+// M5 added the VCO A/B DRY OUTs (the red "VCO A"/"VCO B" jacks flanking the
+// mixer logo in the render — 07 §1g flagged their position as unclear) and
+// the preamp's "ext. source" jack (07 §1e lists it; it was missing here).
 
 namespace s42 {
 
@@ -43,7 +47,9 @@ namespace s42 {
     X(KbVoctOut,  "kb.voct.out",      false) \
     X(KbGateLOut, "kb.gateL.out",     false) \
     X(KbGateROut, "kb.gateR.out",     false) \
-    X(KbPressOut, "kb.press.out",     false)
+    X(KbPressOut, "kb.press.out",     false) \
+    X(VcoADryOut, "vcoA.dry.out",     false) \
+    X(VcoBDryOut, "vcoB.dry.out",     false)
 
 // Normal kinds: what an unpatched inlet reads.
 //   None       -> 0 V
@@ -86,7 +92,8 @@ namespace s42 {
     X(SeqClockIn,  "seq.clock.in",     None,       LfoAOut) \
     X(KbClockIn,   "kb.clock.in",      None,       LfoAOut) \
     X(KbResetIn,   "kb.reset.in",      None,       LfoAOut) \
-    X(ExtAudioIn,  "ext.audio.in",     HostInput,  LfoAOut)
+    X(ExtAudioIn,  "ext.audio.in",     HostInput,  LfoAOut) \
+    X(PreampExtIn, "pre.ext.in",       HostInput,  LfoAOut)
 
 enum class Outlet : int16_t
 {
@@ -133,5 +140,31 @@ inline constexpr InletInfo kInletInfo[] = {
     S42_INLETS(X)
 #undef X
 };
+
+// Display-name lookups (cable serialization stores names, not enum values, so
+// saved states survive registry appends). Return -1 when not found.
+constexpr int inletIndexByName(const char* name) noexcept
+{
+    for (int i = 0; i < kInletCount; ++i)
+    {
+        const char *a = kInletInfo[i].name, *b = name;
+        while (*a != '\0' && *a == *b) { ++a; ++b; }
+        if (*a == *b)
+            return i;
+    }
+    return -1;
+}
+
+constexpr int outletIndexByName(const char* name) noexcept
+{
+    for (int i = 0; i < kOutletCount; ++i)
+    {
+        const char *a = kOutletInfo[i].name, *b = name;
+        while (*a != '\0' && *a == *b) { ++a; ++b; }
+        if (*a == *b)
+            return i;
+    }
+    return -1;
+}
 
 } // namespace s42

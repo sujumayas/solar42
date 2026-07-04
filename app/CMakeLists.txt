@@ -98,6 +98,7 @@ if(SOLAR42N_BUILD_TESTS)
         tests/TestM3Voices.cpp
         tests/TestPolivoks.cpp
         tests/TestFv1.cpp
+        tests/TestM5Panel.cpp
     )
     target_link_libraries(solar42n_tests PRIVATE solar42n_engine Catch2::Catch2WithMain)
     target_compile_definitions(solar42n_tests PRIVATE

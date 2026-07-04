@@ -4,14 +4,25 @@
 
 #include "ui/SolarLookAndFeel.h"
 
-// Panel UI phase 1 widget kit + one component per silk-screened section
-// (top half + mod strip). Sections lay out in LOGICAL panel units — the
-// PanelEditor scales the whole panel with one AffineTransform, so fonts and
-// strokes stay proportional (and M5's zoom comes for free). Jacks, LEDs and
-// telemetry glow join in M5 with the measured per-control PanelLayout.
+// One component per silk-screened section, laid out in LOGICAL panel units as
+// fractions of each section's rectangle — the same fractions the jack census
+// in PanelLayout.h uses, so widgets and the (globally drawn) jacks interleave
+// exactly like the render. The host editor scales the whole panel with one
+// AffineTransform; M5's zoom rides on that.
+//
+// Empty section space drags the panel (pan) and a double-click on a title
+// band zooms to the section — sections forward both to the PanelSurface.
 namespace solar {
 
 using Apvts = juce::AudioProcessorValueTreeState;
+
+// Implemented by PanelView; sections find it through the parent chain.
+struct PanelSurface
+{
+    virtual ~PanelSurface() = default;
+    virtual void panByScreenDelta(juce::Point<float> d) = 0;
+    virtual void zoomToPanelRect(juce::Rectangle<int> r) = 0;
+};
 
 // ---------------------------------------------------------------- widget kit
 
@@ -27,6 +38,7 @@ struct LabeledKnob : juce::Component
         label.setText(text, juce::dontSendNotification);
         label.setJustificationType(juce::Justification::centred);
         label.setMinimumHorizontalScale(0.7f);
+        label.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(label);
         attach = std::make_unique<Apvts::SliderAttachment>(s, paramId, slider);
     }
@@ -62,7 +74,7 @@ struct SlideSwitch : juce::Component
     std::unique_ptr<Apvts::ButtonAttachment> attach;
 };
 
-// Round push button with an LED dot (MUTE / MOD / HOLD / GATE).
+// Round push button with an LED dot (MUTE / MOD / HOLD / keypad).
 struct PushButton : juce::Component
 {
     PushButton(Apvts& s, const juce::String& paramId, const juce::String& text,
@@ -90,6 +102,7 @@ struct ChoiceBox : juce::Component
         addAndMakeVisible(box);
         label.setText(text, juce::dontSendNotification);
         label.setJustificationType(juce::Justification::centred);
+        label.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(label);
         attach = std::make_unique<Apvts::ComboBoxAttachment>(s, paramId, box);
     }
@@ -97,9 +110,12 @@ struct ChoiceBox : juce::Component
     void resized() override
     {
         auto r = getLocalBounds();
-        auto text = r.removeFromBottom(juce::jmax(24, r.getHeight() / 3));
-        label.setFont(juce::FontOptions((float) text.getHeight() * 0.7f));
-        label.setBounds(text);
+        if (label.getText().isNotEmpty())
+        {
+            auto text = r.removeFromBottom(juce::jmax(24, r.getHeight() / 3));
+            label.setFont(juce::FontOptions((float) text.getHeight() * 0.7f));
+            label.setBounds(text);
+        }
         box.setBounds(r.reduced(2, juce::jmax(0, (r.getHeight() - 64) / 2)));
     }
 
@@ -113,7 +129,12 @@ struct ChoiceBox : juce::Component
 class Section : public juce::Component
 {
 public:
-    explicit Section(juce::String title) : title_(std::move(title)) {}
+    enum class Band { Top, Bottom, None };
+
+    explicit Section(juce::String title, Band band = Band::Top, juce::String badge = {})
+        : title_(std::move(title)), badge_(std::move(badge)), band_(band)
+    {
+    }
 
     static constexpr int kBand = 64; // logical title-band height
 
@@ -125,43 +146,95 @@ public:
         g.setColour(kInk);
         g.drawRoundedRectangle(r, 18.0f, 5.0f);
 
-        auto band = r.removeFromTop((float) kBand);
-        g.fillRoundedRectangle(band.withTrimmedBottom(-10.0f).reduced(5.0f), 14.0f);
-        g.setColour(kCream);
-        g.setFont(juce::FontOptions((float) kBand * 0.62f, juce::Font::bold));
-        g.drawText(title_, band.reduced(24.0f, 0.0f), juce::Justification::centredLeft);
+        if (band_ != Band::None)
+        {
+            auto band = band_ == Band::Top ? r.removeFromTop((float) kBand)
+                                           : r.removeFromBottom((float) kBand);
+            g.fillRoundedRectangle(band.reduced(5.0f), 14.0f);
+            g.setColour(kCream);
+            g.setFont(juce::FontOptions((float) kBand * 0.62f, juce::Font::bold));
+            g.drawText(title_, band.reduced(24.0f, 0.0f),
+                       band_ == Band::Top ? juce::Justification::centredLeft
+                                          : juce::Justification::centred);
+        }
+
+        if (badge_.isNotEmpty())
+        {
+            const auto b = frac(0.955, 0.885, 0.0, 0.0).toFloat().withSizeKeepingCentre(58.0f, 58.0f);
+            g.setColour(kInk);
+            g.fillRoundedRectangle(b, 10.0f);
+            g.setColour(kCream);
+            g.setFont(juce::FontOptions(44.0f, juce::Font::bold));
+            g.drawText(badge_, b, juce::Justification::centred);
+        }
 
         paintExtras(g);
+    }
+
+    // Empty section space = pan; double-click the title band = zoom to section.
+    void mouseDrag(const juce::MouseEvent& e) override
+    {
+        if (auto* s = findParentComponentOfClass<PanelSurface>())
+            s->panByScreenDelta(e.getScreenPosition().toFloat() - lastScreenPos_);
+        lastScreenPos_ = e.getScreenPosition().toFloat();
+    }
+
+    void mouseDown(const juce::MouseEvent& e) override
+    {
+        lastScreenPos_ = e.getScreenPosition().toFloat();
+    }
+
+    void mouseDoubleClick(const juce::MouseEvent& e) override
+    {
+        const bool inBand = band_ == Band::None ? true
+            : band_ == Band::Top ? e.y < kBand + 8
+                                 : e.y > getHeight() - kBand - 8;
+        if (inBand)
+            if (auto* s = findParentComponentOfClass<PanelSurface>())
+                s->zoomToPanelRect(getBounds());
     }
 
 protected:
     virtual void paintExtras(juce::Graphics&) {}
 
-    juce::Rectangle<int> content() const
+    // Place by fractions of the SECTION rect — the same coordinate system the
+    // jack census uses, so reserved jack spots line up by construction.
+    juce::Rectangle<int> frac(double fx, double fy, double fw, double fh) const
     {
-        return getLocalBounds().reduced(18).withTrimmedTop(kBand + 6);
+        return { (int) (fx * getWidth()), (int) (fy * getHeight()),
+                 (int) (fw * getWidth()), (int) (fh * getHeight()) };
     }
 
-    // Evenly split a strip into n columns, return column i (0-based).
-    static juce::Rectangle<int> col(juce::Rectangle<int> r, int n, int i, int span = 1)
+    void place(juce::Component& c, double fx, double fy, double fw, double fh)
     {
-        const int w = r.getWidth() / n;
-        return { r.getX() + i * w, r.getY(), w * span, r.getHeight() };
+        c.setBounds(frac(fx, fy, fw, fh));
     }
+
+    static void led(juce::Graphics& g, juce::Point<float> centre, float level,
+                    juce::Colour on, float r = 16.0f)
+    {
+        g.setColour(juce::Colour(0xff101013));
+        g.fillEllipse(centre.x - r - 4.0f, centre.y - r - 4.0f, (r + 4.0f) * 2.0f, (r + 4.0f) * 2.0f);
+        g.setColour(on.withAlpha(0.12f + 0.88f * juce::jlimit(0.0f, 1.0f, level)));
+        g.fillEllipse(centre.x - r, centre.y - r, r * 2.0f, r * 2.0f);
+    }
+
+    juce::String title_, badge_;
+    Band band_;
 
 private:
-    juce::String title_;
+    juce::Point<float> lastScreenPos_;
 };
 
 // ---------------------------------------------------------------- voice sections
 
-// Classic drone voice (DRONE 1/2/4/5): 5 gen columns MOD/TUNE/MUTE, LED bar +
-// VOLT, GATE/HOLD/ATT/RLS row, photo-sensor window.
+// Classic drone voice (DRONE 1/2/4/5): 5 gen columns MOD/TUNE/MUTE, red 5-LED
+// bar, VOLT, photo-sensor window; bottom row HOLD/ATT/RLS between the jacks.
 class ClassicDroneSection : public Section
 {
 public:
     ClassicDroneSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title)
+        : Section(title, Band::Top, id.substring(1))
     {
         for (int g = 0; g < 5; ++g)
         {
@@ -174,74 +247,96 @@ public:
             addAndMakeVisible(*mute[g]);
         }
         volt = std::make_unique<LabeledKnob>(s, id + ".volt", "VOLT", kKnobBlue);
-        gate = std::make_unique<PushButton>(s, id + ".gate", "GATE", kKnobGreen);
         hold = std::make_unique<PushButton>(s, id + ".hold", "HOLD", juce::Colour(0xffe8c33a));
         att = std::make_unique<LabeledKnob>(s, id + ".att", "ATT", kKnobBlack);
         rls = std::make_unique<LabeledKnob>(s, id + ".rls", "RLS", kKnobBlack);
-        for (juce::Component* c : { (juce::Component*) volt.get(), (juce::Component*) gate.get(),
-                                    (juce::Component*) hold.get(), (juce::Component*) att.get(),
-                                    (juce::Component*) rls.get() })
+        for (juce::Component* c : { (juce::Component*) volt.get(), (juce::Component*) hold.get(),
+                                    (juce::Component*) att.get(), (juce::Component*) rls.get() })
             addAndMakeVisible(c);
     }
 
     void resized() override
     {
-        auto r = content();
-        auto bottom = r.removeFromBottom(r.getHeight() * 2 / 7);
-        auto right = r.removeFromRight(r.getWidth() / 4);
-        gutter_ = r.removeFromLeft(76); // MOD / TUNE / MUTE row labels
-
         for (int g = 0; g < 5; ++g)
         {
-            auto c = col(r, 5, g).reduced(4);
-            mod[g]->setBounds(c.removeFromTop(c.getHeight() / 4));
-            mute[g]->setBounds(c.removeFromBottom(c.getHeight() / 3));
-            tune[g]->setBounds(c);
+            const double x = 0.095 + 0.123 * g;
+            place(*mod[g], x, 0.13, 0.115, 0.115);
+            place(*tune[g], x, 0.25, 0.115, 0.30);
+            place(*mute[g], x, 0.57, 0.115, 0.11);
         }
-        volt->setBounds(right.withTrimmedTop(right.getHeight() / 3).reduced(6));
+        place(*volt, 0.755, 0.28, 0.19, 0.34);
+        place(*hold, 0.125, 0.775, 0.09, 0.155);
+        place(*att, 0.225, 0.74, 0.135, 0.21);
+        place(*rls, 0.365, 0.74, 0.135, 0.21);
 
-        bottom.removeFromRight(bottom.getWidth() / 4); // sensor window (painted)
-        sensor_ = getLocalBounds().toFloat().removeFromBottom((float) bottom.getHeight() + 20.0f)
-                      .removeFromRight((float) bottom.getWidth() / 3.0f);
-        gate->setBounds(col(bottom, 4, 0).reduced(6));
-        hold->setBounds(col(bottom, 4, 1).reduced(6));
-        att->setBounds(col(bottom, 4, 2).reduced(4));
-        rls->setBounds(col(bottom, 4, 3).reduced(4));
+        ledBar_ = frac(0.73, 0.13, 0.24, 0.10);
+        sensor_ = frac(0.72, 0.70, 0.17, 0.22);
+    }
+
+    void setTelemetry(const float gens[5], float sensorGlow)
+    {
+        bool ledDiff = false;
+        for (int g = 0; g < 5; ++g)
+        {
+            ledDiff = ledDiff || std::abs(gens[g] - gens_[g]) > 0.03f;
+            gens_[g] = gens[g];
+        }
+        if (ledDiff)
+            repaint(ledBar_.expanded(8));
+        if (std::abs(sensorGlow - sensor01_) > 0.02f)
+        {
+            sensor01_ = sensorGlow;
+            repaint(sensor_.expanded(8));
+        }
     }
 
 private:
     void paintExtras(juce::Graphics& g) override
     {
-        // Photo-sensor window (glows with telemetry in M5).
-        const float d = juce::jmin(sensor_.getWidth(), sensor_.getHeight()) * 0.8f;
-        auto w = juce::Rectangle<float>(d, d).withCentre(sensor_.getCentre());
-        g.setColour(juce::Colours::white);
+        // Gen activity LED bar, "1 2 3 4 5" print beneath.
+        auto bar = ledBar_.toFloat();
+        g.setColour(juce::Colour(0xff101013));
+        g.fillRoundedRectangle(bar, 8.0f);
+        g.setFont(juce::FontOptions(26.0f, juce::Font::bold));
+        for (int i = 0; i < 5; ++i)
+        {
+            const float cx = bar.getX() + bar.getWidth() * ((float) i + 0.5f) / 5.0f;
+            led(g, { cx, bar.getCentreY() }, gens_[i], kAccentRed);
+            g.setColour(kInk);
+            g.drawText(juce::String(i + 1),
+                       juce::Rectangle<float>(40.0f, 30.0f).withCentre({ cx, bar.getBottom() + 22.0f }),
+                       juce::Justification::centred);
+        }
+
+        // Photo-sensor window glows with the LDR's light.
+        const float d = juce::jmin((float) sensor_.getWidth(), (float) sensor_.getHeight());
+        auto w = juce::Rectangle<float>(d, d).withCentre(sensor_.getCentre().toFloat());
+        g.setColour(juce::Colours::white.interpolatedWith(juce::Colour(0xffff5040),
+                                                          sensor01_ * 0.8f));
         g.fillEllipse(w);
         g.setColour(kInk);
         g.drawEllipse(w, 4.0f);
 
-        // Hardware row markers on the generator grid.
+        // MOD / TUNE / MUTE row markers.
         g.setColour(kInk.withAlpha(0.8f));
         g.setFont(juce::FontOptions(21.0f, juce::Font::bold));
-        auto gut = gutter_.toFloat();
-        g.drawText("MOD", gut.removeFromTop(gut.getHeight() / 4), juce::Justification::centred);
-        auto muteRow = gut.removeFromBottom(gut.getHeight() / 3);
-        g.drawText("MUTE", muteRow, juce::Justification::centred);
-        g.drawText("TUNE", gut, juce::Justification::centred);
+        g.drawText("MOD", frac(0.005, 0.13, 0.085, 0.115), juce::Justification::centred);
+        g.drawText("TUNE", frac(0.005, 0.30, 0.085, 0.20), juce::Justification::centred);
+        g.drawText("MUTE", frac(0.005, 0.57, 0.085, 0.11), juce::Justification::centred);
     }
 
-    std::unique_ptr<PushButton> mod[5], mute[5], gate, hold;
+    std::unique_ptr<PushButton> mod[5], mute[5], hold;
     std::unique_ptr<LabeledKnob> tune[5], volt, att, rls;
-    juce::Rectangle<float> sensor_;
-    juce::Rectangle<int> gutter_;
+    juce::Rectangle<int> ledBar_, sensor_;
+    float gens_[5] = {}, sensor01_ = 0.0f;
 };
 
-// Papa Srapa voice (DRONE 3/6).
+// Papa Srapa voice (DRONE 3/6): rate/mod/divider/PITCH row, NOISE, S&H field.
 class PapaSrapaSection : public Section
 {
 public:
     PapaSrapaSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title)
+        : Section(title, Band::Top, id.substring(1))
     {
         rate = std::make_unique<LabeledKnob>(s, id + ".rate", "rate", kKnobBlue);
         fmamt = std::make_unique<LabeledKnob>(s, id + ".fmamt", "mod", kKnobBlue);
@@ -251,63 +346,85 @@ public:
         fm = std::make_unique<SlideSwitch>(s, id + ".fm", "fm");
         am = std::make_unique<SlideSwitch>(s, id + ".am", "am");
         x10 = std::make_unique<SlideSwitch>(s, id + ".x10", "x10");
-        hi = std::make_unique<SlideSwitch>(s, id + ".hi", "hi");
-        gate = std::make_unique<PushButton>(s, id + ".gate", "GATE", kKnobGreen);
+        hi = std::make_unique<SlideSwitch>(s, id + ".hi", "hi/low");
         hold = std::make_unique<PushButton>(s, id + ".hold", "HOLD", juce::Colour(0xffe8c33a));
         att = std::make_unique<LabeledKnob>(s, id + ".att", "ATT", kKnobBlue);
         rls = std::make_unique<LabeledKnob>(s, id + ".rls", "RLS", kKnobBlue);
         for (juce::Component* c : std::initializer_list<juce::Component*> {
                  rate.get(), fmamt.get(), divider.get(), pitch.get(), noise.get(),
-                 fm.get(), am.get(), x10.get(), hi.get(),
-                 gate.get(), hold.get(), att.get(), rls.get() })
+                 fm.get(), am.get(), x10.get(), hi.get(), hold.get(), att.get(), rls.get() })
             addAndMakeVisible(c);
     }
 
     void resized() override
     {
-        auto r = content();
-        auto switches = r.removeFromTop(r.getHeight() / 5);
-        auto bottom = r.removeFromBottom(r.getHeight() / 3);
+        place(*x10, 0.05, 0.14, 0.16, 0.10);
+        place(*fm, 0.30, 0.14, 0.12, 0.10);
+        place(*am, 0.48, 0.14, 0.12, 0.10);
+        place(*hi, 0.68, 0.14, 0.18, 0.10);
 
-        x10->setBounds(col(switches, 4, 0).reduced(8, 2));
-        fm->setBounds(col(switches, 4, 1).reduced(8, 2));
-        am->setBounds(col(switches, 4, 2).reduced(8, 2));
-        hi->setBounds(col(switches, 4, 3).reduced(8, 2));
+        place(*rate, 0.03, 0.25, 0.18, 0.27);
+        place(*fmamt, 0.23, 0.25, 0.18, 0.27);
+        place(*divider, 0.43, 0.27, 0.18, 0.23);
+        place(*pitch, 0.65, 0.24, 0.26, 0.29);
 
-        rate->setBounds(col(r, 5, 0).reduced(2));
-        fmamt->setBounds(col(r, 5, 1).reduced(2));
-        divider->setBounds(col(r, 5, 2).reduced(2));
-        pitch->setBounds(col(r, 5, 3).reduced(2));
-        noise->setBounds(col(r, 5, 4).reduced(2));
+        place(*noise, 0.72, 0.55, 0.20, 0.22);
 
-        gate->setBounds(col(bottom, 4, 0).reduced(6));
-        hold->setBounds(col(bottom, 4, 1).reduced(6));
-        att->setBounds(col(bottom, 4, 2).reduced(2));
-        rls->setBounds(col(bottom, 4, 3).reduced(2));
+        place(*hold, 0.115, 0.775, 0.085, 0.155);
+        place(*att, 0.21, 0.74, 0.105, 0.21);
+        place(*rls, 0.315, 0.74, 0.105, 0.21);
+
+        cvLed_ = frac(0.53, 0.52, 0.05, 0.06);
+        shBox_ = frac(0.575, 0.755, 0.37, 0.21);
+    }
+
+    void setTelemetry(float cvLed)
+    {
+        if (std::abs(cvLed - cv01_) > 0.05f)
+        {
+            cv01_ = cvLed;
+            repaint(cvLed_.expanded(8));
+        }
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        // Modulator activity LED next to the cv out jack.
+        led(g, cvLed_.getCentre().toFloat(), cv01_, kAccentRed);
+
+        // S&H field outline.
+        g.setColour(kInk);
+        g.drawRoundedRectangle(shBox_.toFloat(), 10.0f, 4.0f);
+        g.setFont(juce::FontOptions(30.0f, juce::Font::bold));
+        g.setColour(kAccentRed);
+        g.drawText("S&H", shBox_.withTrimmedBottom((int) (shBox_.getHeight() * 0.62)),
+                   juce::Justification::centred);
+    }
+
     std::unique_ptr<LabeledKnob> rate, fmamt, pitch, noise, att, rls;
     std::unique_ptr<ChoiceBox> divider;
     std::unique_ptr<SlideSwitch> fm, am, x10, hi;
-    std::unique_ptr<PushButton> gate, hold;
+    std::unique_ptr<PushButton> hold;
+    juce::Rectangle<int> cvLed_, shBox_;
+    float cv01_ = 0.0f;
 };
 
-// VCO A/B.
+// VCO A/B: cv amt + tune flanking, big morphing-waveform rotary, pwm/pw, jack row.
 class VcoSection : public Section
 {
 public:
     VcoSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title)
+        : Section(title, Band::Top)
     {
         cvamt = std::make_unique<LabeledKnob>(s, id + ".cvamt", "cv amt", kKnobGreen);
         tune = std::make_unique<LabeledKnob>(s, id + ".tune", "tune", kKnobGreen);
-        wave = std::make_unique<LabeledKnob>(s, id + ".wave", "WAVEFORM", kKnobGreen);
+        wave = std::make_unique<LabeledKnob>(s, id + ".wave", "", kKnobGreen);
         pwm = std::make_unique<LabeledKnob>(s, id + ".pwm", "pwm", kKnobGreen);
         pw = std::make_unique<LabeledKnob>(s, id + ".pw", "pw", kKnobGreen);
         oct = std::make_unique<SlideSwitch>(s, id + ".oct", "oct+3");
         sub = std::make_unique<SlideSwitch>(s, id + ".sub", "-1 sub");
-        exp = std::make_unique<SlideSwitch>(s, id + ".exp", "exp");
+        exp = std::make_unique<SlideSwitch>(s, id + ".exp", "lin/exp");
         for (juce::Component* c : std::initializer_list<juce::Component*> {
                  cvamt.get(), tune.get(), wave.get(), pwm.get(), pw.get(),
                  oct.get(), sub.get(), exp.get() })
@@ -316,35 +433,35 @@ public:
 
     void resized() override
     {
-        auto r = content();
-        auto left = r.removeFromLeft(r.getWidth() / 3);
-        auto lTop = left.removeFromTop(left.getHeight() / 2);
-        cvamt->setBounds(lTop.reduced(4));
-        exp->setBounds(left.removeFromTop(left.getHeight() / 3).reduced(8, 4));
-        pwm->setBounds(left.reduced(4));
-
-        auto right = r.removeFromRight(r.getWidth() / 2);
-        auto rTop = right.removeFromTop(right.getHeight() / 2);
-        tune->setBounds(rTop.reduced(4));
-        pw->setBounds(right.reduced(4));
-
-        auto sw = r.removeFromTop(r.getHeight() / 4);
-        oct->setBounds(col(sw, 2, 0).reduced(6, 2));
-        sub->setBounds(col(sw, 2, 1).reduced(6, 2));
-        wave->setBounds(r.reduced(2));
+        place(*cvamt, 0.04, 0.14, 0.23, 0.28);
+        place(*oct, 0.29, 0.15, 0.20, 0.11);
+        place(*sub, 0.51, 0.15, 0.20, 0.11);
+        place(*tune, 0.72, 0.14, 0.23, 0.28);
+        place(*exp, 0.04, 0.46, 0.21, 0.11);
+        place(*wave, 0.31, 0.27, 0.38, 0.46);
+        place(*pwm, 0.04, 0.57, 0.23, 0.26);
+        place(*pw, 0.72, 0.57, 0.23, 0.26);
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        g.setColour(kInk);
+        g.setFont(juce::FontOptions(30.0f, juce::Font::bold));
+        g.drawText("MORPHING WAVEFORM", frac(0.28, 0.105, 0.44, 0.05),
+                   juce::Justification::centred);
+    }
+
     std::unique_ptr<LabeledKnob> cvamt, tune, wave, pwm, pw;
     std::unique_ptr<SlideSwitch> oct, sub, exp;
 };
 
-// Envelope A/B.
+// Envelope A/B: hold/loop, A D S R, jack row (with the VCO dry outs).
 class EnvelopeSection : public Section
 {
 public:
     EnvelopeSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title)
+        : Section(title, Band::Top)
     {
         const char* n[] = { "A", "D", "S", "R" };
         const char* p[] = { ".a", ".d", ".s", ".r" };
@@ -361,12 +478,10 @@ public:
 
     void resized() override
     {
-        auto r = content();
-        auto side = r.removeFromLeft(r.getWidth() / 6);
-        hold->setBounds(side.removeFromTop(side.getHeight() / 2).reduced(4));
-        loop->setBounds(side.reduced(4));
+        place(*hold, 0.01, 0.14, 0.13, 0.25);
+        place(*loop, 0.01, 0.42, 0.13, 0.25);
         for (int i = 0; i < 4; ++i)
-            adsr[i]->setBounds(col(r, 4, i).reduced(4));
+            place(*adsr[i], 0.16 + 0.21 * i, 0.22, 0.20, 0.40);
     }
 
 private:
@@ -374,11 +489,11 @@ private:
     std::unique_ptr<PushButton> hold, loop;
 };
 
-// Dual Polivoks filter strip + shared double distortion.
+// Dual Polivoks filter strip: 13 columns, CV L / CV R jacks in slots 4 and 8.
 class FilterSection : public Section
 {
 public:
-    explicit FilterSection(Apvts& s) : Section("FILTER  L | R")
+    explicit FilterSection(Apvts& s) : Section("", Band::None)
     {
         freqL = std::make_unique<LabeledKnob>(s, "filt.freqL", "FREQ", kKnobOrange);
         resL = std::make_unique<LabeledKnob>(s, "filt.resL", "RES", kKnobOrange);
@@ -399,20 +514,40 @@ public:
 
     void resized() override
     {
-        auto r = content();
-        int i = 0;
-        for (juce::Component* c : std::initializer_list<juce::Component*> {
-                 freqL.get(), resL.get(), bpL.get(), modL.get(), dist.get(), link.get(),
-                 gain.get(), modR.get(), bpR.get(), freqR.get(), resR.get() })
+        // Slots 4 and 8 stay empty — the CV L / CV R jacks live there.
+        juce::Component* slots[13] = { freqL.get(), resL.get(), bpL.get(), modL.get(),
+                                       nullptr, dist.get(), link.get(), gain.get(),
+                                       nullptr, modR.get(), bpR.get(), freqR.get(), resR.get() };
+        for (int i = 0; i < 13; ++i)
         {
-            auto cell = col(r, 11, i++).reduced(4);
-            if (dynamic_cast<SlideSwitch*>(c) != nullptr)
-                cell = cell.reduced(6, cell.getHeight() / 5);
-            c->setBounds(cell);
+            if (slots[i] == nullptr)
+                continue;
+            const bool sw = dynamic_cast<SlideSwitch*>(slots[i]) != nullptr;
+            place(*slots[i], (i + (sw ? 0.15 : 0.06)) / 13.0, sw ? 0.34 : 0.16,
+                  (sw ? 0.72 : 0.88) / 13.0, sw ? 0.32 : 0.68);
         }
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        // Rotated side tags, like the render's vertical FILTER L / FILTER R.
+        g.setColour(kInk);
+        g.setFont(juce::FontOptions(34.0f, juce::Font::bold));
+        for (int side = 0; side < 2; ++side)
+        {
+            const auto box = frac(side == 0 ? 0.0 : 0.977, 0.08, 0.023, 0.84).toFloat();
+            g.saveState();
+            g.addTransform(juce::AffineTransform::rotation(
+                -juce::MathConstants<float>::halfPi, box.getCentreX(), box.getCentreY()));
+            g.drawText(side == 0 ? "FILTER L" : "FILTER R",
+                       juce::Rectangle<float>(box.getCentreX() - 95.0f,
+                                              box.getCentreY() - 20.0f, 190.0f, 40.0f),
+                       juce::Justification::centred);
+            g.restoreState();
+        }
+    }
+
     std::unique_ptr<LabeledKnob> freqL, resL, modL, dist, gain, modR, freqR, resR;
     std::unique_ptr<SlideSwitch> bpL, link, bpR;
 };
@@ -438,12 +573,10 @@ public:
 
     void resized() override
     {
-        auto r = content();
         for (int c = 0; c < 10; ++c)
         {
-            auto cell = col(r, 10, c).reduced(3);
-            pan[c]->setBounds(cell.removeFromTop(cell.getHeight() / 2));
-            vol[c]->setBounds(cell);
+            place(*pan[c], 0.004 + 0.0996 * c, 0.20, 0.092, 0.38);
+            place(*vol[c], 0.004 + 0.0996 * c, 0.60, 0.092, 0.36);
         }
     }
 
@@ -451,48 +584,50 @@ private:
     std::unique_ptr<LabeledKnob> pan[10], vol[10];
 };
 
-// DUAL EFFECTOR: cartridge slot, per-channel 1-2-3 program toggles, shared
-// X/Y/Z + BLEND, MASTER VOLUME. Room light rides along until the M5 layout
-// pass (it is digital-only and has no silk-screened home yet).
+// DUAL EFFECTOR: cv x/y/z jacks over X/Y/Z knobs, cartridge slot with the two
+// 1-2-3 program toggles, BLEND, MASTER VOLUME.
 class EffectorSection : public Section
 {
 public:
     explicit EffectorSection(Apvts& s) : Section("DUAL EFFECTOR")
     {
-        cart = std::make_unique<ChoiceBox>(s, "fx.cart", "CARTRIDGE");
-        progL = std::make_unique<ChoiceBox>(s, "fx.progL", "1-2-3 L");
-        progR = std::make_unique<ChoiceBox>(s, "fx.progR", "1-2-3 R");
+        cart = std::make_unique<ChoiceBox>(s, "fx.cart", "cartridge slot");
+        progL = std::make_unique<ChoiceBox>(s, "fx.progL", "L");
+        progR = std::make_unique<ChoiceBox>(s, "fx.progR", "R");
         x = std::make_unique<LabeledKnob>(s, "fx.x", "X", kKnobOrange);
         y = std::make_unique<LabeledKnob>(s, "fx.y", "Y", kKnobOrange);
         z = std::make_unique<LabeledKnob>(s, "fx.z", "Z", kKnobOrange);
         blend = std::make_unique<LabeledKnob>(s, "fx.blend", "BLEND", kKnobOrange);
         master = std::make_unique<LabeledKnob>(s, "master.vol", "MASTER VOLUME", kKnobOrange);
-        room = std::make_unique<LabeledKnob>(s, "room.light", "ROOM LIGHT", kKnobBlack);
-        flicker = std::make_unique<SlideSwitch>(s, "room.flicker", "50 Hz");
         for (juce::Component* c : std::initializer_list<juce::Component*> {
                  cart.get(), progL.get(), progR.get(), x.get(), y.get(), z.get(),
-                 blend.get(), master.get(), room.get(), flicker.get() })
+                 blend.get(), master.get() })
             addAndMakeVisible(c);
     }
 
     void resized() override
     {
-        auto r = content();
-        auto top = r.removeFromTop(r.getHeight() / 3);
-        cart->setBounds(col(top, 3, 0).reduced(4));
-        progL->setBounds(col(top, 3, 1).reduced(4));
-        progR->setBounds(col(top, 3, 2).reduced(4));
-        int i = 0;
-        for (juce::Component* c : std::initializer_list<juce::Component*> {
-                 x.get(), y.get(), z.get(), blend.get(), master.get(), room.get() })
-            c->setBounds(col(r, 7, i++).reduced(3));
-        flicker->setBounds(col(r, 7, 6).reduced(4, r.getHeight() / 4));
+        place(*x, 0.005, 0.48, 0.08, 0.42);
+        place(*y, 0.085, 0.48, 0.08, 0.42);
+        place(*z, 0.165, 0.48, 0.08, 0.42);
+        place(*progL, 0.28, 0.30, 0.08, 0.32);
+        place(*cart, 0.37, 0.24, 0.22, 0.42);
+        place(*progR, 0.60, 0.30, 0.08, 0.32);
+        place(*blend, 0.71, 0.30, 0.11, 0.44);
+        place(*master, 0.83, 0.22, 0.16, 0.60);
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        g.setColour(kAccentRed);
+        g.setFont(juce::FontOptions(26.0f, juce::Font::bold));
+        g.drawText("1-2-3", frac(0.28, 0.62, 0.08, 0.08), juce::Justification::centred);
+        g.drawText("1-2-3", frac(0.60, 0.62, 0.08, 0.08), juce::Justification::centred);
+    }
+
     std::unique_ptr<ChoiceBox> cart, progL, progR;
-    std::unique_ptr<LabeledKnob> x, y, z, blend, master, room;
-    std::unique_ptr<SlideSwitch> flicker;
+    std::unique_ptr<LabeledKnob> x, y, z, blend, master;
 };
 
 // ---------------------------------------------------------------- mod strip
@@ -501,7 +636,7 @@ class LfoSection : public Section
 {
 public:
     LfoSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title)
+        : Section(title, Band::Bottom)
     {
         wave = std::make_unique<LabeledKnob>(s, id + ".wave", "wave", kKnobRed);
         rate = std::make_unique<LabeledKnob>(s, id + ".rate", "rate", kKnobRed);
@@ -513,48 +648,58 @@ public:
 
     void resized() override
     {
-        auto r = content();
-        wave->setBounds(col(r, 3, 0).reduced(2));
-        range->setBounds(col(r, 3, 1).reduced(4, r.getHeight() / 6));
-        rate->setBounds(col(r, 3, 2).reduced(2));
+        place(*wave, 0.03, 0.10, 0.27, 0.62);
+        place(*range, 0.55, 0.24, 0.17, 0.34);
+        place(*rate, 0.72, 0.10, 0.27, 0.62);
+        led_ = frac(0.44, 0.66, 0.0, 0.0).withSize(1, 1);
+    }
+
+    void setTelemetry(float level)
+    {
+        if (std::abs(level - level01_) > 0.05f)
+        {
+            level01_ = level;
+            repaint(juce::Rectangle<int>(led_.getX() - 24, led_.getY() - 24, 48, 48));
+        }
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        led(g, led_.getPosition().toFloat(), level01_, juce::Colour(0xff4fa3e0));
+    }
+
     std::unique_ptr<LabeledKnob> wave, rate;
     std::unique_ptr<ChoiceBox> range;
+    juce::Rectangle<int> led_;
+    float level01_ = 0.0f;
 };
 
 class JoystickSection : public Section
 {
 public:
-    explicit JoystickSection(Apvts& s) : Section("JOYSTICK")
+    explicit JoystickSection(Apvts& s) : Section("JOYSTICK", Band::Bottom)
     {
-        x = std::make_unique<LabeledKnob>(s, "joy.x", "X", kKnobRed);
-        y = std::make_unique<LabeledKnob>(s, "joy.y", "Y", kKnobRed);
         xoff = std::make_unique<LabeledKnob>(s, "joy.xoff", "offset X", kKnobRed);
         yoff = std::make_unique<LabeledKnob>(s, "joy.yoff", "offset Y", kKnobRed);
-        for (juce::Component* c : std::initializer_list<juce::Component*> {
-                 x.get(), y.get(), xoff.get(), yoff.get() })
-            addAndMakeVisible(c);
+        addAndMakeVisible(*xoff);
+        addAndMakeVisible(*yoff);
     }
 
     void resized() override
     {
-        auto r = content();
-        xoff->setBounds(col(r, 4, 0).reduced(2));
-        x->setBounds(col(r, 4, 1).reduced(2));
-        y->setBounds(col(r, 4, 2).reduced(2));
-        yoff->setBounds(col(r, 4, 3).reduced(2));
+        place(*xoff, 0.02, 0.10, 0.26, 0.62);
+        place(*yoff, 0.72, 0.10, 0.26, 0.62);
     }
 
 private:
-    std::unique_ptr<LabeledKnob> x, y, xoff, yoff;
+    std::unique_ptr<LabeledKnob> xoff, yoff;
 };
 
 class SeqSection : public Section
 {
 public:
-    explicit SeqSection(Apvts& s) : Section("5 STEP SEQ. VOLTAGE")
+    explicit SeqSection(Apvts& s) : Section("5 STEP SEQ.  VOLTAGE", Band::Bottom)
     {
         pulser = std::make_unique<LabeledKnob>(s, "seq.pulser", "pulser", kKnobRed);
         stages = std::make_unique<ChoiceBox>(s, "seq.stages", "stages");
@@ -564,7 +709,7 @@ public:
         {
             const auto n = juce::String(i + 1);
             step[i] = std::make_unique<LabeledKnob>(s, "seq.step" + n, "step " + n, kKnobRed);
-            gate[i] = std::make_unique<SlideSwitch>(s, "seq.gate" + n, "gate");
+            gate[i] = std::make_unique<SlideSwitch>(s, "seq.gate" + n, "");
             addAndMakeVisible(*step[i]);
             addAndMakeVisible(*gate[i]);
         }
@@ -572,43 +717,84 @@ public:
 
     void resized() override
     {
-        auto r = content();
-        pulser->setBounds(col(r, 7, 0).reduced(2));
-        stages->setBounds(col(r, 7, 1).reduced(6, r.getHeight() / 6));
+        place(*pulser, 0.005, 0.10, 0.085, 0.62);
+        place(*stages, 0.145, 0.20, 0.065, 0.42);
         for (int i = 0; i < 5; ++i)
         {
-            auto cell = col(r, 7, 2 + i).reduced(2);
-            gate[i]->setBounds(cell.removeFromRight(cell.getWidth() / 3)
-                                   .reduced(0, cell.getHeight() / 4));
-            step[i]->setBounds(cell);
+            const double x = 0.225 + 0.106 * i;
+            place(*step[i], x, 0.16, 0.072, 0.56);
+            place(*gate[i], x + 0.074, 0.28, 0.028, 0.32);
+            leds_[i] = frac(x + 0.036, 0.10, 0.0, 0.0).getPosition();
+        }
+    }
+
+    void setTelemetry(int stepIdx, float gateHigh)
+    {
+        if (stepIdx != step_ || std::abs(gateHigh - gate01_) > 0.5f)
+        {
+            step_ = stepIdx;
+            gate01_ = gateHigh;
+            repaint(frac(0.2, 0.06, 0.6, 0.12));
         }
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        // Pulser -> clock routing hint.
+        g.setColour(kAccentRed.withAlpha(0.85f));
+        g.drawArrow(juce::Line<float>((float) frac(0.085, 0.24, 0, 0).getX(),
+                                      (float) frac(0, 0.24, 0, 0).getY(),
+                                      (float) frac(0.103, 0.30, 0, 0).getX(),
+                                      (float) frac(0, 0.32, 0, 0).getY()),
+                    4.0f, 14.0f, 14.0f);
+        for (int i = 0; i < 5; ++i)
+            led(g, leds_[i].toFloat(), i == step_ ? (0.35f + 0.65f * gate01_) : 0.0f,
+                kAccentRed, 13.0f);
+    }
+
     std::unique_ptr<LabeledKnob> pulser, step[5];
     std::unique_ptr<ChoiceBox> stages;
     std::unique_ptr<SlideSwitch> gate[5];
+    juce::Point<int> leds_[5];
+    int step_ = 0;
+    float gate01_ = 0.0f;
 };
 
 class PreampSection : public Section
 {
 public:
-    explicit PreampSection(Apvts& s) : Section("PREAMP")
+    explicit PreampSection(Apvts& s) : Section("PREAMP", Band::Bottom)
     {
         gain = std::make_unique<LabeledKnob>(s, "pre.gain", "gain", kKnobRed);
         addAndMakeVisible(*gain);
     }
 
-    void resized() override { gain->setBounds(content().reduced(6)); }
+    void resized() override { place(*gain, 0.42, 0.10, 0.36, 0.62); }
+
+    void setTelemetry(float clip)
+    {
+        if (std::abs(clip - clip01_) > 0.5f)
+        {
+            clip01_ = clip;
+            repaint(frac(0.80, 0.20, 0.14, 0.22));
+        }
+    }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        led(g, frac(0.87, 0.30, 0, 0).getPosition().toFloat(), clip01_, kAccentRed);
+    }
+
     std::unique_ptr<LabeledKnob> gain;
+    float clip01_ = 0.0f;
 };
 
 class EnvFollowerSection : public Section
 {
 public:
-    explicit EnvFollowerSection(Apvts& s) : Section("ENVELOPE FOLLOWER")
+    explicit EnvFollowerSection(Apvts& s) : Section("ENVELOPE FOLLOWER", Band::Bottom)
     {
         att = std::make_unique<LabeledKnob>(s, "envf.att", "attack", kKnobRed);
         rel = std::make_unique<LabeledKnob>(s, "envf.rel", "release", kKnobRed);
@@ -618,13 +804,139 @@ public:
 
     void resized() override
     {
-        auto r = content();
-        att->setBounds(col(r, 2, 0).reduced(4));
-        rel->setBounds(col(r, 2, 1).reduced(4));
+        place(*att, 0.02, 0.10, 0.23, 0.62);
+        place(*rel, 0.27, 0.10, 0.23, 0.62);
+    }
+
+    void setTelemetry(float env, float gateHigh)
+    {
+        if (std::abs(env - env01_) > 0.04f || std::abs(gateHigh - gate01_) > 0.5f)
+        {
+            env01_ = env;
+            gate01_ = gateHigh;
+            repaint(frac(0.56, 0.08, 0.42, 0.20));
+        }
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        led(g, frac(0.64, 0.16, 0, 0).getPosition().toFloat(), env01_, kAccentRed);
+        led(g, frac(0.875, 0.16, 0, 0).getPosition().toFloat(), gate01_,
+            juce::Colour(0xff3ac86a));
+    }
+
     std::unique_ptr<LabeledKnob> att, rel;
+    float env01_ = 0.0f, gate01_ = 0.0f;
+};
+
+// ---------------------------------------------------------------- performance zone
+
+// The physical position-locking stick (bottom-left on the hardware) — drives
+// the joy.x / joy.y parameters; the mod-strip block holds the offset knobs.
+class JoyPad : public juce::Component
+{
+public:
+    JoyPad(Apvts& s, const juce::String& xId, const juce::String& yId)
+        : xAtt(*s.getParameter(xId), [this](float v) { x_ = v; repaint(); }),
+          yAtt(*s.getParameter(yId), [this](float v) { y_ = v; repaint(); })
+    {
+        xAtt.sendInitialUpdate();
+        yAtt.sendInitialUpdate();
+    }
+
+    void mouseDown(const juce::MouseEvent& e) override
+    {
+        xAtt.beginGesture();
+        yAtt.beginGesture();
+        mouseDrag(e);
+    }
+
+    void mouseDrag(const juce::MouseEvent& e) override
+    {
+        const auto r = pad();
+        xAtt.setValueAsPartOfGesture(juce::jlimit(-1.0f, 1.0f,
+            ((float) e.x - r.getCentreX()) / (r.getWidth() * 0.5f - 40.0f)));
+        yAtt.setValueAsPartOfGesture(juce::jlimit(-1.0f, 1.0f,
+            (r.getCentreY() - (float) e.y) / (r.getHeight() * 0.5f - 40.0f)));
+    }
+
+    void mouseUp(const juce::MouseEvent&) override
+    {
+        xAtt.endGesture();
+        yAtt.endGesture(); // position-locking: the stick stays where released
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        const auto r = pad();
+
+        g.setColour(kInk.withAlpha(0.8f));
+        for (int i = 0; i < 4; ++i) // N E S W direction arrows
+        {
+            juce::Path a;
+            a.addTriangle(-16.0f, 12.0f, 16.0f, 12.0f, 0.0f, -14.0f);
+            const float ang = juce::MathConstants<float>::halfPi * (float) i;
+            g.fillPath(a, juce::AffineTransform::rotation(ang)
+                              .translated(r.getCentre().getPointOnCircumference(
+                                  r.getWidth() * 0.5f - 10.0f, ang)));
+        }
+
+        const auto c = juce::Point<float>(
+            r.getCentreX() + x_ * (r.getWidth() * 0.5f - 40.0f),
+            r.getCentreY() - y_ * (r.getHeight() * 0.5f - 40.0f));
+        g.setColour(juce::Colour(0xff2b2b30));
+        g.fillEllipse(c.x - 68.0f, c.y - 68.0f, 136.0f, 136.0f);
+        g.setColour(juce::Colour(0xff47474d));
+        g.fillEllipse(c.x - 40.0f, c.y - 40.0f, 80.0f, 80.0f);
+    }
+
+private:
+    juce::Rectangle<float> pad() const
+    {
+        return getLocalBounds().toFloat().reduced(30.0f);
+    }
+
+    float x_ = 0.0f, y_ = 0.0f;
+    juce::ParameterAttachment xAtt, yAtt;
+};
+
+// DRONE VOICES keypad: 6 gates in the hardware's column order 1,4 / 2,5 / 3,6.
+class KeypadSection : public juce::Component
+{
+public:
+    explicit KeypadSection(Apvts& s)
+    {
+        const char* ids[6] = { "d1", "d4", "d2", "d5", "d3", "d6" }; // row-major
+        for (int i = 0; i < 6; ++i)
+        {
+            keys[i] = std::make_unique<PushButton>(s, juce::String(ids[i]) + ".gate",
+                                                   juce::String(ids[i]).substring(1),
+                                                   juce::Colours::white);
+            addAndMakeVisible(*keys[i]);
+        }
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        g.setColour(kInk);
+        g.setFont(juce::FontOptions(52.0f, juce::Font::bold));
+        g.drawText("DRONE VOICES", getLocalBounds().removeFromTop(70),
+                   juce::Justification::centred);
+    }
+
+    void resized() override
+    {
+        auto r = getLocalBounds().withTrimmedTop(90);
+        const int bw = r.getWidth() / 2, bh = r.getHeight() / 3;
+        for (int i = 0; i < 6; ++i)
+            keys[i]->setBounds(juce::Rectangle<int>(r.getX() + (i % 2) * bw,
+                                                    r.getY() + (i / 2) * bh, bw, bh)
+                                   .reduced(24));
+    }
+
+private:
+    std::unique_ptr<PushButton> keys[6];
 };
 
 } // namespace solar

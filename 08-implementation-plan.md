@@ -14,8 +14,8 @@
 | M2 — Rack & patching core | ✅ done | commit `c80f612`; 21/21 tests incl. feedback + patch fuzz |
 | M3 — Full voice complement + Polivoks filters | ✅ done | commit `0cdc662` (2026-07-04); 41/41 tests (5 srapa modes, filter self-osc/no-bass-loss, VCO sync/sub/alias, pan-routing); pluginval SUCCESS; panel UI phase 1 (all top-half + mod-strip sections live); `renders/solar42n-m3-fullpath.wav` — ear check superseded by the M4 render |
 | M4 — FV-1 VM + starter cartridges | ✅ done | commit `ccb56b6` (2026-07-04); 55/55 tests (per-opcode fixed-point goldens, assembler word-identical to asfv1 on AN-0001 + all 12 programs, octave-up pitch-shift FFT, shimmer bloom, OCHRE one-shot trigger/re-arm, resampler >90 dB SNR, effector unity round-trip); pluginval SUCCESS; `renders/solar42n-m4-shimmerpath.wav` — **ear check pending** |
-| M5 — Full panel UI + cable layer | ⬜ next | |
-| M6 — Touch keyboard + drone keypad | ⬜ | |
+| M5 — Full panel UI + cable layer | ✅ done | (2026-07-04); 61/61 tests (telemetry seqlock torture, jack-census static_assert + geometry/spacing, name-lookup round-trip, preamp ext-jack override, dry-out scaling); pluginval SUCCESS; full 4950×3200 panel: 63-jack census in `PanelLayout.h`, CableLayer (ghost cable, re-route, Alt-unplug, normal traces on hover, one-per-inlet/mult-per-outlet), cables persist via CABLES state child, telemetry LEDs + sensor glow + step/clip/gate LEDs @30 Hz, zoom 100–300 % (Cmd+scroll/pinch) + pan + double-click zoom-to-section, DRONE VOICES keypad + joystick pad live, debug patch matrix deleted; `renders/m5-panel-screenshot.png` vs render — **panel eye check pending** |
+| M6 — Touch keyboard + drone keypad | ⬜ next | keypad gates + joystick pad landed early in M5; M6 = touch keyboard firmware logic + plate UI + kb jacks/normals live |
 | M7 — State, presets, conveniences | ⬜ | |
 | M8 — Calibration by ear | ⬜ | first user verdict logged 2026-07-03 (00-LOG); criteria to be co-developed |
 | M9 — RT-safety, performance, MIDI, release | ⬜ | |

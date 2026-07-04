@@ -5,6 +5,7 @@
 #include "dsp/Smoother.h"
 #include "dsp/Tolerances.h"
 #include "engine/CommandQueue.h"
+#include "engine/Telemetry.h"
 #include "engine/VoltBus.h"
 #include "engine/modules/ClassicDroneVoice.h"
 #include "engine/modules/Effector.h"
@@ -77,11 +78,13 @@ public:
 
     Tolerances& tolerances() noexcept { return tolerances_; }
     const VoltBus& bus() const noexcept { return bus_; }
+    const Telemetry& telemetry() const noexcept { return telemetry_; }
 
 private:
     void processSubBlock(float* outL, float* outR, const float* extInL,
                          const float* extInR, int n) noexcept;
     void drainCommands() noexcept;
+    void publishTelemetry(float peakL, float peakR, int n) noexcept;
 
     double sampleRate_ = 48000.0;
     Tolerances tolerances_;
@@ -89,6 +92,7 @@ private:
 
     VoltBus bus_;
     CommandQueue cmdQueue_;
+    Telemetry telemetry_;
 
     LfoModule lfoA_, lfoB_;
     JoystickModule joy_;

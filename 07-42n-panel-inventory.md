@@ -132,8 +132,14 @@ VCO A · VCO B · PREAMP · DRONE 4 · DRONE 5 · DRONE 6**.
 ### 1g. Master I/O
 
 EXT. AUDIO in (mixer channel) · WET OUT L/R (max ~2 V) · DRY OUT for VCO A / B
-(max ~1 V, front panel on 42N; exact render position unclear — flag) ·
-headphones · POWER + 12 V DC.
+(max ~1 V; position resolved during M5: the red "VCO A"/"VCO B" jacks in the
+envelope A/B jack rows, flanking the center logo) · headphones · POWER +
+12 V DC.
+
+Registry census corrections (M5, append-only — existing jack ids frozen):
+`vcoA.dry.out` / `vcoB.dry.out` (the DRY OUTs above, osc x 0.2) and
+`pre.ext.in` (the preamp's ext. source jack, §1e — overrides the host-input
+"piezo" when patched).
 
 ## 2. Normalled connections (default patch — break when a cable is inserted)
 

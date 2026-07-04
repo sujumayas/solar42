@@ -218,3 +218,46 @@ The Drone Lab → sample-loop → ToneMatrixSynth bridge was superseded by the
 full native Solar 42N instrument (`app/`, see `08-implementation-plan.md`).
 drone-lab stays as a historical experiment only. "Human ear is the final
 gate" carries over — see the Listening protocol in `CLAUDE.md`.
+
+### 2026-07-04 — app M5: full panel UI + virtual cable layer
+- **Jack census complete**: `ui/PanelLayout.h` (JUCE-free) now maps all **63
+  panel jacks** to measured positions in the 4950×3200 space; a constexpr
+  static_assert keeps it 1:1 with `engine/Jacks.h` forever (a registry append
+  without a panel position no longer compiles). Registry census corrections
+  (append-only, ids frozen): **VCO A/B DRY OUTs** (the render's red "VCO A"/
+  "VCO B" jacks flanking the mixer logo — 07's "position unclear" flag
+  resolved) and the **preamp ext. source jack** (overrides the host-input
+  "piezo" when patched — e.g. VCO B osc → preamp → follower now works).
+- **CableLayer**: press a jack → ghost cable + compatible-jack highlights;
+  release to connect; grab a plug to re-route (drop in space = unplug, like
+  hardware); Alt-click unplugs; one cable per inlet, unlimited per outlet
+  (built-in mult); unpatched inlets show their hardware normal as a dashed
+  trace on hover; bezier cables with gravity sag + plug bodies, ~85 % opacity.
+  Canonical cable list = `PatchBay` (CABLES child of the APVTS tree, jacks
+  stored by display name) → save/recall round-trips cables already; engine
+  edits ride the M2 lock-free command queue.
+- **Telemetry**: seqlock-guarded POD snapshot published per 64-sample
+  sub-block (torture-tested: zero torn reads); UI samples at 30 Hz — drone
+  gen LED bars, photo-sensor window glow (room light + CV), srapa modulator
+  LEDs, sequencer step LED, preamp clip, follower env/gate, master peaks.
+  Verified live: gating a voice from the keypad lights its bar; the seq LED
+  visibly steps.
+- **Editor**: fit-width default, Cmd+scroll / pinch zoom 100–300 % anchored at
+  the cursor, scroll/drag-empty-space pan, double-click a section band to
+  zoom to it, double-click background to fit; aspect-locked resize. The M2
+  debug patch matrix is deleted. Performance zone: DRONE VOICES keypad (wired
+  to the d1–d6 gate params, hardware column order) + position-locking
+  joystick pad (joy.x/joy.y) + keyboard placeholder print (M6). Room-light
+  knob + 50 Hz flicker switch live in the header (digital-only controls).
+- Layout matched against `solar42n-panel-1.png` over three screenshot
+  iterations (header jack block, rotated FILTER L/R tags, hardware-print
+  font sizes, per-section knob/jack interleave).
+- Gate green: 61/61 test cases, pluginval SUCCESS, render smoke.
+- **No sonic change** (dry outs are silent until patched) — the M4 shimmer
+  render ear check is still the pending audition. Visual artifact:
+  `renders/m5-panel-screenshot.png` — **panel eye check pending**: compare
+  against the reference render; patch a few cables by hand (LFO A out →
+  DRONE 1 CV is a good first pull) and confirm the drag feel.
+- Known M6+ leftovers: keypad buttons latch (hardware is momentary + HOLD),
+  keyboard jack strip parked above the keyboard zone (render hides these),
+  1-2-3 program toggles are combo boxes, no faithful cartridge-slot art yet.
