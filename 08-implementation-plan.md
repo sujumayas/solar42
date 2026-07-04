@@ -12,8 +12,8 @@
 | M0 — Skeleton + knowledge capture | ✅ done | commit `4eb9724`; check.sh green; pluginval SUCCESS; `07-42n-panel-inventory.md` |
 | M1 — First sound: classic drone voice | ✅ done | commit `e2f1c05`; 13/13 tests; 4-point BLEP −61 dBc; `renders/solar42n-m1-drone1.wav` |
 | M2 — Rack & patching core | ✅ done | commit `c80f612`; 21/21 tests incl. feedback + patch fuzz |
-| M3 — Full voice complement + Polivoks filters | ⬜ next | Papa Srapa ×2, VCO A/B + ADSR/LOOP, 10-ch mixer pan-routing, nonlinear Polivoks ZDF, panel UI phase 1 |
-| M4 — FV-1 VM + starter cartridges | ⬜ | |
+| M3 — Full voice complement + Polivoks filters | ✅ done | commit `4e1e0ec` (2026-07-04); 41/41 tests (5 srapa modes, filter self-osc/no-bass-loss, VCO sync/sub/alias, pan-routing); pluginval SUCCESS; panel UI phase 1 (all top-half + mod-strip sections live); `renders/solar42n-m3-fullpath.wav` — **ear check pending** |
+| M4 — FV-1 VM + starter cartridges | ⬜ next | |
 | M5 — Full panel UI + cable layer | ⬜ | |
 | M6 — Touch keyboard + drone keypad | ⬜ | |
 | M7 — State, presets, conveniences | ⬜ | |

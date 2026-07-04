@@ -1,11 +1,12 @@
 #pragma once
 
 #include "PluginProcessor.h"
+#include "ui/PanelView.h"
 #include "ui/PatchMatrixDebug.h"
 
-// M2 debug editor: branded strip + auto-generated parameter list (left) +
-// patch matrix (right). The real skeuomorphic PanelEditor replaces this from
-// M3/M5 onward.
+// M3 editor: panel UI phase 1 (top half + mod strip, scaled from the logical
+// 4950-wide space) with the M2 debug patch matrix in the performance zone.
+// M5 replaces the matrix with the CableLayer and adds the print/jack layer.
 class Solar42NEditor : public juce::AudioProcessorEditor
 {
 public:
@@ -15,7 +16,7 @@ public:
     void resized() override;
 
 private:
-    juce::GenericAudioProcessorEditor params_;
+    solar::PanelView panel_;
     PatchMatrixDebug matrix_;
     juce::Viewport matrixView_;
 

@@ -29,6 +29,8 @@ target_link_libraries(solar42n_fv1 PUBLIC solar42n_dsp)
 add_library(solar42n_engine STATIC
     src/engine/Rack.cpp
     src/engine/modules/ClassicDroneVoice.cpp
+    src/engine/modules/PapaSrapaVoice.cpp
+    src/engine/modules/VcoVoice.cpp
 )
 target_link_libraries(solar42n_engine PUBLIC solar42n_dsp solar42n_fv1)
 
@@ -77,6 +79,8 @@ if(SOLAR42N_BUILD_TESTS)
         tests/TestDsp.cpp
         tests/TestDroneVoice.cpp
         tests/TestRouting.cpp
+        tests/TestM3Voices.cpp
+        tests/TestPolivoks.cpp
     )
     target_link_libraries(solar42n_tests PRIVATE solar42n_engine Catch2::Catch2WithMain)
     include(Catch)

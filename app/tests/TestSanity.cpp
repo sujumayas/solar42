@@ -6,6 +6,7 @@
 #include "dsp/Tolerances.h"
 #include "engine/Rack.h"
 
+#include <cmath>
 #include <vector>
 
 using Catch::Approx;
@@ -47,9 +48,12 @@ TEST_CASE("M0 rack renders silence without touching out-of-range memory", "[engi
     std::vector<float> l(512, 1.0f), r(512, 1.0f);
     rack.process(l.data(), r.data(), nullptr, nullptr, 512);
 
+    // Since M3 the Polivoks filters carry a deliberate ~-180 dB thermal-noise
+    // seed (it starts their self-oscillation like op-amp noise does on the
+    // hardware), so "silence" means below any audible floor, not bit-zero.
     for (int i = 0; i < 512; ++i)
     {
-        REQUIRE(l[(size_t) i] == 0.0f);
-        REQUIRE(r[(size_t) i] == 0.0f);
+        REQUIRE(std::abs(l[(size_t) i]) < 1.0e-6f);
+        REQUIRE(std::abs(r[(size_t) i]) < 1.0e-6f);
     }
 }

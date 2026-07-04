@@ -180,7 +180,10 @@ headphones · POWER + 12 V DC.
   generators cross-modulate (supply-coupling FM) — the dirty zone.
 - **Photo-sensor**: red LED + LDR; LED driven by whatever CV reaches the voice
   (LFOs are unipolar for this); ambient light adds in; mains flicker audible.
-  Vactrol-style asymmetric response (fast up, slow down).
+  Vactrol-style asymmetric response (fast up, slow down). *Implementation
+  decision (M3): the CV jack always drives the LED — i.e. patched CV reaches
+  the MOD'd generators only through the opto's lag and unipolar clamp; there
+  is no direct/bypass CV path on a classic voice.*
 - **Papa Srapa modes**: (1) FM+AM off = plain drone; (2) FM = square pitch
   wobble (depth MOD, rate RATE÷DIVIDER); (3) AM = chopped tone at RATE;
   (4) both = chopped + wobble (sirens/birds/bursts); (5) noise switch = white

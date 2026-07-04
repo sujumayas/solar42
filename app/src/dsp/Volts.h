@@ -20,7 +20,18 @@ inline float voltToRatio(float volts) noexcept { return std::exp2(volts); }
 
 inline float voctToHz(float volts) noexcept { return kC0Hz * std::exp2(volts); }
 
-// Fast tanh-like soft clamp onto the +-12 V rails (Pade-style rational).
+// Hard rail limit for CV-style inlets (pitch, cutoff, VCA control): the
+// hardware is linear across the whole -10..+12 V input range, so a CV must
+// pass through untouched until it truly hits the rail. Audio paths use the
+// soft railClamp below instead.
+inline float railLimit(float v) noexcept
+{
+    return v < -kRailVolts ? -kRailVolts : (v > kRailVolts ? kRailVolts : v);
+}
+
+// Fast tanh-like soft clamp onto the +-12 V rails (Pade-style rational) —
+// for audio buses and feedback loops, where saturation should sound musical.
+// NOT for CVs: it compresses several percent already at half rail.
 inline float railClamp(float v) noexcept
 {
     constexpr float inv = 1.0f / kRailVolts;

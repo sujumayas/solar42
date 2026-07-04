@@ -26,7 +26,7 @@ public:
             labels_.add(label.release());
 
             auto box = std::make_unique<juce::ComboBox>();
-            box->addItem("—", 1);
+            box->addItem(juce::String::fromUTF8("—"), 1); // em dash = unpatched
             for (int o = 0; o < s42::kOutletCount; ++o)
                 if (!s42::kOutletInfo[(size_t) o].hidden)
                     box->addItem(s42::kOutletInfo[(size_t) o].name, o + 2);

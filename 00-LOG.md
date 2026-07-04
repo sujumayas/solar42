@@ -134,6 +134,43 @@ Newest entries at the bottom.
   10-ch mixer with pan-as-filter-routing, nonlinear Polivoks filter, panel
   UI phase 1.
 
+### 2026-07-04 — app M3: full voice complement + real Polivoks filters + panel UI phase 1
+- **All 8 voices live.** DRONE 2/4/5 join DRONE 1 (each with its own
+  tolerance-seeded gen detunes + free phases); every classic voice now has a
+  working **photo-sensor** (CV jack → red LED → LDR with vactrol lag + room
+  light + optional 50 Hz flicker; decision logged in 07 §4: the opto is always
+  in the CV path). DRONE 3/6 = **Papa Srapa**: dual Schmitt relaxation oscs
+  (non-50 % duty from the unit serial), FM (flip-flop divider chain ÷1..16),
+  AM (30 µs chop slew), NOISE blend, S&H clocked from its jack — all 5
+  manual modes locked by tests. **VCO A/B**: AS3340 triangle core, morph
+  rotary (saw↔inv-saw zone, sine↔tri polynomial zone, square + PWM), −1 sub,
+  **hard sync** (BLEP-corrected phase reset, test: locks 1.43× detune to the
+  master), lin/exp CV, oct+3/low; Envelope A/B ADSR + HOLD + LOOP drive the
+  VCAs into the mixer; VCO A→B CV normal = instant 2-op FM.
+- **Mixer + filters**: 10-channel mixer where **PAN crossfades each channel
+  between Filter L and Filter R** (constant-power; test: >20 dB separation);
+  **nonlinear Polivoks ZDF-SVF** per side — asymmetric input drive, saturated
+  resonance path, damping goes negative past RES 0.85 → true bounded
+  self-oscillation seeded by a −180 dB noise floor (tests: no bass loss with
+  resonance, ~12 dB/oct, sings at fc, silent below threshold); BP/LP per side,
+  MOD L/R CV amounts, LINK, CV L→CV R normal, shared post-filter **DIST/GAIN**
+  double distortion. L/R skew now also on resonance (self-osc onset differs
+  per side).
+- **Infrastructure**: shared 4-pt BLEP kernel extracted (`BlepKernel.h`);
+  found & fixed a real bug — `railClamp` (soft tanh) was compressing CVs ~4 %
+  mid-range, flattening every V/oct pitch; CV inlets now use hard `railLimit`,
+  audio buses keep the musical soft clamp. ~195 APVTS params (final IDs).
+- **Panel UI phase 1**: `SolarLookAndFeel` (hardware knob color code, slide
+  switches, LED push buttons), `PanelLayout.h` section geometry measured off
+  the render, all top-half + mod-strip sections as APVTS-attached components,
+  one-transform scaling (M5 zoom-ready); patch matrix stays in the
+  performance zone until the M5 cable layer.
+- Gate green: 41/41 tests, pluginval SUCCESS, render smoke.
+- Audition artifact: `renders/solar42n-m3-fullpath.wav` (20 s full analog
+  path: D1 beating cluster L, D4 sensor-wobbled cluster R, D3 srapa chirps,
+  seq→VCO A + env gate, VCO B FM pad, LFO B on filter CV, DIST warm, VOLT
+  dirty-zone tail; RMS −14 dBFS, L/R corr 0.72). **Ear check pending.**
+
 ### ~~<pending> — first audition + bounce~~ (superseded 2026-07-03)
 The Drone Lab → sample-loop → ToneMatrixSynth bridge was superseded by the
 full native Solar 42N instrument (`app/`, see `08-implementation-plan.md`).

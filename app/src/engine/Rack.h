@@ -1,12 +1,17 @@
 #pragma once
 
-#include "dsp/SimpleSvf.h"
+#include "dsp/PhotoSensor.h"
+#include "dsp/PolivoksFilter.h"
 #include "dsp/Smoother.h"
 #include "dsp/Tolerances.h"
 #include "engine/CommandQueue.h"
 #include "engine/VoltBus.h"
 #include "engine/modules/ClassicDroneVoice.h"
+#include "engine/modules/EnvelopeModule.h"
+#include "engine/modules/Mixer.h"
 #include "engine/modules/ModStrip.h"
+#include "engine/modules/PapaSrapaVoice.h"
+#include "engine/modules/VcoVoice.h"
 
 namespace s42 {
 
@@ -15,25 +20,46 @@ namespace s42 {
 // patch edits arrive through a lock-free command queue and are applied at
 // sub-block boundaries.
 //
-// M2 module set: LFO A/B, joystick, 5-step sequencer + pulser, preamp +
-// envelope follower, DRONE 1, placeholder dual SVF, master. Remaining voices,
-// the real Polivoks filter, and the mixer land in M3.
+// M3 module set = the full analog path: LFO A/B, joystick, sequencer, preamp
+// + follower, DRONE 1/2/4/5 (classic, with photo-sensors), DRONE 3/6 (Papa
+// Srapa), VCO A/B + Envelope A/B, 10-channel mixer (pan = filter routing),
+// dual nonlinear Polivoks filter + shared DIST/GAIN, master. The FV-1
+// effector slots between DIST and master in M4; touch keyboard lands in M6.
 class Rack
 {
 public:
     static constexpr int kSubBlock = VoltBus::kSubBlock;
+    static constexpr int kClassicVoices = 4; // DRONE 1, 2, 4, 5
+    static constexpr int kSrapaVoices = 2;   // DRONE 3, 6
+
+    struct FilterParams
+    {
+        float freqHzL = 900.0f, freqHzR = 900.0f;
+        float resL = 0.3f, resR = 0.3f;
+        bool bpL = false, bpR = false;   // BP/LP mode switches
+        float modL = 0.0f, modR = 0.0f;  // CV amount knobs
+        bool link = false;               // CV L controls both channels
+        float dist = 0.0f;               // clean/dirty balance (shared)
+        float gain = 0.3f;               // distortion amount (shared)
+    };
 
     struct Controls
     {
-        ClassicDroneVoice::Params drone1 {};
-        bool drone1Key = false; // keypad button 1 (OR'd with the GATE jack)
+        ClassicDroneVoice::Params drone[kClassicVoices] {};
+        bool droneKey[kClassicVoices] = {};   // keypad buttons 1, 2, 4, 5
+        PapaSrapaVoice::Params srapa[kSrapaVoices] {};
+        bool srapaKey[kSrapaVoices] = {};     // keypad buttons 3, 6
+        VcoVoice::Params vcoA {}, vcoB {};
+        EnvelopeModule::Params envA {}, envB {};
         LfoModule::Params lfoA { 0.5f, 0.2f };
         LfoModule::Params lfoB { 0.5f, 4.0f };
         JoystickModule::Params joy {};
         StepSequencerModule::Params seq {};
         PreampFollowerModule::Params preamp {};
-        float filterFreqHz = 900.0f;
-        float filterRes = 0.3f;
+        MixerModule::Params mixer {};
+        FilterParams filter {};
+        float roomLight = 0.35f;              // ambient light on the photo-sensors
+        bool mainsFlicker = false;
         float masterVol = 0.7f;
     };
 
@@ -66,8 +92,16 @@ private:
     JoystickModule joy_;
     StepSequencerModule seq_;
     PreampFollowerModule preamp_;
-    ClassicDroneVoice drone1_;
-    SimpleSvf filterL_, filterR_;
+
+    ClassicDroneVoice drones_[kClassicVoices];
+    PhotoSensor sensors_[kClassicVoices];
+    PapaSrapaVoice srapas_[kSrapaVoices];
+    VcoVoice vcoA_, vcoB_;
+    EnvelopeModule envA_, envB_;
+
+    MixerModule mixer_;
+    PolivoksFilter filterL_, filterR_;
+    float filterFreqL_ = 900.0f, filterFreqR_ = 900.0f; // tolerance-skewed base cutoffs
     Smoother masterSm_;
 };
 

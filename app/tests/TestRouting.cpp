@@ -76,12 +76,13 @@ TEST_CASE("LFO A modulates a drone generator through the patch bus", "[engine][r
     rack.prepare(48000.0, 512);
 
     Rack::Controls c;
-    c.drone1.hold = true;
-    c.drone1.attackSec = 0.001f;
+    c.drone[0].hold = true;
+    c.drone[0].attackSec = 0.001f;
     for (int g = 1; g < 5; ++g)
-        c.drone1.mute[g] = true;
-    c.drone1.mod[0] = true;      // gen 1 listens to the CV bus
-    c.drone1.tune[0] = 0.8f;
+        c.drone[0].mute[g] = true;
+    c.drone[0].mod[0] = true;    // gen 1 listens to the CV bus
+    c.drone[0].tune[0] = 0.8f;
+    c.roomLight = 0.0f;          // keep the photo-sensor dark: CV only
     c.lfoA.rateHz = 4.0f;
     c.lfoA.wave = 1.0f;          // triangle
     rack.setControls(c);
@@ -114,10 +115,10 @@ TEST_CASE("feedback patch (env out -> own CV) stays bounded", "[engine][routing]
     rack.prepare(48000.0, 512);
 
     Rack::Controls c;
-    c.drone1.hold = true;
-    c.drone1.attackSec = 0.01f;
+    c.drone[0].hold = true;
+    c.drone[0].attackSec = 0.01f;
     for (int g = 0; g < 5; ++g)
-        c.drone1.mod[g] = true; // every generator eats the feedback
+        c.drone[0].mod[g] = true; // every generator eats the feedback
     rack.setControls(c);
     rack.requestPatch(Inlet::D1CvIn, Outlet::D1EnvOut);
 
@@ -137,9 +138,9 @@ TEST_CASE("random patch storm while rendering never produces NaN", "[engine][rou
     rack.prepare(48000.0, 512);
 
     Rack::Controls c;
-    c.drone1.hold = true;
+    c.drone[0].hold = true;
     for (int g = 0; g < 5; ++g)
-        c.drone1.mod[g] = true;
+        c.drone[0].mod[g] = true;
     rack.setControls(c);
 
     std::mt19937 rng(1234);

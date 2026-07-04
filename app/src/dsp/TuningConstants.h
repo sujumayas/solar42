@@ -38,6 +38,22 @@ inline constexpr float kFilterFreqMin = 16.0f;
 inline constexpr float kFilterFreqMax = 18000.0f;
 inline constexpr float kFilterSelfOscRes = 0.85f; // resonance knob position where it starts to sing
 inline constexpr float kFilterLrSkew = 0.025f;    // +-2.5 % L/R component tolerance
+inline constexpr float kFilterNegDamp = 0.25f;    // damping at RES=1 (negative => bounded self-osc growl)
+inline constexpr float kFilterDrive = 1.4f;       // input gain into the asymmetric drive clip
+inline constexpr float kFilterDrivePosV = 6.0f;   // drive clip knee, positive half (volts)
+inline constexpr float kFilterDriveNegV = 9.0f;   // drive clip knee, negative half (asymmetry = even harmonics)
+inline constexpr float kFilterFbClipV = 8.0f;     // hard-ish saturator level in the resonance path
+inline constexpr float kFilterModOctPerVolt = 1.0f; // cutoff CV law at MOD knob full (1 V/oct feels right)
+
+// ---- Post-filter "double distortion" (DIST = clean/dirty balance, GAIN = amount)
+inline constexpr float kDistDriveMax = 24.0f;     // drive multiplier at GAIN=1 (two cascaded stages)
+inline constexpr float kDistStage1PosV = 4.0f, kDistStage1NegV = 6.5f; // stage knees, volts
+inline constexpr float kDistStage2PosV = 3.0f, kDistStage2NegV = 5.0f;
+inline constexpr float kDistMakeup = 0.5f;        // dirty-path level so DIST sweeps stay ~equal-loud
+
+// ---- Mixer (passive-feel bus: 10 channels at full would slam the rails)
+inline constexpr float kMixerPostGain = 0.5f;     // bus trim into the filters (one full voice ≈ M1/M2 level)
+inline constexpr float kExtAudioVolts = 5.0f;     // EXT AUDIO line in: +-1 fs -> +-5 V
 
 // ---- Classic drone voice VOLT knob (transpose depth + dirty zone unspecified)
 inline constexpr float kVoltTransposeOct = 2.5f;  // full downward transpose span
@@ -50,14 +66,34 @@ inline constexpr float kGenLevelVolts = 2.0f;     // one generator's peak, volts
 inline constexpr float kDroneCvOctPerVolt = 0.08f;// CV-jack pitch-mod depth (free-run gens, no V/oct law)
 
 // ---- Photo sensor (LDR/vactrol behavior; no numbers in manual)
+// The voice CV jack drives the sensor's red LED; the LDR adds room light and
+// lags asymmetrically (vactrol memory). Output is CV-bus volts 0..10, so the
+// full-LED pitch push = 10 V * kDroneCvOctPerVolt = 0.8 oct.
 inline constexpr float kSensorAttack = 0.005f;    // light up: fast
 inline constexpr float kSensorDecay = 0.120f;     // light down: LDR memory
-inline constexpr float kSensorModDepthOct = 0.6f; // full-LED pitch push on a generator
+inline constexpr float kSensorFlickerHz = 100.0f; // mains lamp ripple (2 x 50 Hz)
+inline constexpr float kSensorFlickerDepth = 0.15f;
 
 // ---- Papa Srapa (rate range / divider ratios / x10 factor unspecified)
 inline constexpr float kSrapaRateMin = 0.08f, kSrapaRateMax = 12.0f; // x1 position
 inline constexpr float kSrapaRateX10 = 10.0f;
 inline constexpr int   kSrapaDividers[] = { 1, 2, 4, 8, 16 };
+inline constexpr float kSrapaPitchSpanOct = 5.33f; // PITCH knob span; manual: audio osc ~C0..E7
+inline constexpr float kSrapaHiShiftOct = 2.0f;    // hi/low range switch offset (low C0.., hi C2..E7)
+inline constexpr float kSrapaFmDepthOct = 3.0f;    // pitch jump at FM AMOUNT full (siren interval)
+inline constexpr float kSrapaAmSlewSec = 30.0e-6f; // AM chop edge (~30 us keeps a soft click, no thump)
+inline constexpr float kSrapaDutySpread = 0.10f;   // Schmitt duty = 0.5 +- spread * unit tolerance... never 50 %
+inline constexpr float kSrapaDutyBias = 0.08f;     // ...plus a fixed charge/discharge asymmetry
+inline constexpr float kSrapaLevelVolts = 4.0f;    // voice peak level into the mixer
+
+// ---- VCO A/B (AS3340; base octave / FM gain / sub mix unspecified)
+inline constexpr float kVcoLowBaseV = 1.0f;        // "low" octave: knob min + V/oct 0 = C1
+inline constexpr float kVcoOctUpV = 3.0f;          // oct+3 switch
+inline constexpr float kVcoLinFmHzPerVolt = 60.0f; // linear FM gain at CV AMT full (non-through-zero)
+inline constexpr float kVcoLevelVolts = 5.0f;      // audio out +-5 V (spec p4) — level, not by-ear
+inline constexpr float kVcoSubMix = 0.7f;          // -1 sub square level relative to the main wave
+inline constexpr float kVcoPwMin = 0.05f, kVcoPwMax = 0.95f;
+inline constexpr float kVcoToleranceCents = 3.0f;  // per-unit 3340 trim error (precision chip, tiny)
 
 // ---- Keyboard slews (0-255 / 0-127 firmware units -> seconds, unspecified)
 inline constexpr float kPortamentoMaxSec = 2.5f;  // at 255
