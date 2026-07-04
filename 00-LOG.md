@@ -73,6 +73,21 @@ Newest entries at the bottom.
 - Next tweak & why: <...>
 -->
 
+### 2026-07-03 — project pivot: full digital 42N instrument (plan approved)
+- Decided with user: build the **complete digital Solar 42N** as a native
+  **JUCE 8 C++** instrument (Standalone + AU + VST3, macOS first) in `app/` —
+  drone-lab stays as a reference experiment only.
+- Locked trade-offs: revision **42N** · **full virtual patch cables** with
+  hardware normalling (signals in volts) · effector = **fixed-point Spin FV-1
+  VM** + in-house SpinASM programs approximating the cartridges · FX starter
+  set CATHEDRAL/TIME/VIBROTREM/OCHRE + framework for the other 9 · custom DSP
+  (PolyBLEP oscs, nonlinear ZDF Polivoks filter) · all by-ear estimates
+  isolated in `TuningConstants.h` for a dedicated calibration milestone.
+- Wrote `07-42n-panel-inventory.md` — 42N-specific source of truth (voice
+  renumbering DRONE 1-6/VCO A-B, VCO A=sync-in / VCO B=osc-out swap, CV L→CV R
+  normal, full control/jack census, normals list, unspecified-values list).
+- Milestones M0–M9 tracked in-session; M0 = scaffold + this knowledge capture.
+
 ### <pending> — first audition + bounce
 - [ ] Open Drone Lab in Chrome, confirm it plays and the scope moves.
 - [ ] Tune toward SOUND DEMO 3; export a loop to `renders/`.

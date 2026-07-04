@@ -1,0 +1,23 @@
+# Build artifacts
+app/build/
+app/build-*/
+app/cmake-build-*/
+.cache/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Tools fetched by scripts (not vendored)
+app/tools/pluginval/bin/
+
+# clangd helper symlink
+app/compile_commands.json
+
+# Rendered audio scratch (goldens are committed explicitly under app/tests/goldens/)
+renders/scratch/
