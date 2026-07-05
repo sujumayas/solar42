@@ -9,6 +9,9 @@
 //      finite, audible sound (Init is allowed to be silent).
 //   3. Click-free switch: loading a preset mid-render must fade (level dip)
 //      instead of stepping (no hard discontinuity).
+//   4. Cross-build state: blobs from older builds (params missing, no
+//      version stamp) and newer builds (unknown params) load safely —
+//      missing -> defaults, unknown -> dropped.
 //
 // Also doubles as the preset audition renderer:
 //   solar42n_statecheck --render <factory-index> <out.wav> <seconds>
@@ -309,6 +312,51 @@ void testClickFreeSwitch()
     CHECK(maxStep < 0.3f, "no hard discontinuity across the swap");
 }
 
+// ---------------------------------------------------------------- test 4
+void testCrossBuildState()
+{
+    std::printf("== cross-build state: older/newer blobs merge over defaults ==\n");
+
+    // Author a state, then doctor it to look like another build's output.
+    Solar42NProcessor a;
+    if (auto* blend = a.apvts().getParameter("fx.blend"))
+        blend->setValueNotifyingHost(0.31f);
+    auto tree = a.currentFullState();
+
+    // Simulate an OLDER build: master.vol didn't exist yet, no version stamp.
+    auto masterVol = tree.getChildWithProperty("id", juce::var("master.vol"));
+    CHECK(masterVol.isValid(), "found master.vol PARAM child to remove");
+    tree.removeChild(masterVol, nullptr);
+    tree.removeProperty("stateVersion", nullptr);
+
+    // Simulate a NEWER build: a param this build has never heard of.
+    juce::ValueTree alien("PARAM");
+    alien.setProperty("id", "m9.futureKnob", nullptr);
+    alien.setProperty("value", 0.75f, nullptr);
+    tree.addChild(alien, -1, nullptr);
+
+    // The receiving instance sits on a NON-default master.vol — loading must
+    // return it to the default, not leave the stale value behind.
+    Solar42NProcessor b;
+    auto* mv = b.apvts().getParameter("master.vol");
+    const float defNorm = mv->getDefaultValue();
+    mv->setValueNotifyingHost(defNorm < 0.5f ? defNorm + 0.3f : defNorm - 0.3f);
+    b.applyState(tree);
+
+    CHECK(std::abs(mv->getValue() - defNorm) < 1.0e-6f,
+          "param missing from the blob comes back at its DEFAULT");
+    if (auto* blend = b.apvts().getParameter("fx.blend"))
+        CHECK(std::abs(blend->getValue() - 0.31f) < 1.0e-4f,
+              "param present in the blob keeps the blob's value");
+    CHECK(!b.apvts().state.getChildWithProperty("id", juce::var("m9.futureKnob")).isValid(),
+          "unknown param from a newer build is dropped");
+    CHECK((int) b.currentFullState().getProperty("stateVersion", 0) >= 1,
+          "re-saved state carries a stateVersion stamp");
+
+    stabilize(b, 512);
+    CHECK(allFinite(render(b, 512, 24)), "doctored state renders finite");
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -337,6 +385,7 @@ int main(int argc, char** argv)
     testRoundTrip();
     testFactoryPresets();
     testClickFreeSwitch();
+    testCrossBuildState();
 
     std::printf(failures == 0 ? "statecheck: ALL GREEN\n"
                               : "statecheck: %d FAILURE(S)\n",

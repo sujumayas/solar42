@@ -587,6 +587,10 @@ juce::ValueTree Solar42NProcessor::currentFullState()
 {
     auto tree = apvts_.copyState(); // deep copy incl. CABLES / KEYBOARD / UI
     writeSessionChildren(tree);
+    // Format stamp for .s42n files and DAW blobs alike. Loading tolerates any
+    // older (or absent) stamp via mergedWithDefaults(); bump only when a
+    // future change needs an explicit migration keyed off this value.
+    tree.setProperty("stateVersion", kStateVersion, nullptr);
     return tree;
 }
 
@@ -596,12 +600,39 @@ void Solar42NProcessor::getStateInformation(juce::MemoryBlock& destData)
         copyXmlToBinary(*xml, destData);
 }
 
+juce::ValueTree Solar42NProcessor::mergedWithDefaults(const juce::ValueTree& v) const
+{
+    // Cross-build safety: a state saved by an older build may be missing
+    // params added since (they must come back as DEFAULTS, not whatever the
+    // previous patch left behind) and may carry params that no longer exist
+    // (dropped). Start from the pristine tree and overlay what the state
+    // actually says.
+    auto merged = defaultState_.createCopy();
+    merged.copyPropertiesFrom(v, nullptr);
+    for (const auto& child : v)
+    {
+        if (child.hasType("PARAM"))
+        {
+            auto dest = merged.getChildWithProperty("id", child.getProperty("id"));
+            if (dest.isValid() && child.hasProperty("value"))
+                dest.setProperty("value", child.getProperty("value"), nullptr);
+        }
+        else
+        {
+            if (auto existing = merged.getChildWithName(child.getType()); existing.isValid())
+                merged.removeChild(existing, nullptr);
+            merged.addChild(child.createCopy(), -1, nullptr);
+        }
+    }
+    return merged;
+}
+
 void Solar42NProcessor::applyState(juce::ValueTree v)
 {
     if (!v.isValid() || !v.hasType(apvts_.state.getType()))
         return;
 
-    apvts_.replaceState(v);
+    apvts_.replaceState(mergedWithDefaults(v));
 
     // Cartridge slots: prefer the explicit child (M7 states); pre-M7 states
     // derive loaded = inserted + toggles. Order matters: trackers first so a

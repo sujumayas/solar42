@@ -21,3 +21,6 @@ app/compile_commands.json
 
 # Rendered audio scratch (goldens are committed explicitly under app/tests/goldens/)
 renders/scratch/
+# M8 calibration bank: regenerated every iteration by solar42n_calib (61 MB) —
+# keeper milestone WAVs stay committed, this working set does not.
+renders/calib/

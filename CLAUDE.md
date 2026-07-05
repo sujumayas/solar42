@@ -12,7 +12,9 @@ product lives in `app/`; everything else at root is research/reference docs.
    full control/jack census, normalled connections, voltage table, and the
    list of values the manuals do NOT specify.
 3. `00-LOG.md` — chronological log incl. listening verdicts (newest at bottom).
-4. `06-manual-digest.md` — manual digest (base-42 voice numbering; 07 wins on
+4. `09-calibration-protocol.md` — the M8 listening protocol: calib scenes →
+   constants → verdict table (kit: `app/tools/calib`, WAVs in `renders/calib/`).
+5. `06-manual-digest.md` — manual digest (base-42 voice numbering; 07 wins on
    42N specifics). `01`–`05` + `drone-lab/` are historical (early web
    experiment — do not extend it).
 

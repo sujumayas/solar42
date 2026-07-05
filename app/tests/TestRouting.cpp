@@ -109,6 +109,31 @@ TEST_CASE("LFO A modulates a drone generator through the patch bus", "[engine][r
     CHECK(diff / 24000.0 > 0.001);
 }
 
+TEST_CASE("cables survive a re-prepare (power cycle must not unplug)", "[engine][routing]")
+{
+    // Hosts call prepare on every transport/device/buffer change; the engine
+    // wiping its routing there left cables dead while the UI still drew them
+    // (found 2026-07-05 via a silent calibration render).
+    Rack rack;
+    rack.prepare(48000.0, 512);
+
+    Rack::Controls c;
+    c.seq.pulserHz = 8.0f;
+    rack.setControls(c);
+    rack.requestPatch(Inlet::VcoAVoctIn, Outlet::SeqCvOut);
+
+    std::vector<float> l(512), r(512);
+    rack.process(l.data(), r.data(), nullptr, nullptr, 512); // drain the patch
+    REQUIRE(rack.bus().isPatched(Inlet::VcoAVoctIn));
+
+    rack.prepare(48000.0, 512); // sample-rate / device change
+    rack.process(l.data(), r.data(), nullptr, nullptr, 512);
+    CHECK(rack.bus().isPatched(Inlet::VcoAVoctIn));
+
+    // And the patched signal actually flows again after the re-prepare.
+    CHECK(rack.bus().in(Inlet::VcoAVoctIn) == rack.bus().outRead(Outlet::SeqCvOut));
+}
+
 TEST_CASE("feedback patch (env out -> own CV) stays bounded", "[engine][routing]")
 {
     Rack rack;

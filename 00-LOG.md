@@ -365,3 +365,44 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
   sparse two-cluster pads through OCHRE's free-run reverse loop).
   **Ear check pending.** Panel eye check (M5/M6) still carries over — the
   preset bar + cartridge bay + tooltips are new on-screen items to glance at.
+
+### 2026-07-05 — app M8 kickoff: calibration kit + preset durability + two bug fixes
+- **Preset durability (user request: "presets must survive rebuilds").**
+  Two-part answer: (1) location — `PresetManager` was resolving user presets
+  to `~/Library/Solar42N/Presets` (JUCE's `userApplicationDataDirectory` is
+  `~/Library` on macOS, not Application Support); now presets live in
+  `~/Library/Application Support/Solar42N/Presets` and anything in the legacy
+  dir is auto-migrated on launch (the user's "Testing Preset.s42n" moved over
+  intact — presets were never inside the build tree, so rebuilds never
+  touched them). (2) format — `applyState()` now merges every loaded state
+  over the pristine default tree: params missing from an older build's
+  preset come back at their *defaults* (not stale values), params from a
+  newer build are dropped, and saves stamp a `stateVersion` for future
+  migrations. Covered by a new statecheck test (doctored older/newer blobs).
+- **Bug: cables died on re-prepare.** `Rack::prepare()` wiped the VoltBus
+  routing table, so every host `prepareToPlay` (transport start, buffer/device
+  change) silently unplugged all cables in the engine while the UI kept
+  drawing them. Found because the calibration renders patch then re-prepare —
+  the pulser scene came back silent. Fix: `VoltBus::clearBuffers()` re-inits
+  signal state but keeps `patched_` ("power-cycling the rack must not pull
+  patch cords"); regression test in `TestRouting.cpp`.
+- **Bug: standalone killed by macOS TCC.** Crash report 2026-07-04 22:22:
+  the JUCE MIDI-device scan touches Bluetooth and the Info.plist had no
+  `NSBluetoothAlwaysUsageDescription` → SIGABRT on launch day. Added
+  `BLUETOOTH_PERMISSION_ENABLED/TEXT` to `juce_add_plugin`.
+- **M8 calibration kit.** New `solar42n_calib` console tool renders 11
+  focused audition scenes through the REAL processor (real knob→physical
+  maps), one per tunable domain of `TuningConstants.h`: drone/VCO envelope
+  ranges, LFO A/B × range switches, pulser span, VOLT dirty zone, filter
+  range/self-osc/scream, double distortion, photo-sensor lag + flicker,
+  Papa Srapa spans, pan law/L-R skew, per-cartridge full-wet FX voicing.
+  Each print-out is a timeline sheet; `09-calibration-protocol.md` is the
+  new listening protocol (scene → constants → verdict table, A/B criteria
+  vs SOUND DEMO 3, freeze rules). Renders in `renders/calib/` (~5 min).
+  Scenes verified by segment-RMS/brightness analysis (e.g. LFO wobble 17×
+  brightness swing at 5 Hz, OCHRE one-shot fires twice, pan law flat).
+- Analytical pass over `TuningConstants.h` vs the 07 voltage table: no
+  contradictions found; all values stay as-authored pending ear verdicts.
+- **Ear check pending (the M8 loop proper):** listen through
+  `renders/calib/` with `09-calibration-protocol.md` open, give per-scene
+  PASS/ITERATE verdicts (cite SOUND DEMO 3 / video moments where possible).

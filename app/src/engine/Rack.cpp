@@ -59,7 +59,7 @@ void Rack::prepare(double sampleRate, int /*maxBlockSize*/)
     effector_.prepare(sampleRate, tolerances_);
     masterSm_.prepare(sampleRate, 0.01f, controls_.masterVol);
 
-    bus_.clearAll();
+    bus_.clearBuffers(); // keep cables patched across re-prepares
     setControls(controls_);
 }
 

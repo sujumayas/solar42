@@ -25,10 +25,17 @@ public:
 
     void clearAll() noexcept
     {
+        patched_.fill(kNoSource);
+        clearBuffers();
+    }
+
+    // Zero the signal state WITHOUT unplugging cables — prepare() re-inits
+    // DSP through this: power-cycling the rack must not pull patch cords.
+    void clearBuffers() noexcept
+    {
         for (auto& b : buffers_)
             b.fill(0.0f);
         zero_.fill(0.0f);
-        patched_.fill(kNoSource);
         resolveAll();
     }
 

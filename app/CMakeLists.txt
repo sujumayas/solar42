@@ -66,6 +66,10 @@ juce_add_plugin(Solar42N
     COPY_PLUGIN_AFTER_BUILD FALSE
     MICROPHONE_PERMISSION_ENABLED TRUE
     MICROPHONE_PERMISSION_TEXT "Solar 42N uses the audio input for its preamp / envelope follower."
+    # The standalone's MIDI-device scan touches Bluetooth; without this usage
+    # string macOS TCC kills the app (SIGABRT, seen 2026-07-04).
+    BLUETOOTH_PERMISSION_ENABLED TRUE
+    BLUETOOTH_PERMISSION_TEXT "Solar 42N scans for Bluetooth MIDI controllers."
 )
 
 target_sources(Solar42N PRIVATE
@@ -140,4 +144,24 @@ if(SOLAR42N_BUILD_TOOLS)
     if(SOLAR42N_BUILD_TESTS)
         add_test(NAME statecheck COMMAND solar42n_statecheck)
     endif()
+
+    # M8 calibration kit: renders one focused audition WAV per tunable domain
+    # of TuningConstants.h through the real processor (09-calibration-protocol.md).
+    juce_add_console_app(solar42n_calib PRODUCT_NAME "solar42n_calib")
+    target_sources(solar42n_calib PRIVATE
+        tools/calib/Main.cpp
+        src/plugin/PluginProcessor.cpp
+        src/plugin/PluginEditor.cpp
+    )
+    target_include_directories(solar42n_calib PRIVATE src)
+    target_compile_definitions(solar42n_calib PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_MODAL_LOOPS_PERMITTED=1
+    )
+    target_link_libraries(solar42n_calib PRIVATE
+        solar42n_engine
+        juce::juce_audio_utils
+        juce::juce_recommended_config_flags
+    )
 endif()

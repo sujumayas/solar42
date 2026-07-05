@@ -19,6 +19,7 @@ public:
     explicit PresetManager(Solar42NProcessor& p) : proc_(p)
     {
         userDir().createDirectory();
+        migrateLegacyPresets();
     }
 
     static constexpr const char* kExtension = ".s42n";
@@ -38,11 +39,16 @@ public:
     }
 
     // ---- user (.s42n files)
+    // On macOS userApplicationDataDirectory is ~/Library, NOT
+    // ~/Library/Application Support — descend explicitly so presets live in
+    // the conventional per-user location, outside any build tree.
     juce::File userDir() const
     {
-        return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-            .getChildFile("Solar42N")
-            .getChildFile("Presets");
+        auto base = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory);
+#if JUCE_MAC
+        base = base.getChildFile("Application Support");
+#endif
+        return base.getChildFile("Solar42N").getChildFile("Presets");
     }
 
     juce::StringArray userPresetNames() const
@@ -113,6 +119,31 @@ public:
     juce::String currentName() const { return current_; }
 
 private:
+    // Pre-2026-07-05 builds resolved userDir() to ~/Library/Solar42N/Presets
+    // (missed the "Application Support" hop). Adopt anything saved there:
+    // move if the name is free, otherwise leave the file untouched.
+    void migrateLegacyPresets()
+    {
+#if JUCE_MAC
+        const auto legacy =
+            juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                .getChildFile("Solar42N")
+                .getChildFile("Presets");
+        if (legacy == userDir() || !legacy.isDirectory())
+            return;
+        for (const auto& f : legacy.findChildFiles(juce::File::findFiles, false,
+                                                   "*" + juce::String(kExtension)))
+        {
+            const auto dest = userDir().getChildFile(f.getFileName());
+            if (!dest.existsAsFile())
+                f.moveFileTo(dest);
+        }
+        if (legacy.getNumberOfChildFiles(juce::File::findFilesAndDirectories) == 0
+            && legacy.deleteFile())
+            legacy.getParentDirectory().deleteFile(); // only succeeds when empty
+#endif
+    }
+
     void apply(juce::ValueTree tree, const juce::String& name, bool keepCurrentSerial)
     {
         if (keepCurrentSerial)

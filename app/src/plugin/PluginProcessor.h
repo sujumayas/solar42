@@ -60,6 +60,11 @@ public:
 
     uint64_t unitSerial() const noexcept { return rack_.tolerances().serial(); }
 
+    // Saved-state format stamp (DAW blobs + .s42n). Loading is tolerant of
+    // older/absent stamps (missing params -> defaults, unknown params ->
+    // dropped); bump only for changes that need an explicit migration.
+    static constexpr int kStateVersion = 1;
+
     juce::AudioProcessorValueTreeState& apvts() noexcept { return apvts_; }
     s42::Rack& rack() noexcept { return rack_; }
     solar::PatchBay& patchBay() noexcept { return patchBay_; }
@@ -74,6 +79,7 @@ private:
 
     void writeSessionChildren(juce::ValueTree& tree) const; // CARTRIDGES + TOLERANCES
     void applyUnitSerial(uint64_t serial);                  // suspend + reseed + re-prepare
+    juce::ValueTree mergedWithDefaults(const juce::ValueTree& v) const;
 
     static constexpr uint32_t packSlot(int cart, int prog) noexcept
     {
