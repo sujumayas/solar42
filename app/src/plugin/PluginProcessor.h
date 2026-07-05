@@ -5,6 +5,7 @@
 
 #include "engine/Rack.h"
 #include "engine/SeqlockBox.h"
+#include "engine/keyboard/MidiPerformer.h"
 #include "state/KeyboardState.h"
 #include "state/PatchBay.h"
 
@@ -12,7 +13,8 @@ namespace solar {
 class PresetManager;
 }
 
-class Solar42NProcessor : public juce::AudioProcessor
+class Solar42NProcessor : public juce::AudioProcessor,
+                          private juce::Timer
 {
 public:
     Solar42NProcessor();
@@ -96,6 +98,13 @@ private:
     // land here through a seqlock; gestures are plain atomics.
     s42::SeqlockBox<s42::KbConfig> kbShare_;
     solar::KbTouchState kbTouch_;
+
+    // MIDI-in (M9a): the performer lives on the audio thread; the timer is
+    // the message-thread half of latch mode, turning toggle-counter deltas
+    // into dN.hold parameter flips (panel HOLD and MIDI share one state).
+    void timerCallback() override;
+    s42::MidiPerformer midiPerf_;
+    uint32_t midiTogglesSeen_[6] = {};
     solar::KeyboardState kbState_ { apvts_.state,
                                     [this](const s42::KbConfig& c) { kbShare_.write(c); } };
     mutable s42::KbConfig kbConfigCache_ {};

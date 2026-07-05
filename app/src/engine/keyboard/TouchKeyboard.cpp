@@ -132,7 +132,7 @@ void TouchKeyboard::updateTouch(const KbTouch& touch) noexcept
 
         // Track the newest plate: keyboard-mode note + sequencer transpose.
         if (pressed != 0 && sd.orderLen > 0)
-            sd.plateV = config_.plateVolts[globalPlate(s, sd.order[sd.orderLen - 1])];
+            sd.plateV = plateRaw(touch, globalPlate(s, sd.order[sd.orderLen - 1]));
 
         sd.held = held;
 
@@ -143,8 +143,9 @@ void TouchKeyboard::updateTouch(const KbTouch& touch) noexcept
             {
                 // Legato: glide only when 2+ plates are touched together.
                 const bool glide = !config_.legato || sd.orderLen >= 2;
-                sd.target = sidePitch(s, config_.plateVolts[globalPlate(s, top)]);
-                setNote(sd, config_.plateVolts[globalPlate(s, top)], glide);
+                const float raw = plateRaw(touch, globalPlate(s, top));
+                sd.target = sidePitch(s, raw);
+                setNote(sd, raw, glide);
             }
             sd.activePlate = top;
             sd.gate = sd.orderLen > 0;
@@ -244,7 +245,7 @@ void TouchKeyboard::process(const KbTouch& touch, const float* clockJack, bool c
                     const uint16_t chord = sc.arp.hold ? sd.latched : sd.held;
                     if (sd.arp.tick(chord, sc.arp))
                     {
-                        const float raw = config_.plateVolts[globalPlate(s, sd.arp.curPlate)]
+                        const float raw = plateRaw(prevTouch_, globalPlate(s, sd.arp.curPlate))
                                           + (float) sd.arp.curTransposeSemis / 12.0f;
                         sd.target = sidePitch(s, raw);
                         setNote(sd, raw, true);

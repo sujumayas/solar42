@@ -1,5 +1,6 @@
 #pragma once
 
+#include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "engine/keyboard/KbConfig.h"
@@ -17,7 +18,8 @@ class SettingsDrawer : public juce::Component,
                        private juce::ChangeListener
 {
 public:
-    explicit SettingsDrawer(KeyboardState& state) : state_(state)
+    SettingsDrawer(KeyboardState& state, juce::AudioProcessorValueTreeState& apvts)
+        : state_(state), apvts_(apvts)
     {
         title_.setText("TOUCH KEYBOARD", juce::dontSendNotification);
         title_.setFont(juce::FontOptions(17.0f, juce::Font::bold));
@@ -509,6 +511,18 @@ private:
             addRow(names[i], row, 26);
         }
 
+        // MIDI-in (M9a): this one is an APVTS param (persisted with the rig,
+        // automatable), not keyboard-firmware state — hence the attachment.
+        addHeader("MIDI");
+        midiLatch_.setButtonText("Drone keys C1-F1 toggle HOLD");
+        midiLatch_.setTooltip("Off: MIDI notes C1-F1 gate drone voices 1-6 while held "
+                              "(like the DRONE VOICES keypad). On: each press flips that "
+                              "voice's HOLD latch.");
+        content_.addAndMakeVisible(midiLatch_);
+        midiLatchAtt_ = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+            apvts_, "midi.droneLatch", midiLatch_);
+        addRow({}, &midiLatch_);
+
         // Content height = sum of rows + margins.
         contentHeight_ = 8;
         for (const auto& r : rows_)
@@ -589,6 +603,7 @@ private:
     void changeListenerCallback(juce::ChangeBroadcaster*) override { refresh(); }
 
     KeyboardState& state_;
+    juce::AudioProcessorValueTreeState& apvts_;
     juce::Label title_;
     juce::TextButton close_;
     juce::Viewport viewport_;
@@ -607,6 +622,8 @@ private:
     juce::Component* presetRows_[4] = {};
     MaskEditor scaleMask_, arpRhythm_, seqRhythm_;
     StepEditor steps_;
+    juce::ToggleButton midiLatch_;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> midiLatchAtt_;
     int sideTab_ = 0;
     bool loading_ = false;
 };

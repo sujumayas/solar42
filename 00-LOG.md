@@ -431,3 +431,37 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
   knobs). Fidelity gaps: DRONE VOICES pads should be square, keyboard
   section should cluster plates around the center encoder/LCD group.
   Prioritized P1/P2/P3 list in the M9b spec.
+
+### 2026-07-05 — app M9a: MIDI-in — play the plates + drone voices from a keyboard
+- **What landed.** `s42::MidiPerformer` (`engine/keyboard/MidiPerformer.h`,
+  JUCE-free, header-only): held-MIDI-note state → the exact gestures the
+  panel produces. Notes 24–29 (C1–F1) gate drone voices 1–6 (omni); notes
+  36+ play the 12 plates (plate = note mod 12, C4–B4 = native tuning, each
+  keyboard octave away = ±1 V per-touch shift — the digital-only octave
+  reach, panel OCT untouched); velocity → pressure (floored at 0.05 so pp
+  notes cross the touch threshold); channel/poly aftertouch ride above the
+  velocity while held; CC64 sustains plates + momentary drone gates; CC123/
+  120 = panic. `KbTouch` grew `plateShift[12]` and `TouchKeyboard` applies
+  it pre-quantise in all three note paths (keyboard/arp/seq), so quantiser,
+  microtuning, twin/split, arp, seq and pressure modes all work from MIDI
+  exactly as from fingers.
+- **Drone gate checkbox (user decision).** APVTS param `midi.droneLatch`
+  (persisted, automatable; checkbox in the settings drawer under MIDI):
+  off = momentary gates like the DRONE VOICES keypad, on = each note-on
+  flips that voice's real `dN.hold` parameter — flipped on the message
+  thread via a 30 Hz processor timer draining atomic toggle counters, so
+  the panel HOLD buttons, host automation and MIDI share ONE latch state
+  (and the audio thread stays allocation-free).
+- **Seam.** All parsing in `processBlock`'s `MidiBuffer` — the JUCE
+  standalone wrapper feeds device MIDI through the same buffer, so
+  Standalone + AU + VST3 share one handler. MIDI plate touches merge with
+  mouse touches by max-pressure; a ringing MIDI note owns its plate's
+  octave shift (last-pressed wins on collisions).
+- **Sonic change: none by construction** — the adapter reuses the existing
+  touch path (all 25 pre-existing keyboard tests pass untouched), so no new
+  audition WAV; the audition IS the user playing their Arturia KeyLab 37
+  into the standalone (enable the device in Options → Audio/MIDI Settings).
+  **Hands-on verdict pending.**
+- Gate: 94/94 tests (+6 MIDI cases: plate map/octave shift/collision,
+  velocity floor + AT, momentary + sustain, latch counters, guard band,
+  V/OCT shift through the real firmware), pluginval SUCCESS, render smoke.

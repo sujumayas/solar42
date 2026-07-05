@@ -28,6 +28,7 @@ Solar42NProcessor::Solar42NProcessor()
     patchBay_.rebind();
     defaultState_ = apvts_.copyState(); // pristine tree; factory presets build on copies
     presetManager_ = std::make_unique<solar::PresetManager>(*this);
+    startTimerHz(30); // MIDI latch-mode HOLD flips (message thread)
 }
 
 Solar42NProcessor::~Solar42NProcessor() = default;
@@ -341,6 +342,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout Solar42NProcessor::createLay
         layout.add(std::move(grp));
     }
 
+    // ---- MIDI-in behaviour (M9a). Off = the C1-F1 drone keys gate like the
+    // DRONE VOICES keypad; on = each note-on flips that voice's HOLD latch.
+    {
+        auto grp = std::make_unique<Group>("midi", "MIDI", " | ");
+        grp->addChild(std::make_unique<B>(juce::ParameterID("midi.droneLatch", 1),
+                                          "MIDI · Drone Keys Latch Hold", false));
+        layout.add(std::move(grp));
+    }
+
     return layout;
 }
 
@@ -515,6 +525,7 @@ void Solar42NProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     lastSampleRate_ = sampleRate;
     lastBlockSize_ = samplesPerBlock;
     fadeStep_ = 1.0f / (float) (0.012 * sampleRate); // ~12 ms state-swap fade
+    midiPerf_.reset(); // no stuck notes across restarts
     rack_.prepare(sampleRate, samplesPerBlock);
     rack_.setControls(controlsFromParams());
 }
@@ -526,11 +537,43 @@ bool Solar42NProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
             || layouts.getMainInputChannelSet() == juce::AudioChannelSet::disabled());
 }
 
-void Solar42NProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void Solar42NProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
 
-    rack_.setControls(controlsFromParams());
+    // MIDI-in (M9a): one handler serves Standalone device input and DAW
+    // hosts — the wrapper delivers both through this buffer. Events are
+    // applied at block granularity, same as the panel's touch atomics.
+    midiPerf_.setLatch(param("midi.droneLatch") > 0.5f);
+    for (const auto metadata : midi)
+    {
+        const auto m = metadata.getMessage();
+        if (m.isNoteOn())
+            midiPerf_.noteOn(m.getNoteNumber(), m.getFloatVelocity());
+        else if (m.isNoteOff())
+            midiPerf_.noteOff(m.getNoteNumber());
+        else if (m.isChannelPressure())
+            midiPerf_.channelPressure((float) m.getChannelPressureValue() / 127.0f);
+        else if (m.isAftertouch())
+            midiPerf_.polyPressure(m.getNoteNumber(), (float) m.getAfterTouchValue() / 127.0f);
+        else if (m.isSustainPedalOn())
+            midiPerf_.sustain(true);
+        else if (m.isSustainPedalOff())
+            midiPerf_.sustain(false);
+        else if (m.isAllNotesOff() || m.isAllSoundOff())
+            midiPerf_.reset();
+    }
+
+    auto controls = controlsFromParams();
+    bool droneGate[6] = {};
+    midiPerf_.apply(controls.kbTouch, droneGate);
+    controls.droneKey[0] |= droneGate[0]; // voices 1,2,4,5 = classic array
+    controls.droneKey[1] |= droneGate[1];
+    controls.droneKey[2] |= droneGate[3];
+    controls.droneKey[3] |= droneGate[4];
+    controls.srapaKey[0] |= droneGate[2]; // voices 3,6 = Papa Srapas
+    controls.srapaKey[1] |= droneGate[5];
+    rack_.setControls(controls);
 
     const auto numSamples = buffer.getNumSamples();
     const bool hasInput = getTotalNumInputChannels() >= 2;
@@ -558,6 +601,29 @@ void Solar42NProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
 
     for (int ch = 2; ch < getTotalNumOutputChannels(); ++ch)
         buffer.clear(ch, 0, numSamples);
+}
+
+void Solar42NProcessor::timerCallback()
+{
+    // Latch mode: each MIDI note-on on C1-F1 bumped a counter on the audio
+    // thread; an odd delta flips that voice's HOLD parameter here on the
+    // message thread, so the panel button, host automation and MIDI agree.
+    static const char* const kHoldIds[6] = { "d1.hold", "d2.hold", "d3.hold",
+                                             "d4.hold", "d5.hold", "d6.hold" };
+    for (int v = 0; v < 6; ++v)
+    {
+        const uint32_t n = midiPerf_.toggles(v);
+        const uint32_t delta = n - midiTogglesSeen_[v];
+        midiTogglesSeen_[v] = n;
+        if ((delta & 1u) == 0)
+            continue;
+        if (auto* p = apvts_.getParameter(kHoldIds[v]))
+        {
+            p->beginChangeGesture();
+            p->setValueNotifyingHost(p->getValue() > 0.5f ? 0.0f : 1.0f);
+            p->endChangeGesture();
+        }
+    }
 }
 
 juce::AudioProcessorEditor* Solar42NProcessor::createEditor()

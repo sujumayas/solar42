@@ -107,6 +107,9 @@ struct KbConfig
 struct KbTouch
 {
     float plate[12] = {};        // capacitive pressure 0..1 per plate
+    int8_t plateShift[12] = {};  // per-touch octave shift in volts — MIDI-in
+                                 // only (the panel plays 0); lets a keyboard
+                                 // reach octaves without moving OCT state
     bool button[2] = {};         // transpose pushbuttons
 };
 

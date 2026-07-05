@@ -73,6 +73,14 @@ private:
         return config_.behaviour == KbBehaviour::Single ? local : side * 6 + local;
     }
 
+    // Raw (pre-quantise) pitch of a plate under a given touch: designated
+    // volts + that touch's octave shift (MIDI-in plays plates outside the
+    // panel's reach; finger touches always carry shift 0).
+    float plateRaw(const KbTouch& t, int gp) const noexcept
+    {
+        return config_.plateVolts[gp] + (float) t.plateShift[gp];
+    }
+
     float sidePitch(int side, float rawVolts) const noexcept;
     void setNote(Side& sd, float rawVolts, bool allowGlide) noexcept;
     void updateTouch(const KbTouch& touch) noexcept;

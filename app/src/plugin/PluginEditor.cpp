@@ -11,7 +11,7 @@ Solar42NEditor::Solar42NEditor(Solar42NProcessor& p)
       proc_(p),
       bar_(p.presets()),
       panel_(p.apvts(), p.rack(), p.patchBay(), p.keyboardState(), p.kbTouch()),
-      drawer_(p.keyboardState())
+      drawer_(p.keyboardState(), p.apvts())
 {
     addAndMakeVisible(bar_);
     addAndMakeVisible(panel_);
