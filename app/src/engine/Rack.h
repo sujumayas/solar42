@@ -12,6 +12,7 @@
 #include "engine/modules/EnvelopeModule.h"
 #include "engine/modules/Mixer.h"
 #include "engine/modules/ModStrip.h"
+#include "engine/keyboard/TouchKeyboard.h"
 #include "engine/modules/PapaSrapaVoice.h"
 #include "engine/modules/VcoVoice.h"
 
@@ -22,11 +23,12 @@ namespace s42 {
 // patch edits arrive through a lock-free command queue and are applied at
 // sub-block boundaries.
 //
-// Module set: LFO A/B, joystick, sequencer, preamp + follower, DRONE 1/2/4/5
-// (classic, with photo-sensors), DRONE 3/6 (Papa Srapa), VCO A/B + Envelope
-// A/B, 10-channel mixer (pan = filter routing), dual nonlinear Polivoks
-// filter + shared DIST/GAIN, dual FV-1 effector (M4), master. The touch
-// keyboard lands in M6.
+// Module set: touch keyboard (M6, the digital brain — runs first, its V/oct
+// and gates are normalled into the VCOs/envelopes), LFO A/B, joystick,
+// sequencer, preamp + follower, DRONE 1/2/4/5 (classic, with photo-sensors),
+// DRONE 3/6 (Papa Srapa), VCO A/B + Envelope A/B, 10-channel mixer (pan =
+// filter routing), dual nonlinear Polivoks filter + shared DIST/GAIN, dual
+// FV-1 effector (M4), master.
 class Rack
 {
 public:
@@ -61,6 +63,8 @@ public:
         MixerModule::Params mixer {};
         FilterParams filter {};
         EffectorModule::Params fx {};
+        KbConfig kb {};                       // touch keyboard firmware settings
+        KbTouch kbTouch {};                   // live plate/button gestures
         float roomLight = 0.35f;              // ambient light on the photo-sensors
         bool mainsFlicker = false;
         float masterVol = 0.7f;
@@ -94,6 +98,7 @@ private:
     CommandQueue cmdQueue_;
     Telemetry telemetry_;
 
+    TouchKeyboard keyboard_;
     LfoModule lfoA_, lfoB_;
     JoystickModule joy_;
     StepSequencerModule seq_;

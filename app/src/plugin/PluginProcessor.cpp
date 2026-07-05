@@ -315,6 +315,10 @@ s42::Rack::Controls Solar42NProcessor::controlsFromParams() const noexcept
     c.preamp.attackSec = expMap(param("envf.att"), 0.001f, 0.5f);
     c.preamp.releaseSec = expMap(param("envf.rel"), 0.01f, 2.0f);
 
+    kbShare_.read(kbConfigCache_); // keeps the last good copy on contention
+    c.kb = kbConfigCache_;
+    c.kbTouch = kbTouch_.snapshot();
+
     c.roomLight = param("room.light");
     c.mainsFlicker = param("room.flicker") > 0.5f;
     const float mv = param("master.vol");
@@ -360,8 +364,8 @@ juce::AudioProcessorEditor* Solar42NProcessor::createEditor()
 
 void Solar42NProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    // Params + cables (the CABLES child rides in the APVTS tree). M7 adds
-    // keyboard/cartridges/unit-serial.
+    // Params + cables + keyboard (CABLES/KEYBOARD children ride in the APVTS
+    // tree). M7 adds cartridges/unit-serial.
     if (auto xml = apvts_.copyState().createXml())
         copyXmlToBinary(*xml, destData);
 }
@@ -373,6 +377,7 @@ void Solar42NProcessor::setStateInformation(const void* data, int sizeInBytes)
         {
             apvts_.replaceState(juce::ValueTree::fromXml(*xml));
             patchBay_.rebind();
+            kbState_.rebind();
         }
 }
 

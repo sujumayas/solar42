@@ -106,9 +106,13 @@ inline constexpr float kFv1PotSmoothSec = 0.02f;  // RC on the pot/CV line
 inline constexpr float kFv1CvPerPot = 1.0f / 20.0f; // POTn = knob + CV/20 (X/Y/Z CV -10..+10 V)
 inline constexpr float kBlendSmoothSec = 0.01f;
 
-// ---- Keyboard slews (0-255 / 0-127 firmware units -> seconds, unspecified)
-inline constexpr float kPortamentoMaxSec = 2.5f;  // at 255
+// ---- Keyboard firmware (0-255 / 0-127 units -> physical values, unspecified)
+inline constexpr float kPortamentoMaxSec = 2.5f;  // at 255 (square-law knob feel)
 inline constexpr float kPressureSlewMaxSec = 4.0f;// rise/fall at 255
+inline constexpr float kVibratoMinHz = 0.1f;      // speed 0
 inline constexpr float kVibratoMaxHz = 12.0f;     // speed 127
+inline constexpr float kVibratoMaxSemis = 1.0f;   // depth 127, peak pitch swing
+inline constexpr float kVibratoDelayMaxSec = 2.0f;// delay 127, ramp-in time
+inline constexpr float kKbGateDuty = 0.5f;        // arp/seq gate = half a clock step
 
 } // namespace s42::tuning

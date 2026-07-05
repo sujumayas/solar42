@@ -28,6 +28,16 @@ struct TelemetryData
     float preampClip = 0.0f;        // preamp near rails this sub-block, 0/1
     float follower = 0.0f;          // env follower level, 0..1
     float followerGate = 0.0f;      // follower Schmitt gate, 0/1
+
+    // Touch keyboard (M6).
+    float kbGateL = 0.0f, kbGateR = 0.0f; // gate outs high, 0/1
+    float kbVoct = 0.0f, kbPress = 0.0f;  // V/OCT + PRESSURE jack volts
+    uint16_t kbHeld = 0;                  // held/latched plates, global bits
+    int32_t kbStep[2] = { -1, -1 };       // arp/seq position per side, -1 = keyboard mode
+    float kbExtClock = 0.0f;              // clocking from the CLOCK jack, 0/1
+    int32_t kbOctave = 0;                 // single-behaviour octave shift
+    float kbOffset[2] = {};               // transpose-offset toggles, 0/1
+
     float outL = 0.0f, outR = 0.0f; // master peak per sub-block, full-scale units
 };
 

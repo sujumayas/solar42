@@ -1,9 +1,12 @@
 #include "PluginEditor.h"
 
 Solar42NEditor::Solar42NEditor(Solar42NProcessor& p)
-    : juce::AudioProcessorEditor(p), panel_(p.apvts(), p.rack(), p.patchBay())
+    : juce::AudioProcessorEditor(p),
+      panel_(p.apvts(), p.rack(), p.patchBay(), p.keyboardState(), p.kbTouch()),
+      drawer_(p.keyboardState())
 {
     addAndMakeVisible(panel_);
+    addChildComponent(drawer_); // hidden until the keyboard's SETTINGS button
 
     panel_.onPan = [this](juce::Point<float> screenDelta)
     {
@@ -11,6 +14,12 @@ Solar42NEditor::Solar42NEditor(Solar42NProcessor& p)
         applyTransform();
     };
     panel_.onZoomToRect = [this](juce::Rectangle<int> r) { zoomToRect(r); };
+    panel_.onOpenKeyboardSettings = [this]
+    {
+        drawer_.setVisible(!drawer_.isVisible());
+        drawer_.toFront(false);
+    };
+    drawer_.onClose = [this] { drawer_.setVisible(false); };
 
     setResizable(true, true);
     setResizeLimits(900, 580, 3200, 2070);
@@ -43,6 +52,7 @@ void Solar42NEditor::applyTransform()
 void Solar42NEditor::resized()
 {
     applyTransform();
+    drawer_.setBounds(getLocalBounds().removeFromRight(juce::jmin(360, getWidth() / 3)));
 }
 
 void Solar42NEditor::zoomAt(juce::Point<float> viewPos, float newZoom)

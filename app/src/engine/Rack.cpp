@@ -31,6 +31,7 @@ void Rack::prepare(double sampleRate, int /*maxBlockSize*/)
 {
     sampleRate_ = sampleRate;
 
+    keyboard_.prepare(sampleRate);
     lfoA_.prepare(sampleRate);
     lfoB_.prepare(sampleRate);
     joy_.prepare(sampleRate);
@@ -66,6 +67,7 @@ void Rack::setControls(const Controls& c) noexcept
 {
     controls_ = c;
 
+    keyboard_.setConfig(c.kb);
     lfoA_.setParams(c.lfoA);
     lfoB_.setParams(c.lfoB);
     joy_.setParams(c.joy);
@@ -131,7 +133,13 @@ void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
     drainCommands();
 
     // Fixed hardware-mirroring order (backward cables read the previous
-    // sub-block — that's the feedback semantics, see VoltBus).
+    // sub-block — that's the feedback semantics, see VoltBus). The keyboard
+    // runs first: its V/oct + gates feed the VCO/envelope normals.
+    keyboard_.process(controls_.kbTouch,
+                      bus_.in(Inlet::KbClockIn), bus_.isPatched(Inlet::KbClockIn),
+                      bus_.in(Inlet::KbResetIn),
+                      bus_.out(Outlet::KbVoctOut), bus_.out(Outlet::KbGateLOut),
+                      bus_.out(Outlet::KbGateROut), bus_.out(Outlet::KbPressOut), n);
     lfoA_.process(bus_, Outlet::LfoAOut, n);
     lfoB_.process(bus_, Outlet::LfoBOut, n);
     joy_.process(bus_, n);
@@ -323,6 +331,17 @@ void Rack::publishTelemetry(float peakL, float peakR, int n) noexcept
     t.preampClip = preampPeak > 4.9f ? 1.0f : 0.0f;
     t.follower = bus_.outRead(Outlet::EnvFEnvOut)[n - 1] * 0.1f;
     t.followerGate = bus_.outRead(Outlet::EnvFGateOut)[n - 1] > 1.0f ? 1.0f : 0.0f;
+    t.kbGateL = bus_.outRead(Outlet::KbGateLOut)[n - 1] > 1.0f ? 1.0f : 0.0f;
+    t.kbGateR = bus_.outRead(Outlet::KbGateROut)[n - 1] > 1.0f ? 1.0f : 0.0f;
+    t.kbVoct = bus_.outRead(Outlet::KbVoctOut)[n - 1];
+    t.kbPress = bus_.outRead(Outlet::KbPressOut)[n - 1];
+    t.kbHeld = keyboard_.heldMask();
+    t.kbStep[0] = keyboard_.stepOf(0);
+    t.kbStep[1] = keyboard_.stepOf(1);
+    t.kbExtClock = keyboard_.usingExternalClock() ? 1.0f : 0.0f;
+    t.kbOctave = keyboard_.octaveShift();
+    t.kbOffset[0] = keyboard_.offsetEnabled(0) ? 1.0f : 0.0f;
+    t.kbOffset[1] = keyboard_.offsetEnabled(1) ? 1.0f : 0.0f;
     t.outL = peakL;
     t.outR = peakR;
     telemetry_.publish(t);

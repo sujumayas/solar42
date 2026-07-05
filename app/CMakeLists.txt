@@ -44,6 +44,8 @@ target_link_libraries(solar42n_fv1 PUBLIC solar42n_dsp)
 # ---------------------------------------------------------------- engine (JUCE-free)
 add_library(solar42n_engine STATIC
     src/engine/Rack.cpp
+    src/engine/keyboard/KbMenu.cpp
+    src/engine/keyboard/TouchKeyboard.cpp
     src/engine/modules/ClassicDroneVoice.cpp
     src/engine/modules/PapaSrapaVoice.cpp
     src/engine/modules/VcoVoice.cpp
@@ -99,6 +101,7 @@ if(SOLAR42N_BUILD_TESTS)
         tests/TestPolivoks.cpp
         tests/TestFv1.cpp
         tests/TestM5Panel.cpp
+        tests/TestKeyboard.cpp
     )
     target_link_libraries(solar42n_tests PRIVATE solar42n_engine Catch2::Catch2WithMain)
     target_compile_definitions(solar42n_tests PRIVATE

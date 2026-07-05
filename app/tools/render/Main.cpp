@@ -68,17 +68,21 @@ int main(int argc, char** argv)
     s42::Rack rack;
     rack.prepare(kSr, 512);
 
-    // M3 audition scene — the full analog path in one take:
+    // M6 audition scene — the drone bed from M3/M4 with the touch keyboard
+    // as the melodic layer, all through the hardware normals:
     //   DRONE 1  beating 4-gen cluster (M1's voice), panned toward filter L;
     //   DRONE 4  a slow second cluster on the right filter, LFO A on its
     //            sensor LED via the CV jack (gens 1-2 MOD down);
     //   DRONE 3  Papa Srapa: FM+AM siren-bird chirps, low in the mix;
-    //   VCO A    sequenced by the 5-step sequencer (CV -> 1v/oct, gate ->
-    //            Envelope A), saw, through the mixer center;
-    //   VCO B    default-normalled to VCO A's osc (CV AMT up = 2-op FM pad,
-    //            Envelope B HOLD open, low volume);
+    //   KEYBOARD arp, HOLD-latched minor triad (plates 1/4/8), variation x1
+    //            an octave up, portamento glide, clocked by the PATCHED
+    //            PULSER (SeqClockOut -> kb CLOCK in — the M6 verify patch);
+    //            V/OCT + GATE L reach both VCOs/envelopes via the normals;
+    //   VCO A    saw, articulated by Envelope A from the keyboard gate;
+    //   VCO B    default-normalled to VCO A's osc (CV AMT up = 2-op FM),
+    //            slower Envelope B blooms under each arp note;
     //   Filters  L dark/resonant, R brighter + LFO B wobble on CV L (MOD L),
-    //            DIST/GAIN warming everything.
+    //            DIST/GAIN warming everything, CATHEDRAL shimmer behind.
     s42::Rack::Controls c;
 
     auto& d1 = c.drone[0];
@@ -117,13 +121,26 @@ int main(int argc, char** argv)
     c.vcoB.wave01 = 0.62f;  // sine/tri zone
     c.vcoB.cvAmt = 0.35f;   // eats VCO A through the normal = 2-op FM
     c.vcoB.tune01 = 0.15f;
-    c.envB.hold = true;
+    c.envB.attackSec = 0.6f; // blooms under each arp note (gate via normal)
+    c.envB.decaySec = 1.0f;
+    c.envB.sustain = 0.5f;
+    c.envB.releaseSec = 1.2f;
 
-    c.seq.pulserHz = 2.2f;
+    // Touch keyboard (M6): HOLD-latched arp on a minor triad, one variation
+    // pass an octave up, gliding, clocked from the pulser patch below.
+    c.kb.side[0].mode = s42::KbMode::Arp;
+    c.kb.side[0].arp.hold = true;
+    c.kb.side[0].arp.clockRatio = s42::kKbClockUnity + 1; // x2 the pulser
+    c.kb.side[0].arp.variation = 1;
+    c.kb.side[0].arp.intervalSemis = 12;
+    c.kb.portamento = 70;
+    c.kb.vibSpeed = 60;
+    c.kb.vibDepth = 18;
+    c.kb.vibDelay = 50;
+    c.kbTouch.plate[0] = c.kbTouch.plate[3] = c.kbTouch.plate[7] = 0.6f;
+
+    c.seq.pulserHz = 2.2f; // the arp's clock source (patched into kb CLOCK)
     c.seq.stages = 5;
-    c.seq.cv[0] = 1.0f; c.seq.cv[1] = 1.583f; c.seq.cv[2] = 2.0f;
-    c.seq.cv[3] = 1.417f; c.seq.cv[4] = 0.583f;
-    c.seq.gateOn[3] = false; // a rest for articulation
 
     c.lfoA.rateHz = 0.15f; c.lfoA.wave = 1.0f;  // slow triangle -> sensor LED
     c.lfoB.rateHz = 0.28f; c.lfoB.wave = 0.9f;  // filter wobble
@@ -133,8 +150,8 @@ int main(int argc, char** argv)
     m.vol[s42::MixerModule::ChD1] = 0.55f;   m.pan[s42::MixerModule::ChD1] = 0.25f;
     m.vol[s42::MixerModule::ChD4] = 0.5f;    m.pan[s42::MixerModule::ChD4] = 0.75f;
     m.vol[s42::MixerModule::ChD3] = 0.22f;   m.pan[s42::MixerModule::ChD3] = 0.65f;
-    m.vol[s42::MixerModule::ChVcoA] = 0.42f; m.pan[s42::MixerModule::ChVcoA] = 0.45f;
-    m.vol[s42::MixerModule::ChVcoB] = 0.25f; m.pan[s42::MixerModule::ChVcoB] = 0.6f;
+    m.vol[s42::MixerModule::ChVcoA] = 0.55f; m.pan[s42::MixerModule::ChVcoA] = 0.45f;
+    m.vol[s42::MixerModule::ChVcoB] = 0.34f; m.pan[s42::MixerModule::ChVcoB] = 0.6f;
 
     c.filter.freqHzL = 950.0f;  c.filter.resL = 0.55f;
     c.filter.freqHzR = 1600.0f; c.filter.resR = 0.45f;
@@ -155,10 +172,11 @@ int main(int argc, char** argv)
     c.masterVol = 0.6f;
     rack.setControls(c);
 
-    // Patch cables: seq -> VCO A pitch + Envelope A gate; LFO A -> DRONE 4's
-    // sensor LED; LFO B -> filter CV L (CV R follows the 42N normal).
-    rack.requestPatch(s42::Inlet::VcoAVoctIn, s42::Outlet::SeqCvOut);
-    rack.requestPatch(s42::Inlet::EnvAGateIn, s42::Outlet::SeqGateOut);
+    // Patch cables: pulser -> keyboard CLOCK (arp sync — the keyboard's
+    // V/OCT and GATE L reach the VCOs/envelopes through the stock normals);
+    // LFO A -> DRONE 4's sensor LED; LFO B -> filter CV L (CV R follows the
+    // 42N normal).
+    rack.requestPatch(s42::Inlet::KbClockIn, s42::Outlet::SeqClockOut);
     rack.requestPatch(s42::Inlet::D4CvIn, s42::Outlet::LfoAOut);
     rack.requestPatch(s42::Inlet::FiltCvLIn, s42::Outlet::LfoBOut);
 
@@ -180,8 +198,9 @@ int main(int argc, char** argv)
     }
 
     writeWav16(out, l, r);
-    std::printf("solar42n_render: wrote %s (%.1f s, M4 full path: drones + srapa + "
-                "sequenced VCOs -> Polivoks + dist -> FV-1 shimmer)\n",
+    std::printf("solar42n_render: wrote %s (%.1f s, M6 full path: drones + srapa + "
+                "keyboard arp (pulser-clocked, normalled into the VCOs) -> "
+                "Polivoks + dist -> FV-1 shimmer)\n",
                 out.c_str(), seconds);
     return 0;
 }

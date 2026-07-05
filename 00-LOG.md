@@ -261,3 +261,57 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
 - Known M6+ leftovers: keypad buttons latch (hardware is momentary + HOLD),
   keyboard jack strip parked above the keyboard zone (render hides these),
   1-2-3 program toggles are combo boxes, no faithful cartridge-slot art yet.
+
+### 2026-07-04 — app M6: touch keyboard + drone keypad
+- **Firmware as pure JUCE-free logic** (`engine/keyboard/`, unit-tested):
+  `TouchKeyboard` (behaviours single/twin/split, per-side mode
+  keyboard/arp/seq, last-note priority, portamento + legato, vibrato LFO
+  with delay + pressure control), `Quantiser` (19 named scales + root +
+  per-note mask editor; **all notes off = microtonal**, plates hand-tunable
+  in 0.0025 V steps; LOAD SCALE also retunes the 12 plates to walk the
+  scale), `Arpeggiator` (Solar builds the arp from **plate numbers** not
+  incoming pitch; fwd/back/ping-pong/random, HOLD latch, variation ×1–3 by
+  a 1–12 semi interval, 1–8 step rhythm gate mask), `KbSequencer` (2–16
+  steps, free/key-advanced run, directions incl. endpoint-repeating
+  ping-pong, per-step gate/value, continuous-vs-gated CV, rhythm mask),
+  `KbClock` (internal 10–300 BPM, **auto-switch to external** on a CLOCK-in
+  pulse, BPM edit reverts to internal; per-consumer mult/div scaler),
+  `PressureShaper` (raw / ASR / AD / looped-AD / random + rise/fall),
+  `KbMenu` (encoder push-menu state machine: browse/edit + scale/rhythm/seq
+  sub-editors + preset page, two-line LCD display model).
+- **Rack integration**: keyboard runs FIRST in the fixed order, so its
+  V/OCT + GATE L reach both VCOs / envelopes through the M2 hardware
+  normals in the same sub-block; CLOCK-in / RESET-in jacks are live (arp
+  syncs to a patched pulser, RESET returns it to step 1). Config crosses to
+  the audio thread via a generic `SeqlockBox`; plate/button gestures are
+  plain atomics (`KbTouchState`). New `TuningConstants`: vibrato min/max Hz +
+  depth + delay, arp/seq gate duty (all M8-tunable).
+- **UI**: playable `KeyboardSection` replaces the M5 print placeholder —
+  12 plates (mouse Y in a plate = pressure = capacitive area; horizontal
+  drag glissandos; Shift-click = sticky finger for chords; scroll-on-plate
+  tunes it), two transpose buttons with offset LEDs + octave readout, the
+  push-encoder + green LCD rendering the faithful firmware menu, gate/clock/
+  step status row, and a SETTINGS button. Parallel `SettingsDrawer` (desktop
+  overlay) exposes the *same* KbConfig through modern combos/sliders/toggles
+  + a click-mask scale editor, a 16-step bar/gate editor and a preset rack —
+  both paths write one KEYBOARD state child so display + drawer + engine
+  always agree. Keyboard setup now **persists** with the plugin state
+  (config incl. microtuning + presets A–D; rebinds on setStateInformation).
+- Gate green: 85/85 test cases (~1.9k new assertions in `TestKeyboard.cpp`),
+  pluginval SUCCESS, render smoke. The M6 verify criteria are covered by
+  passing tests: glide on plates, arp locked to a patched pulser clock,
+  quantiser-off microtonal plate tuning.
+- Audition artifact: `renders/solar42n-m6-keyboardarp.wav` (24 s — the M4
+  drone/shimmer bed with the keyboard as the melodic layer: HOLD-latched
+  minor-triad arp, variation an octave up, portamento glide, clocked by the
+  PATCHED pulser and normalled into the VCOs; RMS −15 dBFS, L/R corr 0.72).
+  **Ear check pending.** **Panel eye check pending**: the standalone launched
+  clean but the first-run macOS mic-permission prompt is a system-modal only
+  the user can dismiss — click through it and look at the bottom-center
+  keyboard zone (play a plate, open SETTINGS, try an arp over the sequencer
+  pulser). This screenshot step carries over exactly like M5's panel eye
+  check did.
+- Prior M6+ leftovers status: keypad buttons still latch (toggle params —
+  momentary + HOLD nuance is cosmetic, deferred); keyboard jack strip stays
+  parked above the zone (the render hides them); 1-2-3 program toggles +
+  cartridge-slot art remain M7 polish.

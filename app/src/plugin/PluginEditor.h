@@ -2,12 +2,14 @@
 
 #include "PluginProcessor.h"
 #include "ui/PanelView.h"
+#include "ui/SettingsDrawer.h"
 
-// M5 editor: the full panel (jacks + cables + performance zone) scaled from
-// the logical 4950 x 3200 space. Zoom 100-300 % (Cmd+scroll / pinch anchored
-// at the cursor), scroll or drag empty panel space to pan, double-click a
-// section title band to zoom to that section, double-click the background to
-// fit. The M2 debug patch matrix is gone — the CableLayer is the patching UI.
+// M5/M6 editor: the full panel (jacks + cables + performance zone) scaled
+// from the logical 4950 x 3200 space. Zoom 100-300 % (Cmd+scroll / pinch
+// anchored at the cursor), scroll or drag empty panel space to pan,
+// double-click a section title band to zoom to that section, double-click
+// the background to fit. The keyboard's SETTINGS button opens the (desktop-
+// space) settings drawer on the right edge.
 class Solar42NEditor : public juce::AudioProcessorEditor
 {
 public:
@@ -26,6 +28,7 @@ private:
     void zoomToRect(juce::Rectangle<int> panelRect);
 
     solar::PanelView panel_;
+    solar::SettingsDrawer drawer_;
     float zoom_ = 1.0f;
     juce::Point<float> pan_; // logical top-left of the visible window
 

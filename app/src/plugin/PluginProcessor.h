@@ -4,6 +4,8 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 
 #include "engine/Rack.h"
+#include "engine/SeqlockBox.h"
+#include "state/KeyboardState.h"
 #include "state/PatchBay.h"
 
 class Solar42NProcessor : public juce::AudioProcessor
@@ -37,6 +39,8 @@ public:
     juce::AudioProcessorValueTreeState& apvts() noexcept { return apvts_; }
     s42::Rack& rack() noexcept { return rack_; }
     solar::PatchBay& patchBay() noexcept { return patchBay_; }
+    solar::KeyboardState& keyboardState() noexcept { return kbState_; }
+    solar::KbTouchState& kbTouch() noexcept { return kbTouch_; }
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
@@ -46,6 +50,14 @@ private:
     s42::Rack rack_;
     juce::AudioProcessorValueTreeState apvts_;
     solar::PatchBay patchBay_ { apvts_.state, rack_ };
+
+    // Keyboard setup: message thread edits ride the KEYBOARD state tree and
+    // land here through a seqlock; gestures are plain atomics.
+    s42::SeqlockBox<s42::KbConfig> kbShare_;
+    solar::KbTouchState kbTouch_;
+    solar::KeyboardState kbState_ { apvts_.state,
+                                    [this](const s42::KbConfig& c) { kbShare_.write(c); } };
+    mutable s42::KbConfig kbConfigCache_ {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Solar42NProcessor)
 };

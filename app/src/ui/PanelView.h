@@ -2,14 +2,15 @@
 
 #include "engine/Rack.h"
 #include "ui/CableLayer.h"
+#include "ui/KeyboardSection.h"
 #include "ui/PanelLayout.h"
 #include "ui/PanelSections.h"
 
 namespace solar {
 
-// The full skeuomorphic panel (M5): every section, the jack print layer and
-// the cable layer stacked on top, plus the performance zone (physical stick,
-// keyboard placeholder print until M6, DRONE VOICES keypad). Lives in the
+// The full skeuomorphic panel (M5/M6): every section, the jack print layer
+// and the cable layer stacked on top, plus the performance zone (physical
+// stick, playable touch keyboard, DRONE VOICES keypad). Lives in the
 // logical 4950 x 3200 space; the host editor scales it with one transform and
 // drives zoom/pan through the callbacks below.
 class PanelView : public juce::Component,
@@ -22,8 +23,10 @@ public:
 
     std::function<void(juce::Point<float>)> onPan;          // screen-space delta
     std::function<void(juce::Rectangle<int>)> onZoomToRect; // logical panel rect
+    std::function<void()> onOpenKeyboardSettings;           // editor opens the drawer
 
-    PanelView(Apvts& s, s42::Rack& rack, PatchBay& bay)
+    PanelView(Apvts& s, s42::Rack& rack, PatchBay& bay,
+              KeyboardState& kbState, KbTouchState& kbTouch)
         : rack_(rack),
           drone1(s, "d1", "DRONE 1"), drone2(s, "d2", "DRONE 2"),
           drone4(s, "d4", "DRONE 4"), drone5(s, "d5", "DRONE 5"),
@@ -33,17 +36,22 @@ public:
           filter(s), mixer(s), effector(s),
           lfoA(s, "lfoA", "LFO A"), lfoB(s, "lfoB", "LFO B"),
           joystick(s), seq(s), preamp(s), envFollower(s),
-          joyPad(s, "joy.x", "joy.y"), keypad(s),
+          joyPad(s, "joy.x", "joy.y"), keyboard(kbState, kbTouch), keypad(s),
           roomLight(s, "room.light", "ROOM LIGHT", kKnobBlack),
           flicker(s, "room.flicker", "50 Hz"),
           cables(bay)
     {
         setLookAndFeel(&lnf_);
+        keyboard.onOpenSettings = [this]
+        {
+            if (onOpenKeyboardSettings)
+                onOpenKeyboardSettings();
+        };
         for (juce::Component* c : std::initializer_list<juce::Component*> {
                  &drone1, &drone2, &drone4, &drone5, &drone3, &drone6,
                  &vcoA, &vcoB, &envA, &envB, &filter, &mixer, &effector,
                  &lfoA, &lfoB, &joystick, &seq, &preamp, &envFollower,
-                 &joyPad, &keypad, &roomLight, &flicker, &jacks, &cables })
+                 &joyPad, &keyboard, &keypad, &roomLight, &flicker, &jacks, &cables })
             addAndMakeVisible(c);
         setSize(kLogicalW, kLogicalH);
         startTimerHz(30);
@@ -123,6 +131,7 @@ public:
         place(envFollower, layout::kEnvFollower);
         place(lfoB, layout::kLfoB);
         place(joyPad, layout::kJoyPad);
+        place(keyboard, layout::kKeyboard);
         place(keypad, layout::kKeypad);
         place(roomLight, layout::kRoomLight);
         place(flicker, layout::kFlicker);
@@ -146,6 +155,7 @@ private:
         seq.setTelemetry(t.seqStep, t.seqGate);
         preamp.setTelemetry(t.preampClip);
         envFollower.setTelemetry(t.follower, t.followerGate);
+        keyboard.setTelemetry(t);
     }
 
     void paintHeader(juce::Graphics& g)
@@ -193,24 +203,7 @@ private:
         g.drawText("MICROTONAL  DRONE  SYNTHESIZER",
                    layout::kKeyboard.x, layout::kBottom.y + 20, 1400, 60,
                    juce::Justification::centredLeft);
-
-        // Touch keyboard placeholder print — the playable surface lands in M6.
-        const auto kb = juce::Rectangle<int>(layout::kKeyboard.x, layout::kKeyboard.y,
-                                             layout::kKeyboard.w, layout::kKeyboard.h);
-        g.setColour(juce::Colour(0xff17171a));
-        g.fillRoundedRectangle(kb.toFloat(), 24.0f);
-        g.setColour(juce::Colour(0xffe9e4d8).withAlpha(0.9f));
-        for (int p = 0; p < 12; ++p) // 12 touch plates
-        {
-            const float w = (float) kb.getWidth() / 13.5f;
-            const float x = (float) kb.getX() + w * 0.5f + w * (float) p;
-            const float tall = (p % 2 == 0) ? 0.62f : 0.78f;
-            g.drawRoundedRectangle(x, (float) kb.getY() + (float) kb.getHeight() * (1.0f - tall) * 0.5f,
-                                   w * 0.72f, (float) kb.getHeight() * tall, 14.0f, 5.0f);
-        }
-        g.setFont(juce::FontOptions(40.0f, juce::Font::bold));
-        g.drawText("TOUCH KEYBOARD - M6", kb.reduced(0, 8),
-                   juce::Justification::centredBottom);
+        // The playable KeyboardSection component owns the keyboard zone.
     }
 
     SolarLookAndFeel lnf_;
@@ -229,6 +222,7 @@ private:
     PreampSection preamp;
     EnvFollowerSection envFollower;
     JoyPad joyPad;
+    KeyboardSection keyboard;
     KeypadSection keypad;
     LabeledKnob roomLight;
     SlideSwitch flicker;
