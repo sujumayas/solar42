@@ -163,6 +163,7 @@ int main(int argc, char** argv)
     // Z = long decay, blended behind the analog path.
     c.fx.cartridge = 0;
     c.fx.progL = c.fx.progR = 0;
+    c.fx.loadInserted(); // chips hold what the panel shows (M7 slot semantics)
     c.fx.x = 0.6f;
     c.fx.y = 0.15f;
     c.fx.z = 0.7f;

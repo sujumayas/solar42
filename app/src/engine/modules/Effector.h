@@ -21,17 +21,31 @@ namespace s42 {
 //
 // Hardware slot semantics: flipping a channel's toggle loads that program
 // from the *currently inserted* cartridge (RAM cleared, LFOs jammed);
-// swapping the cartridge alone changes nothing until a toggle flips.
+// swapping the cartridge alone changes nothing until a toggle flips. The
+// loaded pair per channel is therefore state of its own (M7): the caller
+// tracks toggle flips and passes what each chip should currently HOLD via
+// the loaded* fields — which may name a different cartridge than the
+// inserted one, and persists/restores exactly.
 class EffectorModule
 {
 public:
     struct Params
     {
         int cartridge = 0;         // inserted cartridge (library order)
-        int progL = 0, progR = 0;  // 1-2-3 toggles
+        int progL = 0, progR = 0;  // 1-2-3 toggle positions
+        int loadedCartL = 0, loadedProgL = 0; // what chip L actually holds
+        int loadedCartR = 0, loadedProgR = 0; // what chip R actually holds
         float x = 0.5f, y = 0.5f, z = 0.5f;
         float blend = 0.5f;
         bool potQuantize = true;   // 9-bit pot ADC character switch
+
+        // Convenience for tools/tests: hold what the panel shows.
+        void loadInserted() noexcept
+        {
+            loadedCartL = loadedCartR = cartridge;
+            loadedProgL = progL;
+            loadedProgR = progR;
+        }
     };
 
     void prepare(double hostRate, const Tolerances& tol)
@@ -49,18 +63,30 @@ public:
             s->prepare(hostRate, tuning::kFv1PotSmoothSec, 0.5f);
         blendSm_.prepare(hostRate, tuning::kBlendSmoothSec, params_.blend);
 
-        vmL_.loadProgram(fv1::CartridgeLibrary::words(params_.cartridge, params_.progL));
-        vmR_.loadProgram(fv1::CartridgeLibrary::words(params_.cartridge, params_.progR));
+        heldCartL_ = params_.loadedCartL;
+        heldProgL_ = params_.loadedProgL;
+        heldCartR_ = params_.loadedCartR;
+        heldProgR_ = params_.loadedProgR;
+        vmL_.loadProgram(fv1::CartridgeLibrary::words(heldCartL_, heldProgL_));
+        vmR_.loadProgram(fv1::CartridgeLibrary::words(heldCartR_, heldProgR_));
         fifoL_.reset();
         fifoR_.reset();
     }
 
     void setParams(const Params& p) noexcept
     {
-        if (p.progL != params_.progL)
-            vmL_.loadProgram(fv1::CartridgeLibrary::words(p.cartridge, p.progL));
-        if (p.progR != params_.progR)
-            vmR_.loadProgram(fv1::CartridgeLibrary::words(p.cartridge, p.progR));
+        if (p.loadedCartL != heldCartL_ || p.loadedProgL != heldProgL_)
+        {
+            heldCartL_ = p.loadedCartL;
+            heldProgL_ = p.loadedProgL;
+            vmL_.loadProgram(fv1::CartridgeLibrary::words(heldCartL_, heldProgL_));
+        }
+        if (p.loadedCartR != heldCartR_ || p.loadedProgR != heldProgR_)
+        {
+            heldCartR_ = p.loadedCartR;
+            heldProgR_ = p.loadedProgR;
+            vmR_.loadProgram(fv1::CartridgeLibrary::words(heldCartR_, heldProgR_));
+        }
         vmL_.setPotQuantize(p.potQuantize);
         vmR_.setPotQuantize(p.potQuantize);
         blendSm_.setTarget(p.blend);
@@ -133,6 +159,8 @@ private:
     }
 
     Params params_ {};
+    int heldCartL_ = 0, heldProgL_ = 0; // what each VM currently holds
+    int heldCartR_ = 0, heldProgR_ = 0;
     fv1::Fv1Vm vmL_, vmR_;
     PolyphaseResampler downL_, upL_, downR_, upR_;
     Fifo fifoL_, fifoR_;

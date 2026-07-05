@@ -564,16 +564,15 @@ TEST_CASE("EffectorModule: dry at blend 0, unity-ish wet through the full chain"
 
     // VIBROTREM tremolo with depth 0 and no plate = a wire through the chip:
     // resamplers + fixed-point VM + volts scaling should come back unity-ish.
-    // Faithful slot semantics: inserting a cartridge loads nothing until a
-    // 1-2-3 toggle flips, so the test flips them like a hardware user would.
+    // Faithful slot semantics (M7 API): the caller tracks 1-2-3 flips and
+    // passes what each chip holds via the loaded* fields.
     const double wetRms = [&] {
         s42::EffectorModule fx;
         fx.prepare(hostRate, tol);
         s42::EffectorModule::Params wet;
         wet.cartridge = 2;
-        wet.progL = wet.progR = 1; // flip away...
-        fx.setParams(wet);
-        wet.progL = wet.progR = 0; // ...and back to program 1 (TREMOLO)
+        wet.progL = wet.progR = 0; // TREMOLO
+        wet.loadInserted();
         wet.x = 0.0f;
         wet.z = 0.0f;
         wet.blend = 1.0f;
@@ -595,6 +594,74 @@ TEST_CASE("EffectorModule: dry at blend 0, unity-ish wet through the full chain"
     }();
     INFO("wet RMS " << wetRms);
     REQUIRE_THAT(wetRms, Catch::Matchers::WithinAbs(2.0 / std::sqrt(2.0), 0.15));
+}
+
+TEST_CASE("EffectorModule: cartridge-slot semantics — loaded program survives a swap "
+          "and restores exactly (M7)",
+          "[fv1][effector][state]")
+{
+    const double hostRate = 48000.0;
+    s42::Tolerances tol;
+
+    auto render = [&](s42::EffectorModule& fx, int samples) {
+        std::vector<float> out((size_t) samples);
+        for (int i = 0; i < samples; ++i)
+        {
+            float l = (float) (1.5 * std::sin(2.0 * M_PI * 220.0 * i / hostRate));
+            float r = l;
+            fx.process(l, r, 0.0f, 0.0f, 0.0f);
+            out[(size_t) i] = l;
+        }
+        return out;
+    };
+
+    const int n = 24000;
+
+    // Reference: TIME inserted, program 1 loaded on both chips, full wet.
+    s42::EffectorModule::Params timeLoaded;
+    timeLoaded.cartridge = 1; // TIME
+    timeLoaded.loadInserted();
+    timeLoaded.blend = 1.0f;
+
+    s42::EffectorModule ref;
+    ref.prepare(hostRate, tol);
+    ref.setParams(timeLoaded);
+    const auto refOut = render(ref, n);
+
+    // Swapping the inserted cartridge WITHOUT flipping a toggle changes
+    // nothing — the chips keep running the TIME program, sample-exact.
+    s42::EffectorModule swapped;
+    swapped.prepare(hostRate, tol);
+    swapped.setParams(timeLoaded);
+    auto midSwap = timeLoaded;
+    midSwap.cartridge = 3; // pull TIME, insert OCHRE — no toggle flip
+    swapped.setParams(midSwap);
+    const auto swapOut = render(swapped, n);
+    REQUIRE(swapOut == refOut);
+
+    // State restore: a fresh unit prepared with loaded != inserted (saved
+    // mid-swap) must sound like the loaded program, not the inserted one.
+    s42::EffectorModule restored;
+    restored.prepare(hostRate, tol);
+    restored.setParams(midSwap);
+    const auto restoredOut = render(restored, n);
+    REQUIRE(restoredOut == refOut);
+
+    // Now flip channel L's toggle: it loads from the INSERTED cartridge
+    // (OCHRE) — output must diverge from the TIME reference.
+    auto flipped = midSwap;
+    flipped.progL = 1;
+    flipped.loadedCartL = flipped.cartridge; // caller-side flip bookkeeping
+    flipped.loadedProgL = 1;
+    s42::EffectorModule flippedFx;
+    flippedFx.prepare(hostRate, tol);
+    flippedFx.setParams(timeLoaded);
+    flippedFx.setParams(flipped);
+    const auto flipOut = render(flippedFx, n);
+    double diff = 0.0;
+    for (int i = 0; i < n; ++i)
+        diff += std::abs((double) flipOut[(size_t) i] - (double) refOut[(size_t) i]);
+    REQUIRE(diff / n > 1e-4);
 }
 
 // ---------------------------------------------------------------- resampler

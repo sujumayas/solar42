@@ -5,6 +5,7 @@
 #include "state/PatchBay.h"
 #include "ui/PanelLayout.h"
 #include "ui/SolarLookAndFeel.h"
+#include "ui/Tooltips.h"
 
 namespace solar {
 
@@ -55,6 +56,7 @@ public:
 // per inlet, any number per outlet. Unpatched inlets show their hardware
 // normal as a dashed trace on hover.
 class CableLayer : public juce::Component,
+                   public juce::TooltipClient,
                    private juce::ChangeListener
 {
 public:
@@ -65,6 +67,16 @@ public:
     }
 
     ~CableLayer() override { bay_.removeChangeListener(this); }
+
+    // The hovered jack explains itself from the registry (M7): direction,
+    // voltage range, and which normal a cable would break.
+    juce::String getTooltip() override
+    {
+        if (dragging_ || hover_ < 0)
+            return {};
+        const auto& j = layout::kJacks[hover_];
+        return tips::jackTooltip(j.isInlet, j.index);
+    }
 
     bool hitTest(int x, int y) override
     {

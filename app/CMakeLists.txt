@@ -117,4 +117,27 @@ if(SOLAR42N_BUILD_TOOLS)
 
     add_executable(solar42n_render tools/render/Main.cpp)
     target_link_libraries(solar42n_render PRIVATE solar42n_engine)
+
+    # M7 verify harness: full-state round trip / factory presets / click-free
+    # switch against the REAL processor. Also renders preset audition WAVs.
+    juce_add_console_app(solar42n_statecheck PRODUCT_NAME "solar42n_statecheck")
+    target_sources(solar42n_statecheck PRIVATE
+        tools/statecheck/Main.cpp
+        src/plugin/PluginProcessor.cpp
+        src/plugin/PluginEditor.cpp
+    )
+    target_include_directories(solar42n_statecheck PRIVATE src)
+    target_compile_definitions(solar42n_statecheck PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_MODAL_LOOPS_PERMITTED=1
+    )
+    target_link_libraries(solar42n_statecheck PRIVATE
+        solar42n_engine
+        juce::juce_audio_utils
+        juce::juce_recommended_config_flags
+    )
+    if(SOLAR42N_BUILD_TESTS)
+        add_test(NAME statecheck COMMAND solar42n_statecheck)
+    endif()
 endif()

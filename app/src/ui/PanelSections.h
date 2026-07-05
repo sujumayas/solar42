@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "ui/SolarLookAndFeel.h"
+#include "ui/Tooltips.h"
 
 // One component per silk-screened section, laid out in LOGICAL panel units as
 // fractions of each section's rectangle — the same fractions the jack census
@@ -41,6 +42,15 @@ struct LabeledKnob : juce::Component
         label.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(label);
         attach = std::make_unique<Apvts::SliderAttachment>(s, paramId, slider);
+
+        // M7 conveniences: hint, value bubble in real units (the attachment
+        // wires the parameter's text functions), double-click = default.
+        if (auto* p = s.getParameter(paramId))
+        {
+            slider.setTooltip(tips::controlTooltip(paramId, p->getName(64)));
+            slider.setDoubleClickReturnValue(true, p->convertFrom0to1(p->getDefaultValue()));
+            slider.setPopupDisplayEnabled(true, false, nullptr);
+        }
     }
 
     void resized() override
@@ -66,6 +76,8 @@ struct SlideSwitch : juce::Component
         button.getProperties().set("switch", 1);
         addAndMakeVisible(button);
         attach = std::make_unique<Apvts::ButtonAttachment>(s, paramId, button);
+        if (auto* p = s.getParameter(paramId))
+            button.setTooltip(tips::controlTooltip(paramId, p->getName(64)));
     }
 
     void resized() override { button.setBounds(getLocalBounds()); }
@@ -84,6 +96,8 @@ struct PushButton : juce::Component
         button.setColour(juce::TextButton::buttonOnColourId, led);
         addAndMakeVisible(button);
         attach = std::make_unique<Apvts::ButtonAttachment>(s, paramId, button);
+        if (auto* p = s.getParameter(paramId))
+            button.setTooltip(tips::controlTooltip(paramId, p->getName(64)));
     }
 
     void resized() override { button.setBounds(getLocalBounds()); }
@@ -98,7 +112,10 @@ struct ChoiceBox : juce::Component
     ChoiceBox(Apvts& s, const juce::String& paramId, const juce::String& text)
     {
         if (auto* p = dynamic_cast<juce::AudioParameterChoice*>(s.getParameter(paramId)))
+        {
             box.addItemList(p->choices, 1);
+            box.setTooltip(tips::controlTooltip(paramId, p->getName(64)));
+        }
         addAndMakeVisible(box);
         label.setText(text, juce::dontSendNotification);
         label.setJustificationType(juce::Justification::centred);
@@ -122,6 +139,99 @@ struct ChoiceBox : juce::Component
     juce::ComboBox box;
     juce::Label label;
     std::unique_ptr<Apvts::ComboBoxAttachment> attach;
+};
+
+// The effector's 1-2-3 program toggle: a real 3-position slide switch (M7,
+// replacing the M5 combo-box placeholder). Click a detent or drag; flipping
+// it is the hardware act that loads a program from the inserted cartridge.
+struct Prog3Switch : juce::Component,
+                     public juce::SettableTooltipClient
+{
+    Prog3Switch(Apvts& s, const juce::String& paramId, const juce::String& text)
+        : title_(text),
+          att_(*s.getParameter(paramId),
+               [this](float v)
+               {
+                   idx_ = juce::jlimit(0, 2, (int) std::lround(v));
+                   repaint();
+               })
+    {
+        if (auto* p = s.getParameter(paramId))
+            setTooltip(tips::controlTooltip(paramId, p->getName(64)));
+        att_.sendInitialUpdate();
+    }
+
+    void mouseDown(const juce::MouseEvent& e) override { pick(e); }
+    void mouseDrag(const juce::MouseEvent& e) override { pick(e); }
+
+    void paint(juce::Graphics& g) override
+    {
+        auto r = getLocalBounds().toFloat();
+        auto head = r.removeFromTop(r.getHeight() * 0.22f);
+        g.setColour(kInk);
+        g.setFont(juce::FontOptions(head.getHeight() * 0.9f, juce::Font::bold));
+        g.drawText(title_, head, juce::Justification::centred);
+
+        const auto track = trackRect();
+        g.setColour(juce::Colour(0xff17171a));
+        g.fillRoundedRectangle(track, track.getWidth() * 0.5f);
+
+        g.setFont(juce::FontOptions(track.getWidth() * 0.62f, juce::Font::bold));
+        for (int i = 0; i < 3; ++i)
+        {
+            g.setColour(kCream.withAlpha(i == idx_ ? 0.0f : 0.55f));
+            g.drawText(juce::String(i + 1),
+                       juce::Rectangle<float>(track.getX() - 40.0f, slotY(i) - 16.0f,
+                                              36.0f, 32.0f),
+                       juce::Justification::centredRight);
+        }
+
+        // Handle at the selected detent.
+        const float hw = track.getWidth() * 1.9f;
+        g.setColour(juce::Colour(0xffe4e0d4));
+        g.fillRoundedRectangle(track.getCentreX() - hw * 0.5f, slotY(idx_) - hw * 0.35f,
+                               hw, hw * 0.7f, 6.0f);
+        g.setColour(kInk);
+        g.drawRoundedRectangle(track.getCentreX() - hw * 0.5f, slotY(idx_) - hw * 0.35f,
+                               hw, hw * 0.7f, 6.0f, 2.5f);
+    }
+
+private:
+    juce::Rectangle<float> trackRect() const
+    {
+        auto r = getLocalBounds().toFloat();
+        r.removeFromTop(r.getHeight() * 0.22f);
+        const float w = juce::jmax(10.0f, r.getWidth() * 0.16f);
+        return { r.getCentreX() - w * 0.5f, r.getY() + r.getHeight() * 0.10f,
+                 w, r.getHeight() * 0.80f };
+    }
+
+    float slotY(int i) const
+    {
+        const auto t = trackRect();
+        return t.getY() + t.getHeight() * (0.14f + 0.36f * (float) i);
+    }
+
+    void pick(const juce::MouseEvent& e)
+    {
+        int best = 0;
+        float bestD = 1.0e9f;
+        for (int i = 0; i < 3; ++i)
+        {
+            const float d = std::abs((float) e.y - slotY(i));
+            if (d < bestD)
+            {
+                bestD = d;
+                best = i;
+            }
+        }
+        if (best != idx_)
+            att_.setValueAsCompleteGesture((float) best);
+    }
+
+    juce::String title_;
+    int idx_ = 0;
+    juce::ParameterAttachment att_;
 };
 
 // ---------------------------------------------------------------- section base
@@ -591,9 +701,9 @@ class EffectorSection : public Section
 public:
     explicit EffectorSection(Apvts& s) : Section("DUAL EFFECTOR")
     {
-        cart = std::make_unique<ChoiceBox>(s, "fx.cart", "cartridge slot");
-        progL = std::make_unique<ChoiceBox>(s, "fx.progL", "L");
-        progR = std::make_unique<ChoiceBox>(s, "fx.progR", "R");
+        cart = std::make_unique<ChoiceBox>(s, "fx.cart", "");
+        progL = std::make_unique<Prog3Switch>(s, "fx.progL", "L");
+        progR = std::make_unique<Prog3Switch>(s, "fx.progR", "R");
         x = std::make_unique<LabeledKnob>(s, "fx.x", "X", kKnobOrange);
         y = std::make_unique<LabeledKnob>(s, "fx.y", "Y", kKnobOrange);
         z = std::make_unique<LabeledKnob>(s, "fx.z", "Z", kKnobOrange);
@@ -610,9 +720,9 @@ public:
         place(*x, 0.005, 0.48, 0.08, 0.42);
         place(*y, 0.085, 0.48, 0.08, 0.42);
         place(*z, 0.165, 0.48, 0.08, 0.42);
-        place(*progL, 0.28, 0.30, 0.08, 0.32);
-        place(*cart, 0.37, 0.24, 0.22, 0.42);
-        place(*progR, 0.60, 0.30, 0.08, 0.32);
+        place(*progL, 0.29, 0.26, 0.06, 0.50);
+        place(*cart, 0.385, 0.30, 0.19, 0.30);
+        place(*progR, 0.61, 0.26, 0.06, 0.50);
         place(*blend, 0.71, 0.30, 0.11, 0.44);
         place(*master, 0.83, 0.22, 0.16, 0.60);
     }
@@ -620,13 +730,29 @@ public:
 private:
     void paintExtras(juce::Graphics& g) override
     {
+        // Cartridge bay: a slot frame around the inserted-cartridge selector,
+        // flanked by the two 1-2-3 program toggles.
+        const auto bay = frac(0.375, 0.22, 0.21, 0.50).toFloat();
+        g.setColour(juce::Colour(0xff2b2b30));
+        g.fillRoundedRectangle(bay, 12.0f);
+        g.setColour(kInk);
+        g.drawRoundedRectangle(bay, 12.0f, 4.0f);
+        g.setColour(kCream.withAlpha(0.8f));
+        g.setFont(juce::FontOptions(24.0f, juce::Font::bold));
+        g.drawText("CARTRIDGE", bay.withTrimmedBottom(bay.getHeight() * 0.72f),
+                   juce::Justification::centred);
+        g.setColour(kCream.withAlpha(0.45f));
+        g.drawText("flip 1-2-3 to load", bay.withTrimmedTop(bay.getHeight() * 0.74f),
+                   juce::Justification::centred);
+
         g.setColour(kAccentRed);
         g.setFont(juce::FontOptions(26.0f, juce::Font::bold));
-        g.drawText("1-2-3", frac(0.28, 0.62, 0.08, 0.08), juce::Justification::centred);
-        g.drawText("1-2-3", frac(0.60, 0.62, 0.08, 0.08), juce::Justification::centred);
+        g.drawText("1-2-3", frac(0.28, 0.78, 0.08, 0.08), juce::Justification::centred);
+        g.drawText("1-2-3", frac(0.60, 0.78, 0.08, 0.08), juce::Justification::centred);
     }
 
-    std::unique_ptr<ChoiceBox> cart, progL, progR;
+    std::unique_ptr<ChoiceBox> cart;
+    std::unique_ptr<Prog3Switch> progL, progR;
     std::unique_ptr<LabeledKnob> x, y, z, blend, master;
 };
 

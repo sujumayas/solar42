@@ -81,6 +81,7 @@ public:
                  int numSamples) noexcept;
 
     Tolerances& tolerances() noexcept { return tolerances_; }
+    const Tolerances& tolerances() const noexcept { return tolerances_; }
     const VoltBus& bus() const noexcept { return bus_; }
     const Telemetry& telemetry() const noexcept { return telemetry_; }
 

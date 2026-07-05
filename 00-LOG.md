@@ -315,3 +315,53 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
   momentary + HOLD nuance is cosmetic, deferred); keyboard jack strip stays
   parked above the zone (the render hides them); 1-2-3 program toggles +
   cartridge-slot art remain M7 polish.
+
+### 2026-07-04 — app M7: state, presets, conveniences
+- **Full save/recall round-trip.** Two new state children join CABLES/KEYBOARD:
+  `CARTRIDGES` persists what each FV-1 chip actually HOLDS — the engine's
+  `EffectorModule` now takes explicit loaded-slot params (flip a 1-2-3 toggle
+  = latch that program from the inserted cartridge; swapping the cartridge
+  alone changes nothing, and a saved mid-swap slot restores exactly), and
+  `TOLERANCES` persists the unit serial (restore = same "hardware unit";
+  changing it suspends, reseeds and re-prepares the rack). The editor's size
+  rides a `UI` child. Pre-M7 states still load (loaded slots derive from the
+  panel, serial keeps the current unit).
+- **Presets.** `PresetManager` + a preset bar strip above the panel (outside
+  the skeuomorphic surface, per plan): 6 code-built factory presets — Init,
+  Cathedral Bloom (the M4 bed), Pulser Arp (the M6 scene), Srapa Aviary
+  (S&H-stepped filter + TIME), Sensor Swell (LFO-on-LED in a dark room +
+  VIBROTREM), Reverse Air (OCHRE free-run loop) — plus user `.s42n` snapshots
+  in ~/Library/Application Support/Solar42N/Presets, prev/next steppers, and
+  a Swap Unit action (new tolerance serial, same patch). Loading a preset
+  keeps YOUR unit serial — a patch always sounds like your unit.
+- **Click-free switching.** Preset loads fade the output (~12 ms), apply on
+  the message thread once the fade has *measurably* landed (wall-clock timers
+  proved unreliable under a starved message loop — the apply gates on actual
+  fade progress, with an idle-transport fast path and a 250 ms hard cap),
+  then fade back. Verified by test: the swap dips to true digital silence
+  with no hard sample step.
+- **Conveniences.** Every jack now explains itself on hover from the frozen
+  registry (direction, voltage range, which normal a cable breaks); curated
+  tooltips on the non-obvious controls (VOLT's dirty zone, PAN-as-filter-
+  routing, slot semantics, 9-bit pots...). Automation naming pass: parameters
+  grouped per panel section, DAW lanes and knob bubbles show real units
+  (s / Hz / dB / V / % / L-R), double-click returns a knob to default. The
+  effector's 1-2-3 combos became real 3-position slide switches in a drawn
+  cartridge bay ("flip 1-2-3 to load"). Room-light control already existed
+  (M5) — confirmed persisted like everything else.
+- **Verification.** New `solar42n_statecheck` harness (ctest + check.sh, runs
+  the REAL processor): randomized-rig round-trip → every param + child
+  restored and two relaunched instances render sample-identical audio (the
+  honest reading of "DAW kill/relaunch → identical sound": free-running
+  phases can't survive a kill, so relaunch-vs-relaunch is the guarantee);
+  all six factory presets load through the faded path and render finite,
+  audible sound; the click-free bound above. Gate: 87/87 (86 Catch2 cases
+  incl. the new effector slot-semantics test + statecheck), pluginval
+  SUCCESS, render smoke.
+- Audition artifacts (new sounds the user hasn't heard yet):
+  `renders/solar42n-m7-preset-srapa-aviary.wav` (20 s — both Papa Srapas as
+  an FM/AM bird pair, DRONE 3's S&H stepping filter L off the pulser, TIME
+  delay-reverb) and `renders/solar42n-m7-preset-reverse-air.wav` (20 s —
+  sparse two-cluster pads through OCHRE's free-run reverse loop).
+  **Ear check pending.** Panel eye check (M5/M6) still carries over — the
+  preset bar + cartridge bay + tooltips are new on-screen items to glance at.
