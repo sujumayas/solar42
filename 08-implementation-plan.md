@@ -18,7 +18,9 @@
 | M6 — Touch keyboard + drone keypad | ✅ done | commit `13c2e08` (2026-07-04); 85/85 tests (+24 keyboard cases / ~1.9k assertions: quantiser 19-scale + microtonal + LOAD SCALE plate retune, last-note priority, portamento/legato glide, twin PRESSURE-as-right-Voct, split dual-mode, arp order/dir/variation/rhythm/HOLD/RESET, seq dir + gated-vs-continuous CV + key-run + plate transpose, clock auto-external + BPM-revert + mult/div scaler, 5 pressure modes, presets A–D, encoder menu + sub-editors, rack pulser→arp-clock normal); pluginval SUCCESS; firmware in `engine/keyboard/` (JUCE-free); playable `KeyboardSection` (plates=pressure, glissando, encoder+LCD menu) + parallel `SettingsDrawer`; KEYBOARD state child persists config+microtuning+presets; `renders/solar42n-m6-keyboardarp.wav` — **ear + panel eye check pending** |
 | M7 — State, presets, conveniences | ✅ done | commit `5fe42d9` (2026-07-04); 87/87 tests (86 Catch2 incl. new effector loaded-slot semantics + `solar42n_statecheck` harness: randomized full-state round-trip → relaunched twins render sample-identical, all 6 factory presets load/render, click-free switch fades to true silence); pluginval SUCCESS; CARTRIDGES child persists what each FV-1 chip HOLDS (mid-swap slots survive), TOLERANCES child persists the unit serial (+ Swap Unit action), UI child persists editor size; PresetManager + preset bar (6 factory presets, user `.s42n` in ~/Library/Application Support/Solar42N/Presets, prev/next, faded loads keep *your* serial); tooltips on all 63 jacks (from the registry: direction/range/normal) + curated control hints; automation pass: parameter groups per section, real units (s/Hz/dB/V/%/L-R), knob value bubbles + double-click default; 1-2-3 combos → real 3-pos switches + cartridge-bay art; `renders/solar42n-m7-preset-srapa-aviary.wav`, `renders/solar42n-m7-preset-reverse-air.wav` — **ear check pending** |
 | M8 — Calibration by ear | 🔶 in progress | kit commit `73e959e` (2026-07-05): `solar42n_calib` renders 11 per-domain audition scenes through the real processor into `renders/calib/`; listening protocol + verdict table in `09-calibration-protocol.md`; 88/88 tests; pluginval SUCCESS. Same session: preset location fix + legacy migration (user preset preserved), cross-build state merge (+statecheck case), cable-wipe-on-re-prepare engine bug fixed (+TestRouting case), standalone Bluetooth TCC crash fixed. **Ear loop pending: per-scene verdicts vs SOUND DEMO 3** |
-| M9 — RT-safety, performance, MIDI, release | ⬜ | |
+| M9a — MIDI-in: keyboard + drone gates | 🔶 in progress | scoped 2026-07-05 with user (no hardware unit on hand → digital-only feature pulled forward); decisions: C1–F1→drones 1–6, momentary/toggle gate **checkbox**, per-note octave shift beyond the panel OCT range; full spec in **“M9 breakdown”** below |
+| M9b — UI legibility & fidelity pass | ⬜ scoped | full-panel review vs `solar42n-panel-1.png` done 2026-07-05; prioritized findings list in **“M9 breakdown”** below |
+| M9c — RT-safety, performance, release | ⬜ | original M9 scope minus M9a (MIDI clock + CC-learn live here) |
 
 ## Context
 
@@ -103,7 +105,7 @@ Targets:
 - **APVTS** for ~200 automatable params, IDs `section.control` (`d1.gen3.tune`, `filtL.freq`, `fx.x`…), ~10 ms smoothing at the engine edge.
 - ValueTree children: `CABLES` (jack-id string pairs), `KEYBOARD` (full config incl. microtuning + presets A–D), `CARTRIDGES`, `TOLERANCES` (unit serial), `UI`.
 - Presets: full-rig `.s42n` snapshots; factory presets (manual patch examples + demo-style drones) embedded; user presets in `~/Library/Application Support/Solar42N/Presets`; preset bar lives outside the skeuomorphic panel.
-- MIDI (M9): notes → touch keyboard (velocity/poly-AT → pressure), MIDI clock → clock ins, right-click CC learn. Strictly an adapter layer.
+- MIDI (M9a, scoped 2026-07-05 — see the **M9 breakdown** for the binding spec): notes → touch plates with per-note octave shift, C1–F1 → drone gates (momentary-or-latch checkbox), velocity/aftertouch → pressure, CC64 sustain. Strictly an adapter layer. MIDI clock → clock ins and right-click CC learn deferred to M9c.
 
 ## Milestones
 
@@ -117,6 +119,92 @@ Targets:
 - **M7 — State & conveniences.** Full save/recall round-trip (params + cables + keyboard + cartridges), factory presets, tooltips, room-light control, automation naming pass. *Verify: DAW kill/relaunch → identical sound; click-free preset switch.*
 - **M8 — Calibration ("tuning by ear").** Systematic pass over `TuningConstants.h` vs SOUND DEMO 3 + hardware videos: envelopes, LFO/pulser ranges, dirty-zone onset, filter drive/self-osc, sensor lag, FX voicing, pan law, tolerance magnitudes. Freeze constants; commit offline-render goldens; log verdicts in `00-LOG.md` style.
 - **M9 — RT-safety, performance, MIDI, release pass.** Audio-thread audit (no alloc/locks; malloc guard + sanitizer), CPU measurement (< ~10 % of a core @ 48 k/128), pluginval strictness 10 + auval, `solar42n_render` regression in `check.sh`, MIDI note/clock/CC-learn, signing/notarization notes.
+
+### M9 breakdown (scoped 2026-07-05 in session with the user)
+
+Context: the user has **no hardware Solar 42 on hand** to A/B against, so the M8
+ear loop is paused and M9 was re-sliced to pull the **digital-only features**
+forward. These specs are decisions made *with the user* — treat them as locked.
+
+**M9a — MIDI-in: play the Microtonal Drone Synthesizer + drone voices from a
+MIDI keyboard (target controller: Arturia KeyLab 37).**
+
+- **Seam**: parse the `MidiBuffer` in `processBlock` — the JUCE standalone
+  wrapper delivers device MIDI through the same buffer, so ONE handler serves
+  Standalone + AU + VST3. Mapping logic lives in a JUCE-free unit-tested class
+  (engine side), the processor only feeds it raw note/CC events. MIDI touches
+  enter the exact same path as mouse touches (`KbTouch`), so quantiser,
+  microtuning, twin/split, arp, seq and pressure modes all work from MIDI for
+  free.
+- **Note map (omni — all channels):**
+  - **MIDI 24–29 (C1–F1) → drone voices 1–6** (d1…d6; d3/d6 are the Papa
+    Srapas). Chromatic order = voice number order.
+  - **MIDI 36+ → the 12 plates**: plate index = note mod 12 (C → plate 1).
+    **Notes 60–71 (C4–B4) play plates at native tuning; each keyboard octave
+    away shifts that touch ±1 V** — *without* moving the panel OCT buttons.
+    This is the deliberate digital-only capability the user asked for:
+    reaching octaves the hardware can't while the panel state stays put.
+    Implementation: `KbTouch` grows a per-plate octave-shift field (JUCE-free
+    engine change, unit-tested); same-plate collisions (one plate held at two
+    octaves) resolve last-pressed-wins, release restores the survivor.
+- **Dynamics**: note-on **velocity → touch pressure**; **channel + poly
+  aftertouch** re-shape pressure while held (KeyLab 37 sends channel AT);
+  the existing pressure modes (raw/ASR/AD/loopAD/random) apply downstream
+  unchanged.
+- **Drone gate mode — user decision: BOTH, via a persisted checkbox**
+  (APVTS param, surfaced in the settings drawer): *momentary* = gate high
+  while the key is held, exactly like the on-panel DRONE VOICES keypad;
+  *toggle* = note-on flips that voice's HOLD latch (press once → drone stays,
+  press again → off). The user explicitly wants to switch between both
+  workflows.
+- **CC64 sustain pedal**: holds plate touches; in momentary mode also holds
+  drone gates.
+- **Out of scope for M9a** (lives in M9c): MIDI clock → clock ins, CC learn.
+- *Verify*: unit tests on the mapper (note→plate/shift/drone routing,
+  velocity/AT pressure, sustain, octave-collision policy, both gate modes);
+  hands-on test with the KeyLab 37; check.sh green.
+
+**M9b — UI legibility & fidelity pass (full-panel review vs
+`solar42n-panel-1.png`, 2026-07-05).**
+
+Root cause of the user's complaints: everything scales linearly from the
+4950×3200 space (~30 % on a normal window) and several labels were authored
+too small even at 100 %. Approach: a **global legibility floor** (minimum
+rendered font size for interactive text, scale-aware) + targeted control
+enlargement — not per-label tweaking.
+
+- **P1 — legibility & overlaps** (the user's direct complaints):
+  1. Cartridge selector 2–3× bigger (combo + "CARTRIDGE"/"flip 1-2-3" captions).
+  2. Dropdowns that are physical controls on hardware: Papa Srapa **DIVIDER
+     combo → blue knob**, LFO A/B **x1/x6/x10 combo → 3-pos slide switch**,
+     seq **STAGES combo → 3-pos slide switch** (same treatment as the M7
+     1-2-3 switches).
+  3. Envelope A/B: "hold"/"loop" labels clip outside the box; ADSR row
+     cramped; bottom jack labels collide.
+  4. Drone sections: bottom-edge jack labels (GATE/env/env out/clock/out)
+     clipped by the section border; DRONE 3/6 S&H box collides with jack
+     labels + voice-number badge.
+  5. Filter strip: FREQ/RES/DIST/GAIN should be **large** orange knobs per
+     the reference; rotated FILTER L/R labels clipped; BP↔LP switch lost its
+     icons.
+  6. Effector: CV X/Y/Z jacks crowd the X/Y/Z knobs.
+  7. Minor: joystick "offset X/X/Y/offset Y" label collisions; pulser→clock
+     red arrow crosses the pulser knob; seq gate toggles/LEDs tiny; mixer
+     channel labels tiny + PAN row missing L•R marks.
+- **P2 — hardware fidelity**:
+  8. DRONE VOICES keypad → six **square** pads, numbers printed above
+     (currently round knob-look buttons, numbers tiny below).
+  9. Keyboard section rework: plates clustered **around** the center control
+     group with staggered heights, round-button row, red-ring encoder, blue
+     LCD, printed triangles (reference look); keep the digital OCT readout.
+- **P3 — silkscreen art**: VCO morph waveform glyphs, LFO wave icons, Papa
+  Srapa red fm/am arrows, envelope-follower + mic glyphs.
+- *Verify*: screenshot diff vs the reference PNG; all interactive text
+  legible at default window size; user eye check (the final gate).
+
+**M9c — RT-safety, performance, release pass** — the remainder of the
+original M9 bullet above: audio-thread audit, CPU measurement, pluginval
+strictness 10 + auval, MIDI clock + CC learn, signing/notarization notes.
 - **Backlog (post-plan)**: remaining 9 cartridges (MAGIC, FILTER, VIBE, PITCH SHIFTER, INFINITY, STRING RINGER, SYNTEX-1, DIGITAL, GENERATOR); webcam room-light; Windows/Linux builds; original branding pass before any public release.
 
 ## Verification

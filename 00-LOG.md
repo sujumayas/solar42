@@ -406,3 +406,28 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
 - **Ear check pending (the M8 loop proper):** listen through
   `renders/calib/` with `09-calibration-protocol.md` open, give per-scene
   PASS/ITERATE verdicts (cite SOUND DEMO 3 / video moments where possible).
+
+### 2026-07-05 — M9 re-sliced with the user: MIDI-in pulled forward + full-panel UI review
+- **Why**: the user has no hardware Solar 42 available right now, so the M8
+  ear loop (A/B vs the real machine's character) pauses; instead we pull the
+  **digital-only** work forward. M9 split into M9a (MIDI-in), M9b (UI pass),
+  M9c (original RT/perf/release scope). Full locked specs live in the **“M9
+  breakdown”** section of `08-implementation-plan.md` — written and committed
+  *before* implementation at the user's request (session time may run out;
+  the repo is the durable tracker).
+- **M9a decisions (user):** C1–F1 (MIDI 24–29) gate drone voices 1–6 on any
+  channel; C2 and up play the 12 plates with **per-note octave shift**
+  (60–71 = native tuning) so a MIDI keyboard reaches octaves without moving
+  the panel OCT buttons — deliberately beyond hardware; velocity/aftertouch →
+  plate pressure; **drone gating is a persisted checkbox: momentary OR
+  toggle-HOLD** (user explicitly wants both workflows); CC64 sustain. Target
+  controller: Arturia KeyLab 37.
+- **UI review (screenshots vs `reference-docs/solar42n-panel-1.png`):**
+  confirmed the user's two complaints — illegible small text (cartridge
+  selector + the combo boxes that are physical switches/knobs on hardware:
+  DIVIDER, LFO x1/x6/x10, STAGES) and overlapping controls (envelope A/B
+  hold/loop clipping, drone-section bottom jack labels on the border, S&H
+  box collisions, effector CV-jack/knob crowding, undersized filter-strip
+  knobs). Fidelity gaps: DRONE VOICES pads should be square, keyboard
+  section should cluster plates around the center encoder/LCD group.
+  Prioritized P1/P2/P3 list in the M9b spec.
