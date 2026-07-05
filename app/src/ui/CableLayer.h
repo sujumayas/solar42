@@ -39,11 +39,17 @@ public:
             const float hole = r * 0.62f;
             g.fillEllipse(c.x - hole, c.y - hole, hole * 2.0f, hole * 2.0f);
 
+            // Label tucked close under the nut: bottom-row jacks sit ~92
+            // units above their section border, so anything lower gets cut
+            // by the border stroke (the M9b "half-clipped GATE/env" bug).
+            // The short envelope sections have no room below at all — their
+            // census entries flip the label to sit above the nut.
             g.setColour(j.isInlet ? kInk : kAccentRed);
-            g.setFont(juce::FontOptions(34.0f, juce::Font::bold));
+            g.setFont(juce::FontOptions(32.0f, juce::Font::bold));
+            const float ly = j.labelAbove ? c.y - r * 1.55f - 16.0f
+                                          : c.y + r * 1.55f + 16.0f;
             g.drawText(j.label,
-                       juce::Rectangle<float>(260.0f, 40.0f)
-                           .withCentre({ c.x, c.y + r * 1.55f + 26.0f }),
+                       juce::Rectangle<float>(240.0f, 36.0f).withCentre({ c.x, ly }),
                        juce::Justification::centred);
         }
     }

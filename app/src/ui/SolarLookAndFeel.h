@@ -115,7 +115,9 @@ public:
         }
 
         // Push button with LED. LED colour rides on the button's on-colour.
-        const float d = juce::jmin(r.getWidth(), r.getHeight() * 0.78f);
+        // Labelled buttons keep the circle smaller so the text fits below.
+        const float d = juce::jmin(r.getWidth(),
+                                   r.getHeight() * (b.getButtonText().isEmpty() ? 0.78f : 0.62f));
         auto circle = juce::Rectangle<float>(d, d)
                           .withCentre({ r.getCentreX(), r.getY() + d * 0.5f + 1.0f });
         g.setColour(kKnobBlack);
@@ -130,9 +132,9 @@ public:
                       ledR * 2.0f, ledR * 2.0f);
 
         g.setColour(kInk);
-        const float fitW = 2.0f * r.getWidth()
+        const float fitW = 1.5f * r.getWidth() // bold caps ≈ 0.66 em wide
                            / (float) juce::jmax(3, b.getButtonText().length());
-        g.setFont(juce::FontOptions(juce::jmin(26.0f, r.getHeight() * 0.3f, fitW),
+        g.setFont(juce::FontOptions(juce::jmin(30.0f, r.getHeight() * 0.32f, fitW),
                                     juce::Font::bold));
         g.drawText(b.getButtonText(), r.withTop(circle.getBottom()),
                    juce::Justification::centredTop);
@@ -140,7 +142,7 @@ public:
 
     juce::Font getComboBoxFont(juce::ComboBox& box) override
     {
-        return juce::Font(juce::FontOptions(juce::jmin(34.0f, (float) box.getHeight() * 0.55f)));
+        return juce::Font(juce::FontOptions(juce::jmin(48.0f, (float) box.getHeight() * 0.55f)));
     }
 
     juce::Font getPopupMenuFont() override

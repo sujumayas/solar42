@@ -465,3 +465,34 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
 - Gate: 94/94 tests (+6 MIDI cases: plate map/octave shift/collision,
   velocity floor + AT, momentary + sustain, latch counters, guard band,
   V/OCT shift through the real firmware), pluginval SUCCESS, render smoke.
+
+### 2026-07-05 — app M9b P1: legibility & overlap pass (screenshot-verified)
+- **Root cause + fix.** All print is in logical panel units (1 unit =
+  0.1 mm) under one scale transform; several labels were authored well below
+  the hardware's ~3 mm lettering, so at a normal window (~31 % scale) they
+  vanished. Introduced a legibility floor: LabeledKnob/ChoiceBox label fonts
+  clamp to ≥ 26 units, combo text scales with box height (cap 48), push-
+  button text caps circle size so the label keeps room.
+- **Dropdowns → the hardware's physical controls.** New `ChoiceSlideSwitch`
+  (vertical N-detent switch for choice params, position labels in hardware
+  top-down order): LFO A/B range now a real **x6 / x1 / x10** switch (x1
+  centre), sequencer STAGES a **4 / 5 / 3** switch (5 centre). Papa Srapa
+  **DIVIDER is now a blue knob** (stepped, value bubble shows 1/2/4/8/16).
+  Cartridge selector ~2.5× bigger with legible CARTRIDGE / "flip 1-2-3 to
+  load" captions; the 1-2-3 program switches got readable in-component
+  digits (they were drawn cream-on-cream and half outside the component).
+- **Overlaps fixed** (all screenshot-verified before/after): jack labels
+  tucked closer under the nut so bottom-row GATE/env/env out/in-clock-out
+  no longer sit half-cut on section borders; envelope sections rebuilt
+  (hold/loop clear of the title band, ADSR raised, jack labels flipped
+  ABOVE the nuts via a new census `labelAbove` flag — those jacks have only
+  49 units below); effector X/Y/Z moved below their CV jacks' labels;
+  filter strip inset so the rotated FILTER L/FILTER R tags stop colliding
+  with the FREQ knobs, BP/LP marks added at each mode switch, knobs
+  enlarged; Papa Srapa voice badge floated off the S&H box + out jack;
+  pulser→clock arrow no longer crosses the pulser knob; LFO activity LED
+  off the out-jack label; "HOLD" no longer truncates to "HO…".
+- Eye-check artifact: `renders/m9b-p1-panel-screenshot.png` (vs
+  `m5-panel-screenshot.png` and the reference PNG). **User eye check
+  pending.** P2 (square DRONE VOICES pads, keyboard-section fidelity
+  rework) and P3 (silkscreen glyphs) remain, specs in 08.
