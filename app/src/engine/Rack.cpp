@@ -32,6 +32,7 @@ void Rack::prepare(double sampleRate, int /*maxBlockSize*/)
 {
     sampleRate_ = sampleRate;
 
+    midiClock_.prepare(sampleRate);
     keyboard_.prepare(sampleRate);
     lfoA_.prepare(sampleRate);
     lfoB_.prepare(sampleRate);
@@ -68,6 +69,8 @@ void Rack::setControls(const Controls& c) noexcept
 {
     controls_ = c;
 
+    midiClock_.setDivider(c.midiClockDivTicks);
+    midiClock_.beginBlock(c.midiClock); // block-relative tick offsets
     keyboard_.setConfig(c.kb);
     lfoA_.setParams(c.lfoA);
     lfoB_.setParams(c.lfoB);
@@ -123,19 +126,21 @@ void Rack::process(float* outL, float* outR, const float* extInL, const float* e
         const int n = std::min(kSubBlock, numSamples - done);
         processSubBlock(outL + done, outR + done,
                         extInL != nullptr ? extInL + done : nullptr,
-                        extInR != nullptr ? extInR + done : nullptr, n);
+                        extInR != nullptr ? extInR + done : nullptr, done, n);
         done += n;
     }
 }
 
 void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
-                           const float* extInR, int n) noexcept
+                           const float* extInR, int blockOffset, int n) noexcept
 {
     drainCommands();
 
     // Fixed hardware-mirroring order (backward cables read the previous
-    // sub-block — that's the feedback semantics, see VoltBus). The keyboard
-    // runs first: its V/oct + gates feed the VCO/envelope normals.
+    // sub-block — that's the feedback semantics, see VoltBus). The MIDI
+    // clock writes first so every clock consumer sees the current pulses;
+    // then the keyboard: its V/oct + gates feed the VCO/envelope normals.
+    midiClock_.process(bus_.out(Outlet::MidiClockOut), blockOffset, n);
     keyboard_.process(controls_.kbTouch,
                       bus_.in(Inlet::KbClockIn), bus_.isPatched(Inlet::KbClockIn),
                       bus_.in(Inlet::KbResetIn),

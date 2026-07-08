@@ -32,6 +32,9 @@ inline const char* outletRange(s42::Outlet o)
         case O::KbVoctOut: return "0..8 V, 1 V/oct";
         case O::KbGateLOut: case O::KbGateROut: return "0/8 V gate";
         case O::KbPressOut: return "0..8 V pressure";
+        case O::MidiClockOut:
+            return "0/10 V pulses from the MIDI real-time clock (digital-only jack) - "
+                   "rate set in Settings > MIDI; START/CONTINUE resyncs, STOP mutes";
         default: return "";
     }
 }

@@ -186,6 +186,9 @@ inline constexpr Jack kJacks[] = {
     out(Outlet::KbPressOut, 3730, 2255, "PRESS"),
     in(Inlet::KbClockIn, 3900, 2255, "CLOCK"),
     in(Inlet::KbResetIn, 4070, 2255, "RESET"),
+    // Digital-only (M9c P4): the MIDI real-time clock as a patchable pulse
+    // source — parked at the strip's end with the other divergence jacks.
+    out(Outlet::MidiClockOut, 4240, 2255, "MIDI CLK"),
 };
 
 inline constexpr int kNumJacks = (int) (sizeof(kJacks) / sizeof(kJacks[0]));

@@ -5,6 +5,7 @@
 #include "dsp/Smoother.h"
 #include "dsp/Tolerances.h"
 #include "engine/CommandQueue.h"
+#include "engine/MidiClockSource.h"
 #include "engine/Telemetry.h"
 #include "engine/VoltBus.h"
 #include "engine/modules/ClassicDroneVoice.h"
@@ -65,6 +66,8 @@ public:
         EffectorModule::Params fx {};
         KbConfig kb {};                       // touch keyboard firmware settings
         KbTouch kbTouch {};                   // live plate/button gestures
+        MidiClockFeed midiClock {};           // this block's F8/FA/FB/FC events
+        int midiClockDivTicks = 6;            // ticks per pulse (6 = 1/16 at 24 ppqn)
         float roomLight = 0.35f;              // ambient light on the photo-sensors
         bool mainsFlicker = false;
         float masterVol = 0.7f;
@@ -87,7 +90,7 @@ public:
 
 private:
     void processSubBlock(float* outL, float* outR, const float* extInL,
-                         const float* extInR, int n) noexcept;
+                         const float* extInR, int blockOffset, int n) noexcept;
     void drainCommands() noexcept;
     void publishTelemetry(float peakL, float peakR, int n) noexcept;
 
@@ -99,6 +102,7 @@ private:
     CommandQueue cmdQueue_;
     Telemetry telemetry_;
 
+    MidiClockSource midiClock_;
     TouchKeyboard keyboard_;
     LfoModule lfoA_, lfoB_;
     JoystickModule joy_;

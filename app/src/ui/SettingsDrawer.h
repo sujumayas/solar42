@@ -523,6 +523,16 @@ private:
             apvts_, "midi.droneLatch", midiLatch_);
         addRow({}, &midiLatch_);
 
+        // MIDI CLK jack rate (M9c P4) — also an APVTS param.
+        midiClockDiv_.addItemList({ "1/32", "1/16", "1/8", "1/4" }, 1);
+        midiClockDiv_.setTooltip("Pulse rate of the MIDI CLK jack (24-ppqn real-time clock "
+                                 "divided down). Patch MIDI CLK into any clock input to sync "
+                                 "the pulser, keyboard arp/seq or S&H to the host/hardware clock.");
+        content_.addAndMakeVisible(midiClockDiv_);
+        midiClockDivAtt_ = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
+            apvts_, "midi.clockDiv", midiClockDiv_);
+        addRow("MIDI CLK rate", &midiClockDiv_);
+
         // Content height = sum of rows + margins.
         contentHeight_ = 8;
         for (const auto& r : rows_)
@@ -624,6 +634,8 @@ private:
     StepEditor steps_;
     juce::ToggleButton midiLatch_;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> midiLatchAtt_;
+    juce::ComboBox midiClockDiv_;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> midiClockDivAtt_;
     int sideTab_ = 0;
     bool loading_ = false;
 };

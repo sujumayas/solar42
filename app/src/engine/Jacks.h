@@ -16,7 +16,9 @@
 // the preamp's "ext. source" jack (07 §1e lists it; it was missing here).
 // M9b P4 added the Papa Srapa cv INPUTS (print: "▲cv" under the mod/divider
 // gap — the recount found our census had the modulator's cv out but not the
-// pitch-CV in).
+// pitch-CV in). M9c P4 added MidiClockOut — a DIGITAL-ONLY outlet (no
+// hardware counterpart): the MIDI real-time clock as a patchable pulse
+// source, living in the KEYBOARD CV strip like the other divergence jacks.
 
 namespace s42 {
 
@@ -52,7 +54,8 @@ namespace s42 {
     X(KbGateROut, "kb.gateR.out",     false) \
     X(KbPressOut, "kb.press.out",     false) \
     X(VcoADryOut, "vcoA.dry.out",     false) \
-    X(VcoBDryOut, "vcoB.dry.out",     false)
+    X(VcoBDryOut, "vcoB.dry.out",     false) \
+    X(MidiClockOut, "midi.clock.out", false)
 
 // Normal kinds: what an unpatched inlet reads.
 //   None       -> 0 V
