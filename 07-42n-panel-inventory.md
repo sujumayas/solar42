@@ -154,6 +154,12 @@ Registry census corrections (M5, append-only — existing jack ids frozen):
 `pre.ext.in` (the preamp's ext. source jack, §1e — overrides the host-input
 "piezo" when patched).
 
+*App divergence (M9c P4)*: `midi.clock.out` — a **digital-only MIDI CLK
+jack** at the end of the on-panel KEYBOARD CV strip (itself a documented
+divergence: hardware keeps those jacks on the rear). Emits 0/10 V pulses
+from the MIDI real-time clock (24 ppqn divided per Settings → MIDI, default
+1/16); START/CONTINUE resyncs, STOP mutes. No hardware counterpart.
+
 ## 2. Normalled connections (default patch — break when a cable is inserted)
 
 1. Touch keyboard **V/OCT → VCO A and VCO B `1v/oct`**.

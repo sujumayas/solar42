@@ -274,9 +274,10 @@ private:
                    juce::Justification::centredLeft);
         // Keyboard CV strip: the hardware wears these on the keyboard block
         // itself (the render art hides them); a thin outlined sub-panel
-        // groups them as part of the keyboard.
+        // groups them as part of the keyboard. Wide enough for the
+        // digital-only MIDI CLK jack at the strip's end (M9c P4).
         g.setColour(kInk.withAlpha(0.85f));
-        g.drawRoundedRectangle(3130.0f, 2158.0f, 1035.0f, 222.0f, 16.0f, 4.0f);
+        g.drawRoundedRectangle(3130.0f, 2158.0f, 1205.0f, 222.0f, 16.0f, 4.0f);
         g.setFont(juce::FontOptions(28.0f, juce::Font::bold));
         g.drawText("KEYBOARD", 3150, 2164, 240, 34, juce::Justification::centredLeft);
 

@@ -682,3 +682,50 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
   artifact: `renders/solar42n-m9b-p4-init-all-gens.wav` (Init density
   change). **User eye + ear checks pending — the final M9b gate.**
   Next: M9c (RT-safety, performance, release pass).
+
+### 2026-07-08 — app M9c: RT-safety, performance, release pass — complete (hands-on checks pending)
+
+- Scoped P1–P6 into the plan first (`c9640a3`), then landed phase by phase:
+  1. **P1 validation gate** (`8e2351d`): check.sh pluginval strictness
+     5 → **10** (VST3 already passed clean) + **auval** (aumu S42n S42p,
+     AU auto-installed to the user domain, registrar-cache retry).
+  2. **P2 RT-safety audit** (`987ea35`): engine was already alloc-free;
+     the processor layer wasn't — `param()` built a juce::String per
+     lookup (~150/block), `controlsFromParams()` concatenated Strings,
+     and the MIDI loop copied MidiMessages (heap on sysex). All three
+     fixed (pre-resolved param table + stack-buffer ids + raw-byte
+     parse). New malloc-guard test: global new/delete counting hooks,
+     ZERO allocations required across 200 busy blocks. **Headphones out
+     resolved: silkscreen in all builds** (standalone monitors through
+     the OS device at MASTER volume; noted in 07 §1d).
+  3. **P3 CPU gate** (`70ebf97`): `solar42n_render --bench` in check.sh,
+     fails over 10 % of one core @ 48 k/128. Measured: **4.0 %**.
+  4. **Swap hardening** (`c47d191`): the statecheck 5 ms quiet-window
+     was a timer-vs-blocks race (0.000000 pass / 0.004898 fail,
+     load-dependent); apply now waits for gain ≤ 0.005 and holds
+     silence ~6 ms before fading back — deterministic 6/6.
+  5. **P4 MIDI clock** (`f8ea8d0`): new digital-only **MIDI CLK** jack
+     (registry append `midi.clock.out`) at the end of the KEYBOARD CV
+     strip — 24 ppqn F8 → 10 V pulses, sample-accurate, divider in
+     Settings → MIDI (1/32…1/4, default 1/16), START/CONTINUE resyncs,
+     STOP mutes. JUCE-free MidiClockSource + 4 unit tests. Patch it
+     into seq/kb/S&H clock ins like any cable.
+  6. **P5 CC learn** (`c6b03d5`): right-click any param widget →
+     MIDI learn / Forget CC / Cancel. Lock-free ring → 30 Hz timer →
+     gesture-wrapped setValueNotifyingHost; bindings persist by param
+     ID in a MIDIMAP state child (missing child = keep the desk's map,
+     so factory presets never clobber it). JUCE-free MidiCcMap +
+     5 unit tests.
+  7. **P6 release notes**: `10-release-signing.md` — Developer ID +
+     hardened runtime + notarytool/staple recipe, install paths,
+     check.sh as the release gate, branding-pass blocker restated.
+- **No sonic change**: render-smoke hash bit-identical across the whole
+  milestone (`09884ef6…`) — no new audition WAV.
+- Gate: check.sh ALL GREEN — **105/105 tests, pluginval strictness 10
+  SUCCESS, auval PASS, CPU 4.0 %**, render smoke.
+- Eye-check artifact: `renders/m9c-panel-screenshot.png` (KEYBOARD strip
+  box now ends after the new ▲MIDI CLK jack). **User checks pending**:
+  eye check of the strip; hands-on KeyLab 37 pass (MIDI CLK patched into
+  kb CLOCK while the DAW plays; right-click a filter FREQ → learn →
+  sweep a KeyLab encoder). M9 (a+b+c) is now fully landed — remaining
+  backlog: 9 cartridges, webcam room-light, Win/Linux, branding.
