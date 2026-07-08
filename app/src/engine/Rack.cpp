@@ -312,7 +312,7 @@ void Rack::publishTelemetry(float peakL, float peakR, int n) noexcept
         for (int g = 0; g < ClassicDroneVoice::kNumGens; ++g)
             t.droneGen[v][g] = drones_[v].genLevel(g) * env;
         t.droneEnv[v] = env;
-        t.sensor[v] = sensors_[v].brightness();
+        t.sensor[v] = sensors_[v].ledGlow();
     }
     for (int s = 0; s < kSrapaVoices; ++s)
     {

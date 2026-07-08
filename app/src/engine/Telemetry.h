@@ -14,7 +14,7 @@ struct TelemetryData
     // Classic drones (index-aligned with Rack: DRONE 1, 2, 4, 5).
     float droneGen[4][5] = {}; // per-generator LED bar, 0..1
     float droneEnv[4] = {};    // AR envelope level, 0..1
-    float sensor[4] = {};      // photo-sensor LDR brightness (window glow), 0..1
+    float sensor[4] = {};      // photo-sensor red-LED glow (window tint), 0..1
 
     // Papa Srapa (DRONE 3, 6).
     float srapaCv[2] = {};     // sub-audio modulator LED, 0..1

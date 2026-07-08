@@ -52,10 +52,15 @@ public:
             light = 1.0f;
 
         ldr_ += (light - ldr_) * (light > ldr_ ? aCoef_ : dCoef_);
+        // The red LED's own glow, same vactrol lag but without room light —
+        // this is what tints the white window red on the panel (the hardware
+        // window stays plain white under mere ambience).
+        ledLdr_ += (led - ledLdr_) * (led > ledLdr_ ? aCoef_ : dCoef_);
         return ldr_ * 10.0f;
     }
 
-    float brightness() const noexcept { return ldr_; } // UI window glow (M5 telemetry)
+    float brightness() const noexcept { return ldr_; }   // LDR total (LED + room)
+    float ledGlow() const noexcept { return ledLdr_; }   // UI window tint (M9b)
 
 private:
     float onePole(float t) const noexcept
@@ -65,7 +70,7 @@ private:
 
     double sr_ = 48000.0;
     float aCoef_ = 1.0f, dCoef_ = 0.1f;
-    float ldr_ = 0.0f;
+    float ldr_ = 0.0f, ledLdr_ = 0.0f;
     float room_ = 0.0f, flickerPhase_ = 0.0f, flickerInc_ = 0.0f;
     bool flicker_ = false;
 };
