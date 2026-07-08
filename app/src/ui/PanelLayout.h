@@ -168,7 +168,7 @@ inline constexpr Jack kJacks[] = {
     out(Outlet::LfoBOut, jx(kLfoB, 0.44), jy(kLfoB, 0.42), "out"),
 
     // Header (EXT AUDIO feeds the mixer channel; WET OUT is print-only).
-    in(Inlet::ExtAudioIn, 340, 110, "EXT. AUDIO"),
+    in(Inlet::ExtAudioIn, 340, 110, "EXT. AUDIO", kLabelLeft),
 
     // Touch keyboard jack strip (registry jacks live from M2; the keyboard
     // module lands in M6 — outs read 0 V until then). The render hides these

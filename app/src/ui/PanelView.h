@@ -188,21 +188,48 @@ private:
         }
         g.setColour(kInk);
         g.drawText("WET OUT", 490, 165, 300, 40, juce::Justification::centred);
+        // Bracket curling under the R / L pair into the caption, per print.
+        const float by = 192.0f;
+        g.drawLine(505.0f, by, 550.0f, by, 4.0f);
+        g.drawLine(505.0f, by, 505.0f, by - 18.0f, 4.0f);
+        g.drawLine(730.0f, by, 775.0f, by, 4.0f);
+        g.drawLine(775.0f, by, 775.0f, by - 18.0f, 4.0f);
         g.drawText("POWER   12V DC", 4530, 130, 380, 40, juce::Justification::centredLeft);
 
+        // Digital-only corner (ROOM LIGHT + 50 Hz have no silk-screened home
+        // on the hardware): a dashed outline marks them as ours.
+        {
+            juce::Path box, dashed;
+            box.addRoundedRectangle(4005.0f, 66.0f, 512.0f, 276.0f, 24.0f);
+            const float dl[2] = { 14.0f, 12.0f };
+            juce::PathStrokeType(3.5f).createDashedStroke(dashed, box, dl, 2);
+            g.setColour(kInk.withAlpha(0.45f));
+            g.fillPath(dashed);
+        }
+
         // Wordmark below the jack block (render: y ~250..500, left of the
-        // effector). Original branding replaces the Elta trade dress before
+        // effector): black SOLAR, red 42, black superscript N — the print
+        // lockup. Original branding replaces the Elta trade dress before
         // any public build (08-implementation-plan.md §Risks).
         const juce::Font wordmark(juce::FontOptions(200.0f, juce::Font::bold));
         juce::AttributedString ws;
-        ws.append("SOLAR 42", wordmark, kInk);
-        ws.append(" N", wordmark, kAccentRed);
+        ws.append("SOLAR ", wordmark, kInk);
+        ws.append("42", wordmark, kAccentRed);
         ws.setJustification(juce::Justification::bottomLeft);
         ws.draw(g, juce::Rectangle<float>(60.0f, 230.0f, 1500.0f, 250.0f));
-
+        juce::GlyphArrangement ga;
+        ga.addLineOfText(wordmark, "SOLAR 42", 0.0f, 0.0f);
+        const float nX = 60.0f + ga.getBoundingBox(0, -1, true).getRight() + 12.0f;
         g.setColour(kInk);
-        g.setFont(juce::FontOptions(96.0f, juce::Font::bold));
-        g.drawFittedText("AMBIENT\nMACHINE",
+        g.setFont(juce::FontOptions(120.0f, juce::Font::bold));
+        g.drawText("N", (int) nX, 292, 140, 95, juce::Justification::centredLeft);
+
+        // The print's diacritics (dot-A, macron-E) + a touch of tracking.
+        g.setColour(kInk);
+        juce::Font ambient(juce::FontOptions(96.0f, juce::Font::bold));
+        ambient.setExtraKerningFactor(0.05f);
+        g.setFont(ambient);
+        g.drawFittedText(juce::String(juce::CharPointer_UTF8("\xC8\xA6MBI\xC4\x92NT\nMACHINE")),
                          juce::Rectangle<int>(2950, 70, 1000, 230),
                          juce::Justification::centredRight, 2);
     }
@@ -214,6 +241,15 @@ private:
         g.drawText("MICROTONAL  DRONE  SYNTHESIZER",
                    layout::kKeyboard.x, layout::kBottom.y + 20, 1400, 60,
                    juce::Justification::centredLeft);
+        // СОЛАР 42N print at the keyboard block's right shoulder (per print).
+        const juce::Font cy(juce::FontOptions(52.0f, juce::Font::bold));
+        juce::AttributedString solap;
+        solap.append(juce::String(juce::CharPointer_UTF8(
+                         "\xD0\xA1\xD0\x9E\xD0\x9B\xD0\x90\xD0\xA0 ")), cy, kInk);
+        solap.append("42N", cy, kAccentRed);
+        solap.setJustification(juce::Justification::centredRight);
+        solap.draw(g, juce::Rectangle<float>(2450.0f, (float) layout::kBottom.y + 20.0f,
+                                             600.0f, 60.0f));
         // The playable KeyboardSection component owns the keyboard zone.
     }
 
