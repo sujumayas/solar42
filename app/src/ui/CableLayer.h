@@ -21,6 +21,7 @@ public:
 
     void paint(juce::Graphics& g) override
     {
+        const juce::Font labelFont(juce::FontOptions(32.0f, juce::Font::bold));
         for (const auto& j : layout::kJacks)
         {
             const auto c = juce::Point<float>((float) j.x, (float) j.y);
@@ -44,7 +45,11 @@ public:
             // by the border stroke (the M9b "half-clipped GATE/env" bug).
             // labelAbove stays available for jacks with no room below.
             g.setColour(j.isInlet ? kInk : kAccentRed);
-            g.setFont(juce::FontOptions(32.0f, juce::Font::bold));
+            g.setFont(labelFont);
+            juce::GlyphArrangement ga;
+            ga.addLineOfText(labelFont, j.label, 0.0f, 0.0f);
+            const float tw = ga.getBoundingBox(0, -1, true).getWidth();
+            juce::Point<float> m; // direction-marker anchor, just before the label
             if (j.labelSide == layout::kLabelLeft)
             {
                 // Beside the nut (the print's tight stacked jacks, e.g. the
@@ -53,6 +58,7 @@ public:
                            juce::Rectangle<float>(c.x - r * 1.55f - 246.0f,
                                                   c.y - 18.0f, 240.0f, 36.0f),
                            juce::Justification::centredRight);
+                m = { c.x - r * 1.55f - 6.0f - tw - 20.0f, c.y };
             }
             else
             {
@@ -62,7 +68,19 @@ public:
                 g.drawText(j.label,
                            juce::Rectangle<float>(240.0f, 36.0f).withCentre({ c.x, ly }),
                            juce::Justification::centred);
+                m = { c.x - tw * 0.5f - 22.0f, ly };
             }
+
+            // The print's I/O language (M9b P3): black ▸ = input, red ▲ =
+            // output, tucked just before the label (colour matches it).
+            juce::Path dir;
+            if (j.isInlet)
+                dir.addTriangle(m.x - 8.0f, m.y - 10.0f, m.x - 8.0f, m.y + 10.0f,
+                                m.x + 10.0f, m.y);
+            else
+                dir.addTriangle(m.x - 10.0f, m.y + 9.0f, m.x + 10.0f, m.y + 9.0f,
+                                m.x, m.y - 10.0f);
+            g.fillPath(dir);
         }
     }
 };
