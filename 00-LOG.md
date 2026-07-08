@@ -634,3 +634,51 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
   fidelity backlog verifications (srapa jack recount, effector centre
   element, link control type, MUTE polarity, keyboard status icons,
   headphones behavior in M9c), then M9c.
+
+### 2026-07-08 — app M9b P4: fidelity backlog resolved — M9b complete (checks pending)
+- Research pass first (manual txt + official PDF pp21–22 + Solar 42 manual
+  + render-spec crops), resolutions written into 08 before code; then one
+  commit per fix:
+  21. **Papa Srapa jack recount** (`c676d65`): the print shows 7 jacks per
+      srapa voice — our census had 6. The missing one is the **cv input**
+      ("▲cv" under the mod/divider gap): appended `D3CvIn`/`D6CvIn` (enum
+      tail, ids frozen) and wired into the audio oscillator's pitch node
+      (law unspecified → `kSrapaCvOctPerVolt = 0.5`, by ear; audio-rate
+      capable). The modulator cv OUT moved to the print's rate/mod gap
+      with the print's marker-only legend; activity LED rides along.
+      Manual p8 confirmed the distinct S&H "in" we already model. 07 §1b
+      corrected; new unit test (+4 V ≈ +2 oct).
+  22. **link is a push button** (`def5722`): manual says "when switched
+      on", print draws the flat black circle (same art as the effector's
+      button, unlike any knob/toggle). SlideSwitch → round PushButton,
+      same `filt.link` param; cream LED carries the latch state.
+  23. **Effector centre element identified** (`a6cd35f`): it's the Solar
+      42's **reset/load button** (42 manual: "press reset/load button …
+      L/R FX"; the 42N auto-loads on toggle flip so its text dropped it,
+      but the panel kept one unlabelled button). Ours latches the
+      INSERTED cartridge + current 1-2-3 programs into both chips — the
+      only way to load a swapped cartridge without flipping a toggle.
+      New BayButton → PanelView callback →
+      `Solar42NProcessor::reloadCartridgeSlots()`. The "flip 1-2-3 to
+      load" caption retired per the print (tooltip carries the hint).
+  24. **Init mute defaults** (`6261239`): polarity was right all along
+      (buttons carry no state; the OSC STATUS badge does, lit = running) —
+      the bug was the parameter default `g >= 3` muting gens 4/5 on all
+      four classic drones. Now all five run at power-on like hardware.
+      **SONIC CHANGE on Init**: denser drones, gens 4/5 add near-unison
+      beating. Audition: `renders/solar42n-m9b-p4-init-all-gens.wav`.
+  25. **Keyboard icon rings rebound** (`c978bea`): the print's icon row IS
+      the hardware keyboard's I/O jack row in the manual's IN-OUT order
+      (clock 🕐 / v/oct ⚡ / gate L ⊓ | gate R ⊓ / pressure ↓ / reset ⏎ —
+      the P2 glyphs already matched). Rings now glow with the real
+      signals; new `kbReset` telemetry (150 ms decay) keeps edge pulses
+      visible at 30 Hz.
+- Deliberately unresolved: **headphones out behavior** stays an M9c
+  decision (RT audit decides standalone monitoring gain).
+- Gate: `check.sh` ALL GREEN — 95/95 tests, pluginval SUCCESS, render
+  smoke.
+- Eye-check artifact: `renders/m9b-p4-panel-screenshot.png` (standalone
+  carries its saved patch cables, not part of the print). Ear-check
+  artifact: `renders/solar42n-m9b-p4-init-all-gens.wav` (Init density
+  change). **User eye + ear checks pending — the final M9b gate.**
+  Next: M9c (RT-safety, performance, release pass).

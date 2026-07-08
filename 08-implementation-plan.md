@@ -19,7 +19,7 @@
 | M7 — State, presets, conveniences | ✅ done | commit `5fe42d9` (2026-07-04); 87/87 tests (86 Catch2 incl. new effector loaded-slot semantics + `solar42n_statecheck` harness: randomized full-state round-trip → relaunched twins render sample-identical, all 6 factory presets load/render, click-free switch fades to true silence); pluginval SUCCESS; CARTRIDGES child persists what each FV-1 chip HOLDS (mid-swap slots survive), TOLERANCES child persists the unit serial (+ Swap Unit action), UI child persists editor size; PresetManager + preset bar (6 factory presets, user `.s42n` in ~/Library/Application Support/Solar42N/Presets, prev/next, faded loads keep *your* serial); tooltips on all 63 jacks (from the registry: direction/range/normal) + curated control hints; automation pass: parameter groups per section, real units (s/Hz/dB/V/%/L-R), knob value bubbles + double-click default; 1-2-3 combos → real 3-pos switches + cartridge-bay art; `renders/solar42n-m7-preset-srapa-aviary.wav`, `renders/solar42n-m7-preset-reverse-air.wav` — **ear check pending** |
 | M8 — Calibration by ear | 🔶 in progress | kit commit `73e959e` (2026-07-05): `solar42n_calib` renders 11 per-domain audition scenes through the real processor into `renders/calib/`; listening protocol + verdict table in `09-calibration-protocol.md`; 88/88 tests; pluginval SUCCESS. Same session: preset location fix + legacy migration (user preset preserved), cross-build state merge (+statecheck case), cable-wipe-on-re-prepare engine bug fixed (+TestRouting case), standalone Bluetooth TCC crash fixed. **Ear loop pending: per-scene verdicts vs SOUND DEMO 3** |
 | M9a — MIDI-in: keyboard + drone gates | ✅ done | commit `2d926f9` (2026-07-05): `MidiPerformer` (JUCE-free) + `KbTouch.plateShift`; C1–F1→drones (momentary or HOLD-latch via `midi.droneLatch` checkbox in the drawer), 36+→plates w/ per-note octave shift (60–71 native), velocity/AT→pressure, CC64/123; 94/94 tests (+6), pluginval SUCCESS; **hands-on KeyLab 37 verdict pending** |
-| M9b — UI legibility & fidelity pass | 🔶 P1+P1.5+P2 done | **P1 done `41268ff` (2026-07-05)**: legibility floor, ChoiceSlideSwitch, DIVIDER knob, cartridge bay, envelope rebuild, filter-strip inset. **Eye check 2026-07-07 → ITERATE** (tile review vs `solar42n-panel-1.png`; 07 row-order doc bug fixed). **P1.5 done 2026-07-07, commits `58942b4`…`60ebf31`** (9 commits, every fix tile-diffed vs the reference before commit): drone rows to MUTE/TUNE/MOD + numbers on top, VCO pwm/pw captions freed, mixer print (PAN◆/L◄►R/black band/EXT.AUDIO/VOL, VOICE MIXER → center badge), effector to print layout (MOD L/R above CV jacks, BP/LP bracket, headphones silkscreen, cartridge slot), sensor white-at-idle (LED-only tint via `PhotoSensor::ledGlow`), envelope jack labels below nuts (row → fy 0.72), seq voltage ruler + stacked cv/gate (census `labelSide` field), joystick stack + LED, preamp gain size, SOLAR 42ᴺ lockup + diacritics + СОЛАР 42N + WET OUT bracket + dashed digital corner, KEYBOARD CV strip box, print-style title bands (TopRight/TopLeft/TopCentre; classic drones bandless) + S&H corner badge, VCO low label, d-pad dots, LED bars. check.sh ALL GREEN (94/94, pluginval SUCCESS); `renders/m9b-p15-panel-screenshot.png` — **user eye check pending**. **P2 done 2026-07-08, commits `23dacb5` (fix 16) + `e5fa794` (fix 17)**, both tile-diffed vs the reference: keypad → square keycaps (bevel, LED notch, numbers above), keyboard → 6\|6 ridged plate clusters around the centre group (white icon row, ▽/△ flanking red-centre encoder, blue LCD w/ OCT in status row, sunburst, △ feet, SETTINGS top-right chip). check.sh ALL GREEN; `renders/m9b-p2-panel-screenshot.png` — **user eye check pending**. **P3 done 2026-07-08, commits `4e25d41` (fix 18) + `27b949d` (fix 19) + `24c44d4` (fix 20)**, each tile-diffed vs the reference: jack I/O markers panel-wide (black ▸ in / red ▲ out beside every label), VCO morph glyph ring + numbered screws 1–7/8–14 + pwm routing arrow + −1 sub ⊓ (wave knob dropped to the print's position so the ring clears the switch row), LFO ∧/⊓ wave icons, srapa fm/am arrows + LFO dotted run + noise spark, joystick knob→jack arrows + 2nd LED, BP/LP response-curve icons, preamp mic glyph + two-line ext. source, envelope-follower bell-over-burst glyph, POWER polarity glyph + bracket. Known divergence: the print's S&H random-dot cluster has no room (our NOISE knob owns that corner). check.sh ALL GREEN (94/94, pluginval SUCCESS); `renders/m9b-p3-panel-screenshot.png` — **user eye check pending**. Fidelity backlog remains below |
+| M9b — UI legibility & fidelity pass | ✅ done (eye/ear checks pending) | **P1 done `41268ff` (2026-07-05)**: legibility floor, ChoiceSlideSwitch, DIVIDER knob, cartridge bay, envelope rebuild, filter-strip inset. **Eye check 2026-07-07 → ITERATE** (tile review vs `solar42n-panel-1.png`; 07 row-order doc bug fixed). **P1.5 done 2026-07-07, commits `58942b4`…`60ebf31`** (9 commits, every fix tile-diffed vs the reference before commit): drone rows to MUTE/TUNE/MOD + numbers on top, VCO pwm/pw captions freed, mixer print (PAN◆/L◄►R/black band/EXT.AUDIO/VOL, VOICE MIXER → center badge), effector to print layout (MOD L/R above CV jacks, BP/LP bracket, headphones silkscreen, cartridge slot), sensor white-at-idle (LED-only tint via `PhotoSensor::ledGlow`), envelope jack labels below nuts (row → fy 0.72), seq voltage ruler + stacked cv/gate (census `labelSide` field), joystick stack + LED, preamp gain size, SOLAR 42ᴺ lockup + diacritics + СОЛАР 42N + WET OUT bracket + dashed digital corner, KEYBOARD CV strip box, print-style title bands (TopRight/TopLeft/TopCentre; classic drones bandless) + S&H corner badge, VCO low label, d-pad dots, LED bars. check.sh ALL GREEN (94/94, pluginval SUCCESS); `renders/m9b-p15-panel-screenshot.png` — **user eye check pending**. **P2 done 2026-07-08, commits `23dacb5` (fix 16) + `e5fa794` (fix 17)**, both tile-diffed vs the reference: keypad → square keycaps (bevel, LED notch, numbers above), keyboard → 6\|6 ridged plate clusters around the centre group (white icon row, ▽/△ flanking red-centre encoder, blue LCD w/ OCT in status row, sunburst, △ feet, SETTINGS top-right chip). check.sh ALL GREEN; `renders/m9b-p2-panel-screenshot.png` — **user eye check pending**. **P3 done 2026-07-08, commits `4e25d41` (fix 18) + `27b949d` (fix 19) + `24c44d4` (fix 20)**, each tile-diffed vs the reference: jack I/O markers panel-wide (black ▸ in / red ▲ out beside every label), VCO morph glyph ring + numbered screws 1–7/8–14 + pwm routing arrow + −1 sub ⊓ (wave knob dropped to the print's position so the ring clears the switch row), LFO ∧/⊓ wave icons, srapa fm/am arrows + LFO dotted run + noise spark, joystick knob→jack arrows + 2nd LED, BP/LP response-curve icons, preamp mic glyph + two-line ext. source, envelope-follower bell-over-burst glyph, POWER polarity glyph + bracket. Known divergence: the print's S&H random-dot cluster has no room (our NOISE knob owns that corner). check.sh ALL GREEN (94/94, pluginval SUCCESS); `renders/m9b-p3-panel-screenshot.png` — **user eye check pending**. **P4 done 2026-07-08, commits `c676d65`…`c978bea`** (5 commits, one per backlog fix): srapa cv-in census append + engine pitch CV (print's 7-jack recount), link toggle→push button, effector reset/load button identified (Solar 42 manual) + wired to slot re-latch, Init mute default `g>=3`→all-active (**sonic change**: `renders/solar42n-m9b-p4-init-all-gens.wav`), keyboard icon rings rebound to their real jack signals (clock/v-oct/gateL\|gateR/pressure/reset, new kbReset telemetry). check.sh ALL GREEN (95/95, pluginval SUCCESS); `renders/m9b-p4-panel-screenshot.png` — **user eye + ear check pending**. Headphones-out behavior deliberately remains in M9c |
 | M9c — RT-safety, performance, release | ⬜ | original M9 scope minus M9a (MIDI clock + CC-learn live here) |
 
 ## Context
@@ -338,26 +338,65 @@ enlargement — not per-label tweaking.
   marker in-section); BP/LP response-curve icons; envelope-follower
   bell-over-burst + preamp mic glyphs; −1 sub ⊓ glyph; POWER polarity
   glyph + curled bracket.
-- **M9b fidelity backlog — evaluate, then implement or document** (found by
-  the eye check; each needs a manual/engine check before UI work):
-  - **Headphones out behavior**: level knob → standalone monitoring gain?
-    (plugin builds: decorative). Decide in M9c alongside the RT audit.
-  - **Papa Srapa jack recount**: the render spec shows two hex jacks under
-    rate/mod that our panel doesn't place, and `07` §1b's jack list is
-    ambiguous about a distinct S&H "in" (normalled from own noise) vs our
-    exposed `in` jack. Recount vs manual p8; census corrections are
-    **append-only** (ids frozen).
-  - **Effector center element**: the print shows a round element between
-    the two 1-2-3 program switches — identify (button/window/screw) in
-    manual pp21–22; add if functional.
-  - **"link" control type**: we use a toggle; confirm switch-vs-jack on
-    hardware and match.
-  - **MUTE polarity + Init defaults**: our Init renders oscillators 4/5
-    lighter on all four classic drones — confirm which visual state means
-    "muted" and that Init matches hardware power-on (all five active).
-  - **Keyboard status icons**: when P2 adds the icon row, wire the ones
-    that are real state displays (clock, arp/seq, hold) to telemetry
-    rather than printing them as decoration.
+- **M9b P4 — fidelity backlog resolutions. STATUS: done 2026-07-08,
+  commits `c676d65` (fix 21) `def5722` (22) `a6cd35f` (23) `6261239` (24)
+  `c978bea` (25); check.sh ALL GREEN (95/95, pluginval SUCCESS);
+  `renders/m9b-p4-panel-screenshot.png` + audition WAV
+  `renders/solar42n-m9b-p4-init-all-gens.wav` — user eye/ear check
+  pending.** Evidence: 42N manual txt + official PDF pp21–22, Solar 42
+  manual txt (effector legacy), render-spec PDF crops. Each former
+  backlog bullet resolved as follows:
+  - **Headphones out behavior**: still deferred to M9c (RT audit decides
+    standalone monitoring gain; decorative in plugin builds). Unchanged.
+  - **Fix 21 — Papa Srapa jack recount**: the print shows **7 jacks** per
+    srapa voice: modulator **cv out** (red marker only, no text, under the
+    rate/mod gap), **cv in** (labelled "cv", black ▲, under the mod/divider
+    gap), GATE in, env out, and the S&H box's **in / clock / out** (manual
+    p8: "white noise … fed to the Sample and Hold generator through IN
+    jack" — the distinct S&H in exists and we already model it, Internal
+    normal from own noise). Census has 6 of 7 — the **cv in is missing**.
+    Append `D3CvIn`/`D6CvIn` (enum tail, ids frozen), place per print, move
+    the cv out to the print position (cables re-anchor by id), wire the CV
+    into the audio oscillator's pitch (law unspecified by the manual →
+    `kSrapaCvOctPerVolt` in TuningConstants, by ear). 07 §1b list corrected.
+  - **Fix 22 — "link" control type**: the print draws link as a small flat
+    black circle — the same art as the (unlabelled) effector button, unlike
+    every knob (pointer/skirt) and toggle (lever). Manual: "LINK – when
+    **switched on** links CV on filter 1 to control both" → a latching
+    **push button**, not a jack, not a toggle lever. Swap our SlideSwitch
+    for the round PushButton (same `filt.link` param), cream LED as the
+    state cue (hardware shows latch position; we need an equivalent).
+  - **Fix 23 — effector centre element**: identified via the Solar 42
+    manual — the **reset/load button** ("insert a cartridge … and press
+    reset/load button"; the 42 had L/R FX select + RESET, the 42N gained
+    per-channel 1-2-3 toggles and auto-load, so its manual dropped the
+    text but the panel kept one unlabelled button). Functional for us:
+    pressing it **latches the inserted cartridge + current 1-2-3 programs
+    into both channels** — exactly the hardware "load" semantics, and the
+    only way to load a swapped cartridge without flipping a toggle.
+    UI button (not a param; transient action) → PanelView callback →
+    `PluginProcessor::reloadCartridgeSlots()` pokes the loaded-slot
+    atomics. The "flip 1-2-3 to load" bay caption retires (tooltip
+    carries the hint), matching the print.
+  - **Fix 24 — MUTE polarity + Init defaults**: polarity confirmed
+    correct: the black MUTE buttons carry no state on hardware; the red
+    **OSC STATUS** 5-bar LED badge does (lit = generator running; our
+    badge alpha already tracks `muteGain_`, and the print's 1/3/5-lit art
+    is decorative). The real bug: mute param default was `g >= 3` —
+    generators 4/5 shipped muted on all four classic drones. Init now
+    matches hardware power-on: **all five active**. Sonic change on Init
+    (denser drones, gen 4≈5 unison beating) → fresh audition render.
+  - **Fix 25 — keyboard status icons**: the six rings are the hardware
+    keyboard's **physical I/O jacks** (rear-panel row drawn on the print),
+    in exactly the manual's IN-OUT order: clock in 🕐, v/oct out ⚡,
+    gate L out ⊓ · gate R out ⊓, pressure out ↓̲, reset in ⇁ — matching
+    the glyphs P2 already painted. Rebind the ring LEDs from the
+    provisional set (gateL/R, ext clock, step, offset L/R) to the real
+    signals: ext-clock active, v/oct level, gate L, gate R, pressure
+    level, reset pulse (new `kbReset` telemetry field with a short decay
+    so edge pulses stay visible). Our census keeps these jacks in the
+    boxed KEYBOARD CV strip (documented divergence); the rings are their
+    status displays.
 - *Verify (every phase)*: screenshot diff vs the reference PNG tiles
   (**`app/scripts/panel-shot.sh`** captures the standalone window; its
   header documents the tile-crop math vs `solar42n-panel-1.png`); all
