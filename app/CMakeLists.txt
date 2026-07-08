@@ -107,6 +107,7 @@ if(SOLAR42N_BUILD_TESTS)
         tests/TestM5Panel.cpp
         tests/TestKeyboard.cpp
         tests/TestMidiPerformer.cpp
+        tests/TestRtSafety.cpp
     )
     target_link_libraries(solar42n_tests PRIVATE solar42n_engine Catch2::Catch2WithMain)
     target_compile_definitions(solar42n_tests PRIVATE

@@ -117,7 +117,10 @@ VCO A · VCO B · PREAMP · DRONE 4 · DRONE 5 · DRONE 6**.
   auto-loads on toggle flip so its manual dropped the text, but the panel
   keeps the button — identified M9b P4); **BLEND** (wet level, shared); **MASTER
   VOLUME**; headphone jack + level. No output VCA — manual warns not to max
-  MASTER (recommend ≤ 3 o'clock).
+  MASTER (recommend ≤ 3 o'clock). *App decision (M9c P2): the headphone
+  jack + level stay silkscreen in all builds — standalone monitoring is the
+  OS output device at MASTER volume; a separate headphone gain would
+  double-apply. Hardware-only comfort feature.*
 
 ### 1e. Bottom modulation strip — manual pp10–12
 

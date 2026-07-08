@@ -4,6 +4,10 @@
 #include "dsp/TuningConstants.h"
 #include "state/PresetManager.h"
 
+#include <algorithm>
+#include <cstdio>
+#include <string_view>
+
 namespace
 {
 float expMap(float v01, float lo, float hi) noexcept
@@ -25,6 +29,7 @@ Solar42NProcessor::Solar42NProcessor()
           .withOutput("Wet Out", juce::AudioChannelSet::stereo(), true)),
       apvts_(*this, nullptr, "PARAMS", createLayout())
 {
+    buildParamTable();
     patchBay_.rebind();
     defaultState_ = apvts_.copyState(); // pristine tree; factory presets build on copies
     presetManager_ = std::make_unique<solar::PresetManager>(*this);
@@ -358,10 +363,24 @@ juce::AudioProcessorValueTreeState::ParameterLayout Solar42NProcessor::createLay
     return layout;
 }
 
+void Solar42NProcessor::buildParamTable()
+{
+    for (auto* p : getParameters())
+        if (auto* rp = dynamic_cast<juce::RangedAudioParameter*>(p))
+            paramTable_.emplace_back(rp->paramID.toStdString(),
+                                     apvts_.getRawParameterValue(rp->paramID));
+    std::sort(paramTable_.begin(), paramTable_.end());
+}
+
 float Solar42NProcessor::param(const char* id) const noexcept
 {
-    if (auto* raw = apvts_.getRawParameterValue(id))
-        return raw->load();
+    const std::string_view key(id);
+    const auto it = std::lower_bound(paramTable_.begin(), paramTable_.end(), key,
+                                     [](const auto& e, std::string_view k)
+                                     { return std::string_view(e.first) < k; });
+    if (it != paramTable_.end() && std::string_view(it->first) == key)
+        return it->second->load(std::memory_order_relaxed);
+    jassertfalse; // unknown parameter id — audit the call site
     return 0.0f;
 }
 
@@ -381,91 +400,101 @@ s42::Rack::Controls Solar42NProcessor::controlsFromParams() const noexcept
     namespace tn = s42::tuning;
     s42::Rack::Controls c;
 
-    auto fparam = [this](const juce::String& id) { return param(id.toRawUTF8()); };
-    auto bparam = [this](const juce::String& id) { return param(id.toRawUTF8()) > 0.5f; };
+    // RT-safe id assembly (M9c P2): fixed stack buffers + snprintf — no
+    // juce::String may be built on the audio thread (heap-allocated storage).
+    char idBuf[32];
+    auto fparam = [&](const char* head, const char* tail) noexcept
+    {
+        std::snprintf(idBuf, sizeof(idBuf), "%s.%s", head, tail);
+        return param(idBuf);
+    };
+    auto bparam = [&](const char* head, const char* tail) noexcept
+    { return fparam(head, tail) > 0.5f; };
 
     for (int v = 0; v < s42::Rack::kClassicVoices; ++v)
     {
-        const juce::String id(kDroneIds[v]);
+        const char* id = kDroneIds[v];
         auto& d = c.drone[v];
         for (int g = 0; g < s42::ClassicDroneVoice::kNumGens; ++g)
         {
-            const auto base = id + ".gen" + juce::String(g + 1);
-            d.tune[g] = fparam(base + ".tune");
-            d.mute[g] = bparam(base + ".mute");
-            d.mod[g] = bparam(base + ".mod");
+            char base[16];
+            std::snprintf(base, sizeof(base), "%s.gen%d", id, g + 1);
+            d.tune[g] = fparam(base, "tune");
+            d.mute[g] = bparam(base, "mute");
+            d.mod[g] = bparam(base, "mod");
         }
-        d.volt = fparam(id + ".volt");
-        d.attackSec = expMap(fparam(id + ".att"), tn::kDroneAttMin, tn::kDroneAttMax);
-        d.releaseSec = expMap(fparam(id + ".rls"), tn::kDroneRlsMin, tn::kDroneRlsMax);
-        d.hold = bparam(id + ".hold");
-        c.droneKey[v] = bparam(id + ".gate");
+        d.volt = fparam(id, "volt");
+        d.attackSec = expMap(fparam(id, "att"), tn::kDroneAttMin, tn::kDroneAttMax);
+        d.releaseSec = expMap(fparam(id, "rls"), tn::kDroneRlsMin, tn::kDroneRlsMax);
+        d.hold = bparam(id, "hold");
+        c.droneKey[v] = bparam(id, "gate");
     }
 
     for (int s = 0; s < s42::Rack::kSrapaVoices; ++s)
     {
-        const juce::String id(kSrapaIds[s]);
+        const char* id = kSrapaIds[s];
         auto& p = c.srapa[s];
-        p.rate01 = fparam(id + ".rate");
-        p.fmAmt = fparam(id + ".fmamt");
-        p.dividerIdx = (int) fparam(id + ".divider") % 5;
-        p.pitch01 = fparam(id + ".pitch");
-        p.noise01 = fparam(id + ".noise");
-        p.fmOn = bparam(id + ".fm");
-        p.amOn = bparam(id + ".am");
-        p.x10 = bparam(id + ".x10");
-        p.hi = bparam(id + ".hi");
-        p.attackSec = expMap(fparam(id + ".att"), tn::kDroneAttMin, tn::kDroneAttMax);
-        p.releaseSec = expMap(fparam(id + ".rls"), tn::kDroneRlsMin, tn::kDroneRlsMax);
-        p.hold = bparam(id + ".hold");
-        c.srapaKey[s] = bparam(id + ".gate");
+        p.rate01 = fparam(id, "rate");
+        p.fmAmt = fparam(id, "fmamt");
+        p.dividerIdx = (int) fparam(id, "divider") % 5;
+        p.pitch01 = fparam(id, "pitch");
+        p.noise01 = fparam(id, "noise");
+        p.fmOn = bparam(id, "fm");
+        p.amOn = bparam(id, "am");
+        p.x10 = bparam(id, "x10");
+        p.hi = bparam(id, "hi");
+        p.attackSec = expMap(fparam(id, "att"), tn::kDroneAttMin, tn::kDroneAttMax);
+        p.releaseSec = expMap(fparam(id, "rls"), tn::kDroneRlsMin, tn::kDroneRlsMax);
+        p.hold = bparam(id, "hold");
+        c.srapaKey[s] = bparam(id, "gate");
     }
 
-    auto vcoFromParams = [&](const juce::String& id, s42::VcoVoice::Params& p)
+    auto vcoFromParams = [&](const char* id, s42::VcoVoice::Params& p) noexcept
     {
-        p.cvAmt = fparam(id + ".cvamt");
-        p.tune01 = fparam(id + ".tune");
-        p.wave01 = fparam(id + ".wave");
-        p.pwmAmt = fparam(id + ".pwm");
-        p.pw01 = fparam(id + ".pw");
-        p.octUp = bparam(id + ".oct");
-        p.subOn = bparam(id + ".sub");
-        p.expCv = bparam(id + ".exp");
+        p.cvAmt = fparam(id, "cvamt");
+        p.tune01 = fparam(id, "tune");
+        p.wave01 = fparam(id, "wave");
+        p.pwmAmt = fparam(id, "pwm");
+        p.pw01 = fparam(id, "pw");
+        p.octUp = bparam(id, "oct");
+        p.subOn = bparam(id, "sub");
+        p.expCv = bparam(id, "exp");
     };
     vcoFromParams("vcoA", c.vcoA);
     vcoFromParams("vcoB", c.vcoB);
 
-    auto envFromParams = [&](const juce::String& id, s42::EnvelopeModule::Params& p)
+    auto envFromParams = [&](const char* id, s42::EnvelopeModule::Params& p) noexcept
     {
-        p.attackSec = expMap(fparam(id + ".a"), tn::kVcoAttMin, tn::kVcoAttMax);
-        p.decaySec = expMap(fparam(id + ".d"), tn::kVcoDecMin, tn::kVcoDecMax);
-        p.sustain = fparam(id + ".s");
-        p.releaseSec = expMap(fparam(id + ".r"), tn::kVcoRelMin, tn::kVcoRelMax);
-        p.hold = bparam(id + ".hold");
-        p.loop = bparam(id + ".loop");
+        p.attackSec = expMap(fparam(id, "a"), tn::kVcoAttMin, tn::kVcoAttMax);
+        p.decaySec = expMap(fparam(id, "d"), tn::kVcoDecMin, tn::kVcoDecMax);
+        p.sustain = fparam(id, "s");
+        p.releaseSec = expMap(fparam(id, "r"), tn::kVcoRelMin, tn::kVcoRelMax);
+        p.hold = bparam(id, "hold");
+        p.loop = bparam(id, "loop");
     };
     envFromParams("envA", c.envA);
     envFromParams("envB", c.envB);
 
     for (int ch = 0; ch < s42::MixerModule::kChannels; ++ch)
     {
-        const juce::String id = "mix." + juce::String(kMixChIds[ch]);
-        const float v = fparam(id + ".vol");
+        char base[16];
+        std::snprintf(base, sizeof(base), "mix.%s", kMixChIds[ch]);
+        const float v = fparam(base, "vol");
         c.mixer.vol[ch] = v * v; // audio taper
-        c.mixer.pan[ch] = fparam(id + ".pan");
+        c.mixer.pan[ch] = fparam(base, "pan");
     }
 
-    c.filter.freqHzL = expMap(fparam("filt.freqL"), tn::kFilterFreqMin, tn::kFilterFreqMax);
-    c.filter.resL = fparam("filt.resL");
-    c.filter.bpL = bparam("filt.bpL");
-    c.filter.freqHzR = expMap(fparam("filt.freqR"), tn::kFilterFreqMin, tn::kFilterFreqMax);
-    c.filter.resR = fparam("filt.resR");
-    c.filter.bpR = bparam("filt.bpR");
-    c.filter.modL = fparam("filt.modL");
-    c.filter.modR = fparam("filt.modR");
-    c.filter.link = bparam("filt.link");
-    c.filter.dist = fparam("filt.dist");
-    c.filter.gain = fparam("filt.gain");
+    c.filter.freqHzL = expMap(param("filt.freqL"), tn::kFilterFreqMin, tn::kFilterFreqMax);
+    c.filter.resL = param("filt.resL");
+    c.filter.bpL = param("filt.bpL") > 0.5f;
+    c.filter.freqHzR = expMap(param("filt.freqR"), tn::kFilterFreqMin, tn::kFilterFreqMax);
+    c.filter.resR = param("filt.resR");
+    c.filter.bpR = param("filt.bpR") > 0.5f;
+    c.filter.modL = param("filt.modL");
+    c.filter.modR = param("filt.modR");
+    c.filter.link = param("filt.link") > 0.5f;
+    c.filter.dist = param("filt.dist");
+    c.filter.gain = param("filt.gain");
 
     // Cartridge slots: a 1-2-3 flip (knob, automation, restored param — any
     // path) latches that program from the currently-inserted cartridge; the
@@ -515,8 +544,11 @@ s42::Rack::Controls Solar42NProcessor::controlsFromParams() const noexcept
     c.seq.stages = 3 + (int) param("seq.stages") % 3;
     for (int s = 0; s < 5; ++s)
     {
-        c.seq.cv[s] = param(("seq.step" + juce::String(s + 1)).toRawUTF8()) * 5.0f;
-        c.seq.gateOn[s] = param(("seq.gate" + juce::String(s + 1)).toRawUTF8()) > 0.5f;
+        char sid[16];
+        std::snprintf(sid, sizeof(sid), "seq.step%d", s + 1);
+        c.seq.cv[s] = param(sid) * 5.0f;
+        std::snprintf(sid, sizeof(sid), "seq.gate%d", s + 1);
+        c.seq.gateOn[s] = param(sid) > 0.5f;
     }
 
     c.preamp.gain = std::pow(100.0f, param("pre.gain")); // 0..40 dB
@@ -562,21 +594,28 @@ void Solar42NProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     midiPerf_.setLatch(param("midi.droneLatch") > 0.5f);
     for (const auto metadata : midi)
     {
-        const auto m = metadata.getMessage();
-        if (m.isNoteOn())
-            midiPerf_.noteOn(m.getNoteNumber(), m.getFloatVelocity());
-        else if (m.isNoteOff())
-            midiPerf_.noteOff(m.getNoteNumber());
-        else if (m.isChannelPressure())
-            midiPerf_.channelPressure((float) m.getChannelPressureValue() / 127.0f);
-        else if (m.isAftertouch())
-            midiPerf_.polyPressure(m.getNoteNumber(), (float) m.getAfterTouchValue() / 127.0f);
-        else if (m.isSustainPedalOn())
-            midiPerf_.sustain(true);
-        else if (m.isSustainPedalOff())
-            midiPerf_.sustain(false);
-        else if (m.isAllNotesOff() || m.isAllSoundOff())
-            midiPerf_.reset();
+        // Raw bytes, omni: getMessage() copies into a MidiMessage, which
+        // heap-allocates for sysex — never construct one on the audio thread.
+        const juce::uint8* d = metadata.data;
+        const int n = metadata.numBytes;
+        if (n < 2)
+            continue;
+        const int status = d[0] & 0xF0;
+        if (status == 0x90 && n >= 3 && d[2] > 0)
+            midiPerf_.noteOn(d[1], (float) d[2] * (1.0f / 127.0f));
+        else if ((status == 0x80 || (status == 0x90 && d[2] == 0)) && n >= 3)
+            midiPerf_.noteOff(d[1]);
+        else if (status == 0xD0)
+            midiPerf_.channelPressure((float) d[1] * (1.0f / 127.0f));
+        else if (status == 0xA0 && n >= 3)
+            midiPerf_.polyPressure(d[1], (float) d[2] * (1.0f / 127.0f));
+        else if (status == 0xB0 && n >= 3)
+        {
+            if (d[1] == 64) // CC64 sustain
+                midiPerf_.sustain(d[2] >= 64);
+            else if (d[1] == 120 || d[1] == 123) // all sound / all notes off
+                midiPerf_.reset();
+        }
     }
 
     auto controls = controlsFromParams();

@@ -1294,9 +1294,10 @@ private:
         g.drawFittedText("MASTER\nVOLUME", frac(0.795, 0.13, 0.15, 0.14),
                          juce::Justification::centred, 2);
 
-        // Headphones out: glyph + jack + level print (inventory §1g). The
-        // behavior (standalone monitor level) is an M9c decision; until then
-        // this is silkscreen, not a control.
+        // Headphones out: glyph + jack + level print (inventory §1g).
+        // Decided in M9c P2: silkscreen in ALL builds — standalone
+        // monitoring is the OS output device at MASTER volume, and a second
+        // headphone gain stage would double-apply (hardware-only comfort).
         const float hx = (float) frac(0.966, 0.0, 0.0, 0.0).getX();
         const float hy = (float) frac(0.0, 0.20, 0.0, 0.0).getY();
         juce::Path band;

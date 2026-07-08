@@ -3,6 +3,10 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "engine/Rack.h"
 #include "engine/SeqlockBox.h"
 #include "engine/keyboard/MidiPerformer.h"
@@ -85,6 +89,7 @@ private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
     s42::Rack::Controls controlsFromParams() const noexcept;
     float param(const char* id) const noexcept;
+    void buildParamTable();
 
     void writeSessionChildren(juce::ValueTree& tree) const; // CARTRIDGES + TOLERANCES
     void applyUnitSerial(uint64_t serial);                  // suspend + reseed + re-prepare
@@ -100,6 +105,12 @@ private:
     s42::Rack rack_;
     juce::AudioProcessorValueTreeState apvts_;
     solar::PatchBay patchBay_ { apvts_.state, rack_ };
+
+    // RT-safe parameter reads (M9c P2): every (id -> raw atomic) pair is
+    // resolved once at construction and binary-searched by string_view on
+    // the audio thread. getRawParameterValue() builds a juce::String (heap)
+    // per call, so it must never run inside processBlock.
+    std::vector<std::pair<std::string, std::atomic<float>*>> paramTable_;
 
     // Keyboard setup: message thread edits ride the KEYBOARD state tree and
     // land here through a seqlock; gestures are plain atomics.
