@@ -1107,7 +1107,9 @@ private:
 class SeqSection : public Section
 {
 public:
-    explicit SeqSection(Apvts& s) : Section("5 STEP SEQ.  VOLTAGE", Band::Bottom)
+    // Title band painted by hand: text left + the striped voltage-ruler
+    // print filling the rest, like the hardware.
+    explicit SeqSection(Apvts& s) : Section("", Band::Bottom)
     {
         pulser = std::make_unique<LabeledKnob>(s, "seq.pulser", "pulser", kKnobRed);
         // Hardware: 3-position switch printed 4 / 5 / 3 top-down (5 = centre).
@@ -1162,6 +1164,17 @@ private:
         for (int i = 0; i < 5; ++i)
             led(g, leds_[i].toFloat(), i == step_ ? (0.35f + 0.65f * gate01_) : 0.0f,
                 kAccentRed, 13.0f);
+
+        // Bottom band: title at the left, voltage-ruler stripes to the right.
+        const auto band = getLocalBounds().toFloat().reduced(4.0f)
+                              .removeFromBottom((float) kBand).reduced(5.0f);
+        g.setColour(kCream);
+        g.setFont(juce::FontOptions((float) kBand * 0.62f, juce::Font::bold));
+        g.drawText("5 STEP SEQ.  VOLTAGE", band.reduced(24.0f, 0.0f).toNearestInt(),
+                   juce::Justification::centredLeft);
+        for (float sx = band.getX() + 560.0f; sx < band.getRight() - 16.0f; sx += 17.0f)
+            g.fillRect(sx, band.getCentreY() - band.getHeight() * 0.28f,
+                       7.0f, band.getHeight() * 0.56f);
     }
 
     std::unique_ptr<LabeledKnob> pulser, step[5];

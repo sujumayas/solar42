@@ -45,11 +45,24 @@ public:
             // labelAbove stays available for jacks with no room below.
             g.setColour(j.isInlet ? kInk : kAccentRed);
             g.setFont(juce::FontOptions(32.0f, juce::Font::bold));
-            const float ly = j.labelAbove ? c.y - r * 1.55f - 16.0f
-                                          : c.y + r * 1.55f + 16.0f;
-            g.drawText(j.label,
-                       juce::Rectangle<float>(240.0f, 36.0f).withCentre({ c.x, ly }),
-                       juce::Justification::centred);
+            if (j.labelSide == layout::kLabelLeft)
+            {
+                // Beside the nut (the print's tight stacked jacks, e.g. the
+                // sequencer cv/gate outs).
+                g.drawText(j.label,
+                           juce::Rectangle<float>(c.x - r * 1.55f - 246.0f,
+                                                  c.y - 18.0f, 240.0f, 36.0f),
+                           juce::Justification::centredRight);
+            }
+            else
+            {
+                const float ly = j.labelSide == layout::kLabelAbove
+                                     ? c.y - r * 1.55f - 16.0f
+                                     : c.y + r * 1.55f + 16.0f;
+                g.drawText(j.label,
+                           juce::Rectangle<float>(240.0f, 36.0f).withCentre({ c.x, ly }),
+                           juce::Justification::centred);
+            }
         }
     }
 };

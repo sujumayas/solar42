@@ -65,25 +65,27 @@ inline constexpr Rect kFlicker { 4330, 130, 170, 150 };
 inline constexpr int kJackR = 33;    // ring radius for the print layer
 inline constexpr int kJackHitR = 90; // hit radius (>= 24 px at fit-width; nearest wins)
 
+enum : int8_t { kLabelBelow = 0, kLabelAbove = 1, kLabelLeft = 2 };
+
 struct Jack
 {
     bool isInlet;
     int16_t index; // s42::Inlet or s42::Outlet
     int x, y;
     const char* label;
-    bool labelAbove; // short sections (envelopes) have no room below the nut
+    int8_t labelSide; // kLabelBelow default; Above/Left where the print does
 };
 
 constexpr int jx(const Rect& r, double fx) noexcept { return r.x + (int) (fx * r.w + 0.5); }
 constexpr int jy(const Rect& r, double fy) noexcept { return r.y + (int) (fy * r.h + 0.5); }
 
-constexpr Jack in(s42::Inlet i, int x, int y, const char* label, bool labelAbove = false) noexcept
+constexpr Jack in(s42::Inlet i, int x, int y, const char* label, int8_t side = kLabelBelow) noexcept
 {
-    return { true, (int16_t) i, x, y, label, labelAbove };
+    return { true, (int16_t) i, x, y, label, side };
 }
-constexpr Jack out(s42::Outlet o, int x, int y, const char* label, bool labelAbove = false) noexcept
+constexpr Jack out(s42::Outlet o, int x, int y, const char* label, int8_t side = kLabelBelow) noexcept
 {
-    return { false, (int16_t) o, x, y, label, labelAbove };
+    return { false, (int16_t) o, x, y, label, side };
 }
 
 using s42::Inlet;
@@ -154,9 +156,11 @@ inline constexpr Jack kJacks[] = {
     out(Outlet::JoyXOut, jx(kJoystick, 0.42), jy(kJoystick, 0.42), "X"),
     out(Outlet::JoyYOut, jx(kJoystick, 0.60), jy(kJoystick, 0.42), "Y"),
     in(Inlet::SeqClockIn, jx(kSeq, 0.115), jy(kSeq, 0.42), "clock"),
-    out(Outlet::SeqClockOut, jx(kSeq, 0.795), jy(kSeq, 0.42), "clock"),
-    out(Outlet::SeqCvOut, jx(kSeq, 0.875), jy(kSeq, 0.42), "cv"),
-    out(Outlet::SeqGateOut, jx(kSeq, 0.95), jy(kSeq, 0.42), "gate"),
+    // cv over gate stacked at the strip's right edge like the print; the
+    // clock out keeps its census jack even though the render art hides it.
+    out(Outlet::SeqClockOut, jx(kSeq, 0.83), jy(kSeq, 0.42), "clock"),
+    out(Outlet::SeqCvOut, jx(kSeq, 0.945), jy(kSeq, 0.30), "cv", kLabelLeft),
+    out(Outlet::SeqGateOut, jx(kSeq, 0.945), jy(kSeq, 0.66), "gate", kLabelLeft),
     in(Inlet::PreampExtIn, jx(kPreamp, 0.27), jy(kPreamp, 0.42), "ext. source"),
     out(Outlet::EnvFEnvOut, jx(kEnvFollower, 0.64), jy(kEnvFollower, 0.42), "env"),
     out(Outlet::EnvFGateOut, jx(kEnvFollower, 0.875), jy(kEnvFollower, 0.42), "gate"),
