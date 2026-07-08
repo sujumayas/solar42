@@ -25,6 +25,99 @@ struct PanelSurface
     virtual void zoomToPanelRect(juce::Rectangle<int> r) = 0;
 };
 
+// ------------------------------------------------------------- print art kit
+// Shared silkscreen art (M9b P3). All coordinates are logical panel units.
+
+// Curved routing arrow with the print's tail dot; the head lands on b,
+// oriented along the curve's end tangent. Caller sets the colour.
+inline void printArrow(juce::Graphics& g, juce::Point<float> a, juce::Point<float> c1,
+                       juce::Point<float> c2, juce::Point<float> b,
+                       float thickness = 5.0f, float head = 18.0f)
+{
+    juce::Path p;
+    p.startNewSubPath(a);
+    p.cubicTo(c1, c2, b);
+    g.strokePath(p, juce::PathStrokeType(thickness, juce::PathStrokeType::curved,
+                                         juce::PathStrokeType::rounded));
+    const auto dir = b - c2;
+    juce::Path h;
+    h.addTriangle(0.0f, 0.0f, -head, head * 0.45f, -head, -head * 0.45f);
+    g.fillPath(h, juce::AffineTransform::rotation(std::atan2(dir.y, dir.x)).translated(b));
+    g.fillEllipse(a.x - 7.0f, a.y - 7.0f, 14.0f, 14.0f);
+}
+
+// Numbered panel screw — the 42N print scatters slotted screw heads with
+// position numbers over the VCO sections (1-7 on A, 8-14 on B).
+inline void printScrew(juce::Graphics& g, juce::Point<float> c, int number,
+                       juce::Point<float> numberAt)
+{
+    g.setColour(juce::Colour(0xffcfccc2));
+    g.fillEllipse(c.x - 13.0f, c.y - 13.0f, 26.0f, 26.0f);
+    g.setColour(kInk);
+    g.drawEllipse(c.x - 13.0f, c.y - 13.0f, 26.0f, 26.0f, 2.5f);
+    g.drawLine(c.x - 8.0f, c.y + 8.0f, c.x + 8.0f, c.y - 8.0f, 3.0f);
+    g.setFont(juce::FontOptions(26.0f, juce::Font::bold));
+    g.drawText(juce::String(number),
+               juce::Rectangle<float>(48.0f, 30.0f).withCentre(numberAt),
+               juce::Justification::centred);
+}
+
+// The morph knob's waveform ring, left to right: sine, triangle, saw, pulse,
+// crossed sines, overtone scribble (the print's 6 morph stations).
+inline juce::Path waveGlyph(int kind)
+{
+    juce::Path p;
+    switch (kind)
+    {
+        case 0: // sine
+            p.startNewSubPath(-22.0f, 0.0f);
+            p.cubicTo(-15.0f, -19.0f, -7.0f, -19.0f, 0.0f, 0.0f);
+            p.cubicTo(7.0f, 19.0f, 15.0f, 19.0f, 22.0f, 0.0f);
+            break;
+        case 1: // triangle
+            p.startNewSubPath(-22.0f, 10.0f);
+            p.lineTo(-11.0f, -12.0f);
+            p.lineTo(0.0f, 10.0f);
+            p.lineTo(11.0f, -12.0f);
+            p.lineTo(22.0f, 10.0f);
+            break;
+        case 2: // saw
+            p.startNewSubPath(-22.0f, 12.0f);
+            p.lineTo(-2.0f, -12.0f);
+            p.lineTo(-2.0f, 12.0f);
+            p.lineTo(18.0f, -12.0f);
+            p.lineTo(18.0f, 12.0f);
+            break;
+        case 3: // pulse
+            p.startNewSubPath(-22.0f, 12.0f);
+            p.lineTo(-22.0f, -12.0f);
+            p.lineTo(-4.0f, -12.0f);
+            p.lineTo(-4.0f, 12.0f);
+            p.lineTo(14.0f, 12.0f);
+            p.lineTo(14.0f, -12.0f);
+            p.lineTo(20.0f, -12.0f);
+            break;
+        case 4: // crossed sines (the morph's mid stations)
+            p.startNewSubPath(-20.0f, -12.0f);
+            p.cubicTo(-6.0f, -12.0f, 6.0f, 12.0f, 20.0f, 12.0f);
+            p.startNewSubPath(-20.0f, 12.0f);
+            p.cubicTo(-6.0f, 12.0f, 6.0f, -12.0f, 20.0f, -12.0f);
+            break;
+        default: // gnarly overtone scribble
+            p.startNewSubPath(-20.0f, 6.0f);
+            p.lineTo(-14.0f, -8.0f);
+            p.lineTo(-9.0f, 8.0f);
+            p.lineTo(-4.0f, -10.0f);
+            p.lineTo(1.0f, 10.0f);
+            p.lineTo(6.0f, -6.0f);
+            p.lineTo(11.0f, 8.0f);
+            p.lineTo(16.0f, -4.0f);
+            p.lineTo(20.0f, 4.0f);
+            break;
+    }
+    return p;
+}
+
 // ---------------------------------------------------------------- widget kit
 
 struct LabeledKnob : juce::Component
@@ -688,7 +781,8 @@ class VcoSection : public Section
 {
 public:
     VcoSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title, Band::TopRight) // print: short chip top-right
+        : Section(title, Band::TopRight), // print: short chip top-right
+          screwBase_(id == "vcoB" ? 8 : 1)
     {
         cvamt = std::make_unique<LabeledKnob>(s, id + ".cvamt", "cv amt", kKnobGreen);
         tune = std::make_unique<LabeledKnob>(s, id + ".tune", "tune", kKnobGreen);
@@ -711,7 +805,9 @@ public:
         place(*sub, 0.51, 0.15, 0.20, 0.11);
         place(*tune, 0.72, 0.14, 0.23, 0.26);
         place(*exp, 0.04, 0.42, 0.21, 0.10);
-        place(*wave, 0.31, 0.27, 0.38, 0.46);
+        // Knob sits low like the print so the P3 glyph ring clears the
+        // oct+3 / -1 sub switch row above it.
+        place(*wave, 0.31, 0.335, 0.38, 0.44);
         // pwm/pw end above the census jack row (nut tops ~0.80) so the
         // LabeledKnob caption strip stays visible.
         place(*pwm, 0.04, 0.53, 0.23, 0.25);
@@ -728,10 +824,62 @@ private:
         // "low" = the oct switch's down position (print sub-label).
         g.setFont(juce::FontOptions(24.0f, juce::Font::bold));
         g.drawText("low", frac(0.27, 0.265, 0.10, 0.05), juce::Justification::centred);
+
+        // Morph glyph ring (P3): six waveform stations on radial ticks
+        // around the big knob, sine to overtone scribble like the print.
+        auto wb = wave->getBounds().toFloat();
+        wb.removeFromBottom(juce::jmax(30.0f, wb.getHeight() / 5.0f)); // caption strip
+        const auto kc = wb.getCentre();
+        const float rim = juce::jmin(wb.getWidth(), wb.getHeight()) * 0.5f;
+        for (int i = 0; i < 6; ++i)
+        {
+            const float a = juce::degreesToRadians(-75.0f + 30.0f * (float) i);
+            g.drawLine(juce::Line<float>(kc.getPointOnCircumference(rim + 4.0f, a),
+                                         kc.getPointOnCircumference(rim + 18.0f, a)),
+                       3.5f);
+            g.strokePath(waveGlyph(i),
+                         juce::PathStrokeType(3.5f, juce::PathStrokeType::curved,
+                                              juce::PathStrokeType::rounded),
+                         juce::AffineTransform::translation(
+                             kc.getPointOnCircumference(rim + 42.0f, a)));
+        }
+
+        // Numbered screws (1-7 / 8-14), scattered like the print but nudged
+        // into this layout's free panel between the controls.
+        static constexpr struct { double fx, fy, nfx, nfy; } kScrews[7] = {
+            { 0.315, 0.075, 0.268, 0.073 }, { 0.045, 0.115, 0.090, 0.113 },
+            { 0.285, 0.520, 0.285, 0.572 }, { 0.710, 0.520, 0.710, 0.572 },
+            { 0.835, 0.460, 0.835, 0.512 }, { 0.045, 0.790, 0.045, 0.842 },
+            { 0.225, 0.905, 0.268, 0.903 },
+        };
+        for (int i = 0; i < 7; ++i)
+            printScrew(g,
+                       frac(kScrews[i].fx, kScrews[i].fy, 0, 0).getPosition().toFloat(),
+                       screwBase_ + i,
+                       frac(kScrews[i].nfx, kScrews[i].nfy, 0, 0).getPosition().toFloat());
+
+        // Red routing arrow: the pwm jack's CV sweeps up into the pwm depth
+        // knob (print). Curve stays under the morph knob.
+        g.setColour(kAccentRed.withAlpha(0.9f));
+        printArrow(g, frac(0.585, 0.820, 0, 0).getPosition().toFloat(),
+                   frac(0.460, 0.865, 0, 0).getPosition().toFloat(),
+                   frac(0.340, 0.760, 0, 0).getPosition().toFloat(),
+                   frac(0.270, 0.660, 0, 0).getPosition().toFloat());
+
+        // "-1 sub" pulse glyph after the switch caption, per print.
+        g.setColour(kInk);
+        juce::Path p;
+        const auto sq = frac(0.7062, 0.205, 0, 0).getPosition().toFloat();
+        p.startNewSubPath(sq.x - 14.0f, sq.y + 9.0f);
+        p.lineTo(sq.x - 14.0f, sq.y - 9.0f);
+        p.lineTo(sq.x + 14.0f, sq.y - 9.0f);
+        p.lineTo(sq.x + 14.0f, sq.y + 9.0f);
+        g.strokePath(p, juce::PathStrokeType(3.5f));
     }
 
     std::unique_ptr<LabeledKnob> cvamt, tune, wave, pwm, pw;
     std::unique_ptr<SlideSwitch> oct, sub, exp;
+    const int screwBase_;
 };
 
 // Envelope A/B: hold/loop, A D S R, jack row (with the VCO dry outs).
