@@ -756,6 +756,47 @@ private:
         // Modulator activity LED next to the cv out jack.
         led(g, cvLed_.getCentre().toFloat(), cv01_, kAccentRed);
 
+        // P3 print art: "LFO" over the x10 range switch with the print's
+        // dotted run, red routing arrows from the LFO rate into the fm / am
+        // switches, and the noise spark glyph by the NOISE knob.
+        g.setColour(kInk);
+        g.setFont(juce::FontOptions(28.0f, juce::Font::bold));
+        g.drawText("LFO", frac(0.025, 0.030, 0.12, 0.07), juce::Justification::centredLeft);
+        {
+            const float dy = (float) frac(0.0, 0.115, 0, 0).getY();
+            g.setColour(kInk.withAlpha(0.7f));
+            const float dashes[2] = { 6.0f, 8.0f };
+            g.drawDashedLine({ (float) frac(0.03, 0.0, 0, 0).getX(), dy,
+                               (float) frac(0.20, 0.0, 0, 0).getX(), dy },
+                             dashes, 2, 3.0f);
+        }
+
+        g.setColour(kAccentRed.withAlpha(0.9f));
+        printArrow(g, frac(0.160, 0.260, 0, 0).getPosition().toFloat(),
+                   frac(0.190, 0.155, 0, 0).getPosition().toFloat(),
+                   frac(0.240, 0.135, 0, 0).getPosition().toFloat(),
+                   frac(0.295, 0.178, 0, 0).getPosition().toFloat(), 4.0f, 15.0f);
+        printArrow(g, frac(0.175, 0.270, 0, 0).getPosition().toFloat(),
+                   frac(0.250, 0.100, 0, 0).getPosition().toFloat(),
+                   frac(0.380, 0.090, 0, 0).getPosition().toFloat(),
+                   frac(0.475, 0.175, 0, 0).getPosition().toFloat(), 4.0f, 15.0f);
+
+        g.setColour(kInk);
+        {
+            const auto sp = frac(0.51, 0.655, 0, 0).getPosition().toFloat();
+            static constexpr float zig[10][2] = {
+                { -32.0f, 6.0f },  { -24.0f, -10.0f }, { -17.0f, 12.0f },
+                { -10.0f, -16.0f }, { -3.0f, 18.0f },  { 4.0f, -14.0f },
+                { 11.0f, 12.0f },  { 18.0f, -9.0f },   { 25.0f, 7.0f },
+                { 32.0f, -4.0f },
+            };
+            juce::Path spark;
+            spark.startNewSubPath(sp.x + zig[0][0], sp.y + zig[0][1]);
+            for (int i = 1; i < 10; ++i)
+                spark.lineTo(sp.x + zig[i][0], sp.y + zig[i][1]);
+            g.strokePath(spark, juce::PathStrokeType(3.0f));
+        }
+
         // S&H field outline with the print's corner badge (in-box text would
         // hide behind the jack nuts).
         g.setColour(kInk);
@@ -998,6 +1039,20 @@ private:
                        juce::Justification::centred);
             g.drawText("LP", juce::Rectangle<int>((int) bx2 - 30, 3, 60, 30),
                        juce::Justification::centred);
+
+            // P3: response-curve icons beside the labels (band-pass hump,
+            // low-pass shelf with the resonance bump).
+            juce::Path bp, lp;
+            const float bx = bx1 - 65.0f, lx = bx2 + 65.0f, cy = 22.0f;
+            bp.startNewSubPath(bx - 26.0f, cy + 14.0f);
+            bp.cubicTo(bx - 10.0f, cy + 12.0f, bx - 12.0f, cy - 14.0f, bx, cy - 14.0f);
+            bp.cubicTo(bx + 12.0f, cy - 14.0f, bx + 10.0f, cy + 12.0f, bx + 26.0f, cy + 14.0f);
+            lp.startNewSubPath(lx - 26.0f, cy - 6.0f);
+            lp.lineTo(lx - 4.0f, cy - 6.0f);
+            lp.cubicTo(lx + 2.0f, cy - 14.0f, lx + 8.0f, cy - 14.0f, lx + 11.0f, cy - 6.0f);
+            lp.cubicTo(lx + 14.0f, cy + 2.0f, lx + 17.0f, cy + 10.0f, lx + 24.0f, cy + 14.0f);
+            g.strokePath(bp, juce::PathStrokeType(3.0f));
+            g.strokePath(lp, juce::PathStrokeType(3.0f));
         }
 
         // "link" print under the center toggle.
@@ -1249,6 +1304,21 @@ private:
     void paintExtras(juce::Graphics& g) override
     {
         led(g, led_.getPosition().toFloat(), level01_, juce::Colour(0xff4fa3e0));
+
+        // P3: the wave knob sweeps triangle -> pulse; the print flanks the
+        // caption with the two shapes.
+        g.setColour(kInk);
+        const auto tri = frac(0.077, 0.655, 0, 0).getPosition().toFloat();
+        const auto pul = frac(0.253, 0.655, 0, 0).getPosition().toFloat();
+        juce::Path p;
+        p.startNewSubPath(tri.x - 10.0f, tri.y + 9.0f);
+        p.lineTo(tri.x, tri.y - 9.0f);
+        p.lineTo(tri.x + 10.0f, tri.y + 9.0f);
+        p.startNewSubPath(pul.x - 10.0f, pul.y + 9.0f);
+        p.lineTo(pul.x - 10.0f, pul.y - 9.0f);
+        p.lineTo(pul.x + 10.0f, pul.y - 9.0f);
+        p.lineTo(pul.x + 10.0f, pul.y + 9.0f);
+        g.strokePath(p, juce::PathStrokeType(3.5f));
     }
 
     std::unique_ptr<LabeledKnob> wave, rate;
@@ -1277,10 +1347,23 @@ public:
 private:
     void paintExtras(juce::Graphics& g) override
     {
-        // Activity LED beside the top (X) jack, like the print; the curved
-        // knob->jack routing arrows land with the P3 art pass.
-        led(g, frac(0.30, 0.26, 0.0, 0.0).getPosition().toFloat(), 0.0f,
+        // Activity LEDs beside the stacked jacks (print: red dots flanking
+        // the column; ours sit right of the labels' side).
+        led(g, frac(0.68, 0.26, 0.0, 0.0).getPosition().toFloat(), 0.0f,
             kAccentRed, 13.0f);
+        led(g, frac(0.68, 0.62, 0.0, 0.0).getPosition().toFloat(), 0.0f,
+            kAccentRed, 13.0f);
+
+        // P3: the print's curved routing arrows, offset knob -> out jack.
+        g.setColour(kAccentRed.withAlpha(0.9f));
+        printArrow(g, frac(0.240, 0.620, 0, 0).getPosition().toFloat(),
+                   frac(0.306, 0.745, 0, 0).getPosition().toFloat(),
+                   frac(0.389, 0.579, 0, 0).getPosition().toFloat(),
+                   frac(0.435, 0.390, 0, 0).getPosition().toFloat(), 4.0f, 15.0f);
+        printArrow(g, frac(0.765, 0.630, 0, 0).getPosition().toFloat(),
+                   frac(0.737, 0.745, 0, 0).getPosition().toFloat(),
+                   frac(0.670, 0.735, 0, 0).getPosition().toFloat(),
+                   frac(0.608, 0.672, 0, 0).getPosition().toFloat(), 4.0f, 15.0f);
     }
 
     std::unique_ptr<LabeledKnob> xoff, yoff;
@@ -1392,6 +1475,18 @@ private:
     void paintExtras(juce::Graphics& g) override
     {
         led(g, frac(0.87, 0.30, 0, 0).getPosition().toFloat(), clip01_, kAccentRed);
+
+        // P3: microphone glyph under the LED, per print.
+        const float mx = (float) frac(0.87, 0.0, 0, 0).getX();
+        g.setColour(kInk);
+        g.fillRoundedRectangle(mx - 14.0f, 118.0f, 28.0f, 48.0f, 14.0f);
+        juce::Path u;
+        u.addCentredArc(mx, 152.0f, 24.0f, 24.0f, 0.0f,
+                        juce::MathConstants<float>::halfPi,
+                        3.0f * juce::MathConstants<float>::halfPi, true);
+        g.strokePath(u, juce::PathStrokeType(5.0f));
+        g.drawLine(mx, 176.0f, mx, 200.0f, 5.0f);
+        g.drawLine(mx - 16.0f, 200.0f, mx + 16.0f, 200.0f, 5.0f);
     }
 
     std::unique_ptr<LabeledKnob> gain;
@@ -1431,6 +1526,25 @@ private:
         led(g, frac(0.64, 0.16, 0, 0).getPosition().toFloat(), env01_, kAccentRed);
         led(g, frac(0.875, 0.16, 0, 0).getPosition().toFloat(), gate01_,
             juce::Colour(0xff3ac86a));
+
+        // P3: the print's follower glyph — a red envelope traced over a
+        // black signal burst — between the knobs and the jacks.
+        const float gx = (float) frac(0.525, 0.0, 0, 0).getX();
+        const float base = 145.0f;
+        static constexpr float bars[11] = { 6.0f, 14.0f, 24.0f, 34.0f, 42.0f, 46.0f,
+                                            42.0f, 34.0f, 24.0f, 14.0f, 6.0f };
+        g.setColour(kInk);
+        for (int i = 0; i < 11; ++i)
+        {
+            const float x = gx + 6.4f * ((float) i - 5.0f);
+            g.drawLine(x, base, x, base - bars[i], 3.0f);
+        }
+        juce::Path env;
+        env.startNewSubPath(gx - 35.0f, base);
+        env.cubicTo(gx - 15.0f, base - 5.0f, gx - 17.0f, base - 77.0f, gx, base - 77.0f);
+        env.cubicTo(gx + 17.0f, base - 77.0f, gx + 15.0f, base - 5.0f, gx + 35.0f, base);
+        g.setColour(kAccentRed);
+        g.strokePath(env, juce::PathStrokeType(4.0f));
     }
 
     std::unique_ptr<LabeledKnob> att, rel;

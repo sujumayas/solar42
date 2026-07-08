@@ -46,15 +46,20 @@ public:
             // labelAbove stays available for jacks with no room below.
             g.setColour(j.isInlet ? kInk : kAccentRed);
             g.setFont(labelFont);
-            juce::GlyphArrangement ga;
-            ga.addLineOfText(labelFont, j.label, 0.0f, 0.0f);
-            const float tw = ga.getBoundingBox(0, -1, true).getWidth();
+            const auto lines = juce::StringArray::fromLines(j.label);
+            float tw = 0.0f; // widest line anchors the direction marker
+            for (const auto& line : lines)
+            {
+                juce::GlyphArrangement ga;
+                ga.addLineOfText(labelFont, line, 0.0f, 0.0f);
+                tw = juce::jmax(tw, ga.getBoundingBox(0, -1, true).getWidth());
+            }
             juce::Point<float> m; // direction-marker anchor, just before the label
             if (j.labelSide == layout::kLabelLeft)
             {
                 // Beside the nut (the print's tight stacked jacks, e.g. the
                 // sequencer cv/gate outs).
-                g.drawText(j.label,
+                g.drawText(lines[0],
                            juce::Rectangle<float>(c.x - r * 1.55f - 246.0f,
                                                   c.y - 18.0f, 240.0f, 36.0f),
                            juce::Justification::centredRight);
@@ -63,11 +68,13 @@ public:
             else
             {
                 const float ly = j.labelSide == layout::kLabelAbove
-                                     ? c.y - r * 1.55f - 16.0f
+                                     ? c.y - r * 1.55f - 16.0f - 32.0f * (float) (lines.size() - 1)
                                      : c.y + r * 1.55f + 16.0f;
-                g.drawText(j.label,
-                           juce::Rectangle<float>(240.0f, 36.0f).withCentre({ c.x, ly }),
-                           juce::Justification::centred);
+                for (int i = 0; i < lines.size(); ++i)
+                    g.drawText(lines[i],
+                               juce::Rectangle<float>(240.0f, 36.0f)
+                                   .withCentre({ c.x, ly + 32.0f * (float) i }),
+                               juce::Justification::centred);
                 m = { c.x - tw * 0.5f - 22.0f, ly };
             }
 

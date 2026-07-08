@@ -195,6 +195,31 @@ private:
         g.drawLine(730.0f, by, 775.0f, by, 4.0f);
         g.drawLine(775.0f, by, 775.0f, by - 18.0f, 4.0f);
         g.drawText("POWER   12V DC", 4530, 130, 380, 40, juce::Justification::centredLeft);
+        // P3: barrel polarity glyph (centre pin +) and the print's curled
+        // bracket under the POWER caption.
+        g.fillRoundedRectangle(4798.0f, 147.0f, 18.0f, 6.0f, 3.0f);
+        g.drawLine(4816.0f, 150.0f, 4833.0f, 150.0f, 3.5f);
+        {
+            juce::Path c;
+            c.addCentredArc(4846.0f, 150.0f, 13.0f, 13.0f, 0.0f,
+                            juce::MathConstants<float>::halfPi + 0.7f,
+                            juce::MathConstants<float>::halfPi - 0.7f
+                                + juce::MathConstants<float>::twoPi,
+                            true);
+            g.strokePath(c, juce::PathStrokeType(3.5f));
+        }
+        g.fillEllipse(4841.0f, 145.0f, 10.0f, 10.0f);
+        g.drawLine(4851.0f, 146.0f, 4864.0f, 138.0f, 3.5f);
+        g.drawLine(4864.0f, 136.0f, 4880.0f, 136.0f, 3.5f);
+        g.drawLine(4872.0f, 128.0f, 4872.0f, 144.0f, 3.5f);
+        {
+            juce::Path b;
+            b.startNewSubPath(4525.0f, 170.0f);
+            b.quadraticTo(4525.0f, 187.0f, 4543.0f, 187.0f);
+            b.lineTo(4897.0f, 187.0f);
+            b.quadraticTo(4915.0f, 187.0f, 4915.0f, 170.0f);
+            g.strokePath(b, juce::PathStrokeType(4.0f));
+        }
 
         // Digital-only corner (ROOM LIGHT + 50 Hz have no silk-screened home
         // on the hardware): a dashed outline marks them as ours.

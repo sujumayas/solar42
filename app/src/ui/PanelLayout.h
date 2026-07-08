@@ -162,7 +162,9 @@ inline constexpr Jack kJacks[] = {
     out(Outlet::SeqClockOut, jx(kSeq, 0.83), jy(kSeq, 0.42), "clock"),
     out(Outlet::SeqCvOut, jx(kSeq, 0.945), jy(kSeq, 0.30), "cv", kLabelLeft),
     out(Outlet::SeqGateOut, jx(kSeq, 0.945), jy(kSeq, 0.66), "gate", kLabelLeft),
-    in(Inlet::PreampExtIn, jx(kPreamp, 0.27), jy(kPreamp, 0.42), "ext. source"),
+    // Two lines like the print (keeps the P3 direction marker inside the
+    // section); JackLayer splits on '\n'.
+    in(Inlet::PreampExtIn, jx(kPreamp, 0.27), jy(kPreamp, 0.42), "ext.\nsource"),
     out(Outlet::EnvFEnvOut, jx(kEnvFollower, 0.64), jy(kEnvFollower, 0.42), "env"),
     out(Outlet::EnvFGateOut, jx(kEnvFollower, 0.875), jy(kEnvFollower, 0.42), "gate"),
     out(Outlet::LfoBOut, jx(kLfoB, 0.44), jy(kLfoB, 0.42), "out"),
