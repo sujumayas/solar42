@@ -241,6 +241,14 @@ private:
         g.drawText("MICROTONAL  DRONE  SYNTHESIZER",
                    layout::kKeyboard.x, layout::kBottom.y + 20, 1400, 60,
                    juce::Justification::centredLeft);
+        // Keyboard CV strip: the hardware wears these on the keyboard block
+        // itself (the render art hides them); a thin outlined sub-panel
+        // groups them as part of the keyboard.
+        g.setColour(kInk.withAlpha(0.85f));
+        g.drawRoundedRectangle(3130.0f, 2158.0f, 1035.0f, 222.0f, 16.0f, 4.0f);
+        g.setFont(juce::FontOptions(28.0f, juce::Font::bold));
+        g.drawText("KEYBOARD", 3150, 2164, 240, 34, juce::Justification::centredLeft);
+
         // СОЛАР 42N print at the keyboard block's right shoulder (per print).
         const juce::Font cy(juce::FontOptions(52.0f, juce::Font::bold));
         juce::AttributedString solap;

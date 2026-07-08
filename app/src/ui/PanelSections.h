@@ -355,7 +355,11 @@ private:
 class Section : public juce::Component
 {
 public:
-    enum class Band { Top, Bottom, None };
+    // Band styles follow the print: full-width Top for the mod strip's
+    // Bottom, short TopRight chips on the voice sections (DRONE 3/6, VCOs),
+    // TopLeft on the envelopes, a centred chip on the effector, None where
+    // the hardware prints no title (classic drones, filter, mixer).
+    enum class Band { Top, TopRight, TopLeft, TopCentre, Bottom, None };
 
     explicit Section(juce::String title, Band band = Band::Top, juce::String badge = {})
         : title_(std::move(title)), badge_(std::move(badge)), band_(band)
@@ -374,14 +378,21 @@ public:
 
         if (band_ != Band::None)
         {
-            auto band = band_ == Band::Top ? r.removeFromTop((float) kBand)
-                                           : r.removeFromBottom((float) kBand);
+            auto band = band_ == Band::Bottom ? r.removeFromBottom((float) kBand)
+                                              : r.removeFromTop((float) kBand);
+            if (band_ == Band::TopRight)
+                band = band.removeFromRight(band.getWidth() * 0.40f);
+            else if (band_ == Band::TopLeft)
+                band = band.removeFromLeft(band.getWidth() * 0.62f);
+            else if (band_ == Band::TopCentre)
+                band = band.withSizeKeepingCentre(band.getWidth() * 0.36f, band.getHeight());
             g.fillRoundedRectangle(band.reduced(5.0f), 14.0f);
             g.setColour(kCream);
             g.setFont(juce::FontOptions((float) kBand * 0.62f, juce::Font::bold));
             g.drawText(title_, band.reduced(24.0f, 0.0f),
-                       band_ == Band::Top ? juce::Justification::centredLeft
-                                          : juce::Justification::centred);
+                       band_ == Band::Top || band_ == Band::TopLeft
+                           ? juce::Justification::centredLeft
+                           : juce::Justification::centred);
         }
 
         if (badge_.isNotEmpty())
@@ -462,7 +473,7 @@ class ClassicDroneSection : public Section
 {
 public:
     ClassicDroneSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title, Band::Top, id.substring(1))
+        : Section(title, Band::None, id.substring(1)) // print has no title here
     {
         for (int g = 0; g < 5; ++g)
         {
@@ -487,19 +498,20 @@ public:
     {
         // Hardware row order (render spec + manual print): numbers 1-5 on top,
         // then MUTE buttons / TUNE knobs / MOD buttons above the GATE block.
+        // No title band (the print has none), so the rows use the full height.
         for (int g = 0; g < 5; ++g)
         {
             const double x = 0.095 + 0.123 * g;
-            place(*mute[g], x, 0.19, 0.115, 0.11);
-            place(*tune[g], x, 0.31, 0.115, 0.30);
-            place(*mod[g], x, 0.635, 0.115, 0.115);
+            place(*mute[g], x, 0.125, 0.115, 0.11);
+            place(*tune[g], x, 0.25, 0.115, 0.32);
+            place(*mod[g], x, 0.615, 0.115, 0.115);
         }
-        place(*volt, 0.755, 0.28, 0.19, 0.34);
+        place(*volt, 0.755, 0.24, 0.19, 0.36);
         place(*hold, 0.125, 0.775, 0.09, 0.155);
         place(*att, 0.225, 0.74, 0.135, 0.21);
         place(*rls, 0.365, 0.74, 0.135, 0.21);
 
-        ledBar_ = frac(0.73, 0.13, 0.24, 0.10);
+        ledBar_ = frac(0.73, 0.065, 0.24, 0.10);
         sensor_ = frac(0.72, 0.70, 0.17, 0.22);
     }
 
@@ -523,7 +535,8 @@ public:
 private:
     void paintExtras(juce::Graphics& g) override
     {
-        // Gen activity LED bar, "1 2 3 4 5" print beneath.
+        // Gen activity LED bar — red vertical segments like the print —
+        // with the "1 2 3 4 5" print beneath.
         auto bar = ledBar_.toFloat();
         g.setColour(juce::Colour(0xff101013));
         g.fillRoundedRectangle(bar, 8.0f);
@@ -531,7 +544,11 @@ private:
         for (int i = 0; i < 5; ++i)
         {
             const float cx = bar.getX() + bar.getWidth() * ((float) i + 0.5f) / 5.0f;
-            led(g, { cx, bar.getCentreY() }, gens_[i], kAccentRed);
+            const float bw = bar.getWidth() / 5.0f * 0.36f;
+            const float bh = bar.getHeight() * 0.70f;
+            g.setColour(kAccentRed.withAlpha(
+                0.16f + 0.84f * juce::jlimit(0.0f, 1.0f, gens_[i])));
+            g.fillRect(cx - bw * 0.5f, bar.getCentreY() - bh * 0.5f, bw, bh);
             g.setColour(kInk);
             g.drawText(juce::String(i + 1),
                        juce::Rectangle<float>(40.0f, 30.0f).withCentre({ cx, bar.getBottom() + 22.0f }),
@@ -552,7 +569,7 @@ private:
         g.setFont(juce::FontOptions(26.0f, juce::Font::bold));
         for (int i = 0; i < 5; ++i)
             g.drawText(juce::String(i + 1),
-                       frac(0.095 + 0.123 * i, 0.125, 0.115, 0.06),
+                       frac(0.095 + 0.123 * i, 0.055, 0.115, 0.06),
                        juce::Justification::centred);
 
         // MUTE / TUNE / MOD row markers, rotated along the left edge like the
@@ -569,9 +586,9 @@ private:
             g.drawText(t, area.withSizeKeepingCentre(area.getHeight(), area.getWidth()),
                        juce::Justification::centred);
         };
-        rowMarker("MUTE", 0.19, 0.11);
-        rowMarker("TUNE", 0.34, 0.24);
-        rowMarker("MOD", 0.635, 0.115);
+        rowMarker("MUTE", 0.125, 0.11);
+        rowMarker("TUNE", 0.28, 0.24);
+        rowMarker("MOD", 0.615, 0.115);
     }
 
     std::unique_ptr<PushButton> mod[5], mute[5], hold;
@@ -585,7 +602,7 @@ class PapaSrapaSection : public Section
 {
 public:
     PapaSrapaSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title, Band::Top, id.substring(1))
+        : Section(title, Band::TopRight, id.substring(1)) // print: short chip top-right
     {
         badgeFx_ = 0.9575; // the S&H field + out jack own the true corner
         badgeFy_ = 0.665;
@@ -625,8 +642,10 @@ public:
         place(*att, 0.21, 0.74, 0.105, 0.21);
         place(*rls, 0.315, 0.74, 0.105, 0.21);
 
-        cvLed_ = frac(0.53, 0.52, 0.05, 0.06);
-        shBox_ = frac(0.575, 0.755, 0.37, 0.21);
+        cvLed_ = frac(0.502, 0.52, 0.05, 0.06);
+        // Box bottom rides the section border like the print, so the
+        // in/clock/out labels sit inside it un-struck.
+        shBox_ = frac(0.575, 0.75, 0.37, 0.238);
     }
 
     void setTelemetry(float cvLed)
@@ -644,13 +663,17 @@ private:
         // Modulator activity LED next to the cv out jack.
         led(g, cvLed_.getCentre().toFloat(), cv01_, kAccentRed);
 
-        // S&H field outline.
+        // S&H field outline with the print's corner badge (in-box text would
+        // hide behind the jack nuts).
         g.setColour(kInk);
         g.drawRoundedRectangle(shBox_.toFloat(), 10.0f, 4.0f);
-        g.setFont(juce::FontOptions(30.0f, juce::Font::bold));
-        g.setColour(kAccentRed);
-        g.drawText("S&H", shBox_.withTrimmedBottom((int) (shBox_.getHeight() * 0.62)),
-                   juce::Justification::centred);
+        const auto chip = juce::Rectangle<float>(140.0f, 54.0f)
+                              .withCentre({ (float) shBox_.getRight() - 70.0f,
+                                            (float) shBox_.getY() + 4.0f });
+        g.fillRoundedRectangle(chip, 10.0f);
+        g.setColour(kCream);
+        g.setFont(juce::FontOptions(32.0f, juce::Font::bold));
+        g.drawText("S&H", chip, juce::Justification::centred);
     }
 
     std::unique_ptr<LabeledKnob> rate, fmamt, divider, pitch, noise, att, rls;
@@ -665,7 +688,7 @@ class VcoSection : public Section
 {
 public:
     VcoSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title, Band::Top)
+        : Section(title, Band::TopRight) // print: short chip top-right
     {
         cvamt = std::make_unique<LabeledKnob>(s, id + ".cvamt", "cv amt", kKnobGreen);
         tune = std::make_unique<LabeledKnob>(s, id + ".tune", "tune", kKnobGreen);
@@ -702,6 +725,9 @@ private:
         g.setFont(juce::FontOptions(30.0f, juce::Font::bold));
         g.drawText("MORPHING WAVEFORM", frac(0.28, 0.105, 0.44, 0.05),
                    juce::Justification::centred);
+        // "low" = the oct switch's down position (print sub-label).
+        g.setFont(juce::FontOptions(24.0f, juce::Font::bold));
+        g.drawText("low", frac(0.27, 0.265, 0.10, 0.05), juce::Justification::centred);
     }
 
     std::unique_ptr<LabeledKnob> cvamt, tune, wave, pwm, pw;
@@ -713,7 +739,7 @@ class EnvelopeSection : public Section
 {
 public:
     EnvelopeSection(Apvts& s, const juce::String& id, const juce::String& title)
-        : Section(title, Band::Top)
+        : Section(title, Band::TopLeft) // print: band spans ~60%, text left
     {
         const char* n[] = { "A", "D", "S", "R" };
         const char* p[] = { ".a", ".d", ".s", ".r" };
@@ -941,7 +967,7 @@ private:
 class EffectorSection : public Section
 {
 public:
-    explicit EffectorSection(Apvts& s) : Section("DUAL EFFECTOR")
+    explicit EffectorSection(Apvts& s) : Section("DUAL EFFECTOR", Band::TopCentre)
     {
         cart = std::make_unique<ChoiceBox>(s, "fx.cart", "");
         progL = std::make_unique<Prog3Switch>(s, "fx.progL", "L");
@@ -1313,6 +1339,15 @@ public:
             g.fillPath(a, juce::AffineTransform::rotation(ang)
                               .translated(r.getCentre().getPointOnCircumference(
                                   r.getWidth() * 0.5f - 10.0f, ang)));
+        }
+
+        // Diagonal corner dots, per the print.
+        for (int i = 0; i < 4; ++i)
+        {
+            const float ang = juce::MathConstants<float>::halfPi * ((float) i + 0.5f);
+            const auto p = r.getCentre().getPointOnCircumference(
+                r.getWidth() * 0.5f - 26.0f, ang);
+            g.fillEllipse(p.x - 9.0f, p.y - 9.0f, 18.0f, 18.0f);
         }
 
         const auto c = juce::Point<float>(
