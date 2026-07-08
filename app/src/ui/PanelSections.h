@@ -1101,6 +1101,14 @@ public:
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        // Activity LED beside the top (X) jack, like the print; the curved
+        // knob->jack routing arrows land with the P3 art pass.
+        led(g, frac(0.30, 0.26, 0.0, 0.0).getPosition().toFloat(), 0.0f,
+            kAccentRed, 13.0f);
+    }
+
     std::unique_ptr<LabeledKnob> xoff, yoff;
 };
 
@@ -1194,7 +1202,8 @@ public:
         addAndMakeVisible(*gain);
     }
 
-    void resized() override { place(*gain, 0.42, 0.10, 0.36, 0.62); }
+    // Medium skirted red knob like the print (was authored small).
+    void resized() override { place(*gain, 0.36, 0.06, 0.46, 0.72); }
 
     void setTelemetry(float clip)
     {

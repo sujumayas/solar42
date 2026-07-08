@@ -153,8 +153,9 @@ inline constexpr Jack kJacks[] = {
 
     // Modulation strip.
     out(Outlet::LfoAOut, jx(kLfoA, 0.44), jy(kLfoA, 0.42), "out"),
-    out(Outlet::JoyXOut, jx(kJoystick, 0.42), jy(kJoystick, 0.42), "X"),
-    out(Outlet::JoyYOut, jx(kJoystick, 0.60), jy(kJoystick, 0.42), "Y"),
+    // X over Y stacked centre like the print (labels beside the nuts).
+    out(Outlet::JoyXOut, jx(kJoystick, 0.50), jy(kJoystick, 0.26), "X", kLabelLeft),
+    out(Outlet::JoyYOut, jx(kJoystick, 0.50), jy(kJoystick, 0.62), "Y", kLabelLeft),
     in(Inlet::SeqClockIn, jx(kSeq, 0.115), jy(kSeq, 0.42), "clock"),
     // cv over gate stacked at the strip's right edge like the print; the
     // clock out keeps its census jack even though the render art hides it.
