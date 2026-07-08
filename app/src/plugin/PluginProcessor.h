@@ -62,6 +62,13 @@ public:
 
     uint64_t unitSerial() const noexcept { return rack_.tolerances().serial(); }
 
+    // The effector bay's reset/load button (M9b P4; hardware Solar 42
+    // legacy): latch the INSERTED cartridge + current 1-2-3 programs into
+    // both chips — the only way to load a swapped cartridge without
+    // flipping a toggle. Message thread; the audio thread picks the slots
+    // up in controlsFromParams().
+    void reloadCartridgeSlots();
+
     // Saved-state format stamp (DAW blobs + .s42n). Loading is tolerant of
     // older/absent stamps (missing params -> defaults, unknown params ->
     // dropped); bump only for changes that need an explicit migration.

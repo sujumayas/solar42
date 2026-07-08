@@ -112,7 +112,10 @@ VCO A · VCO B · PREAMP · DRONE 4 · DRONE 5 · DRONE 6**.
   **CV R** in · **MOD L / MOD R** (CV amount per channel).
 - **DUAL EFFECTOR**: cartridge slot; **cv x / cv y / cv z** in jacks; **X, Y, Z**
   knobs; two **1‑2‑3** program toggles (one per channel — flipping loads that
-  program from the inserted cartridge); **BLEND** (wet level, shared); **MASTER
+  program from the inserted cartridge); unlabelled round **reset/load button**
+  between the toggles (Solar 42 legacy "press reset/load … L/R FX"; the 42N
+  auto-loads on toggle flip so its manual dropped the text, but the panel
+  keeps the button — identified M9b P4); **BLEND** (wet level, shared); **MASTER
   VOLUME**; headphone jack + level. No output VCA — manual warns not to max
   MASTER (recommend ≤ 3 o'clock).
 

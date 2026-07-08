@@ -24,6 +24,7 @@ public:
     std::function<void(juce::Point<float>)> onPan;          // screen-space delta
     std::function<void(juce::Rectangle<int>)> onZoomToRect; // logical panel rect
     std::function<void()> onOpenKeyboardSettings;           // editor opens the drawer
+    std::function<void()> onCartReset; // effector reset/load button (P4)
 
     PanelView(Apvts& s, s42::Rack& rack, PatchBay& bay,
               KeyboardState& kbState, KbTouchState& kbTouch)
@@ -46,6 +47,11 @@ public:
         {
             if (onOpenKeyboardSettings)
                 onOpenKeyboardSettings();
+        };
+        effector.onCartReset = [this]
+        {
+            if (onCartReset)
+                onCartReset();
         };
         for (juce::Component* c : std::initializer_list<juce::Component*> {
                  &drone1, &drone2, &drone4, &drone5, &drone3, &drone6,

@@ -29,6 +29,7 @@ Solar42NEditor::Solar42NEditor(Solar42NProcessor& p)
         drawer_.setVisible(!drawer_.isVisible());
         drawer_.toFront(false);
     };
+    panel_.onCartReset = [this] { proc_.reloadCartridgeSlots(); };
     drawer_.onClose = [this] { drawer_.setVisible(false); };
 
     setResizable(true, true);

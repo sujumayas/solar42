@@ -361,6 +361,17 @@ float Solar42NProcessor::param(const char* id) const noexcept
     return 0.0f;
 }
 
+void Solar42NProcessor::reloadCartridgeSlots()
+{
+    // Hardware "reset/load": latch the inserted cartridge + the current
+    // 1-2-3 positions into both chips. If a slot already holds that pair
+    // this is a no-op (like re-pressing on hardware); after a cartridge
+    // swap it performs the load a toggle flip would.
+    const int cart = (int) param("fx.cart") % 4;
+    loadedL_.store(packSlot(cart, (int) param("fx.progL") % 3), std::memory_order_relaxed);
+    loadedR_.store(packSlot(cart, (int) param("fx.progR") % 3), std::memory_order_relaxed);
+}
+
 s42::Rack::Controls Solar42NProcessor::controlsFromParams() const noexcept
 {
     namespace tn = s42::tuning;

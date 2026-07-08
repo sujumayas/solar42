@@ -201,6 +201,48 @@ struct PushButton : juce::Component
     std::unique_ptr<Apvts::ButtonAttachment> attach;
 };
 
+// Unlabelled round action button (the effector bay's reset/load, M9b P4 —
+// Solar 42 legacy button the 42N print kept). Not parameter state: it fires
+// a transient action, so no attachment.
+struct BayButton : juce::Component,
+                   public juce::SettableTooltipClient
+{
+    std::function<void()> onPress;
+
+    void paint(juce::Graphics& g) override
+    {
+        const auto r = getLocalBounds().toFloat();
+        const float d = juce::jmin(r.getWidth(), r.getHeight());
+        auto c = juce::Rectangle<float>(d, d).withCentre(r.getCentre());
+        if (down_)
+            c = c.reduced(d * 0.05f);
+        g.setColour(kKnobBlack);
+        g.fillEllipse(c);
+        // Rim bright enough to read on the dark bay (the print's button
+        // sits on cream; our bay is dark).
+        g.setColour(isMouseOver() ? kCream : juce::Colour(0xff8f8f98));
+        g.drawEllipse(c.reduced(1.5f), 3.0f);
+    }
+
+    void mouseEnter(const juce::MouseEvent&) override { repaint(); }
+    void mouseExit(const juce::MouseEvent&) override { repaint(); }
+    void mouseDown(const juce::MouseEvent&) override
+    {
+        down_ = true;
+        repaint();
+    }
+    void mouseUp(const juce::MouseEvent& e) override
+    {
+        down_ = false;
+        repaint();
+        if (getLocalBounds().contains(e.getPosition()) && onPress != nullptr)
+            onPress();
+    }
+
+private:
+    bool down_ = false;
+};
+
 // Labeled combo for the few stepped controls (DIVIDER, LFO range, STAGES).
 struct ChoiceBox : juce::Component
 {
@@ -1176,11 +1218,24 @@ private:
 class EffectorSection : public Section
 {
 public:
+    // Fired by the bay's reset/load button; PanelView routes it to
+    // Solar42NProcessor::reloadCartridgeSlots().
+    std::function<void()> onCartReset;
+
     explicit EffectorSection(Apvts& s) : Section("DUAL EFFECTOR", Band::TopCentre)
     {
         cart = std::make_unique<ChoiceBox>(s, "fx.cart", "");
         progL = std::make_unique<Prog3Switch>(s, "fx.progL", "L");
         progR = std::make_unique<Prog3Switch>(s, "fx.progR", "R");
+        reset = std::make_unique<BayButton>();
+        reset->onPress = [this]
+        {
+            if (onCartReset != nullptr)
+                onCartReset();
+        };
+        reset->setTooltip("reset / load - latches the inserted cartridge's selected "
+                          "programs into both channels (needed after a cartridge swap; "
+                          "flipping a 1-2-3 toggle also loads)");
         x = std::make_unique<LabeledKnob>(s, "fx.x", "X", kKnobOrange);
         y = std::make_unique<LabeledKnob>(s, "fx.y", "Y", kKnobOrange);
         z = std::make_unique<LabeledKnob>(s, "fx.z", "Z", kKnobOrange);
@@ -1189,8 +1244,8 @@ public:
         blend = std::make_unique<LabeledKnob>(s, "fx.blend", "", kKnobOrange);
         master = std::make_unique<LabeledKnob>(s, "master.vol", "", kKnobOrange);
         for (juce::Component* c : std::initializer_list<juce::Component*> {
-                 cart.get(), progL.get(), progR.get(), x.get(), y.get(), z.get(),
-                 modL.get(), modR.get(), blend.get(), master.get() })
+                 cart.get(), progL.get(), progR.get(), reset.get(), x.get(), y.get(),
+                 z.get(), modL.get(), modR.get(), blend.get(), master.get() })
             addAndMakeVisible(c);
     }
 
@@ -1204,6 +1259,8 @@ public:
         place(*progL, 0.25, 0.24, 0.085, 0.52);
         place(*cart, 0.36, 0.26, 0.245, 0.34);
         place(*progR, 0.625, 0.24, 0.085, 0.52);
+        // Reset/load button between the toggles, under the slot (print).
+        place(*reset, 0.4575, 0.535, 0.05, 0.13);
         // MOD L/R centred over the filter strip's CV L / CV R jacks
         // (kEffector and kFilter share x/w, so the fractions line up).
         place(*modL, 0.30, 0.755, 0.09, 0.235);
@@ -1226,10 +1283,9 @@ private:
         g.setFont(juce::FontOptions(30.0f, juce::Font::bold));
         g.drawText("cartridge slot", bay.withTrimmedBottom(bay.getHeight() * 0.72f),
                    juce::Justification::centred);
-        g.setColour(kCream.withAlpha(0.6f));
-        g.setFont(juce::FontOptions(27.0f, juce::Font::bold));
-        g.drawText("flip 1-2-3 to load", bay.withTrimmedTop(bay.getHeight() * 0.74f),
-                   juce::Justification::centred);
+        // (The old "flip 1-2-3 to load" caption retired in P4 — the print
+        // has the reset/load button there instead; its tooltip carries the
+        // hint.)
 
         // BLEND / MASTER VOLUME captions above their knobs, like the print.
         g.setColour(kInk);
@@ -1266,6 +1322,7 @@ private:
 
     std::unique_ptr<ChoiceBox> cart;
     std::unique_ptr<Prog3Switch> progL, progR;
+    std::unique_ptr<BayButton> reset;
     std::unique_ptr<LabeledKnob> x, y, z, modL, modR, blend, master;
 };
 
