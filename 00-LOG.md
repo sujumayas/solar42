@@ -571,3 +571,33 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
 - Eye-check artifact: `renders/m9b-p15-panel-screenshot.png` — **user eye
   check pending**. Next: M9b P2 (square keypad pads + keyboard rework,
   blue LCD, red-ring encoder), P3 glyphs, backlog verifications.
+
+### 2026-07-08 — app M9b P2: keypad + keyboard to the print (screenshot-verified)
+- Both P2 fix groups landed, one commit each, each rebuilt + tile-diffed
+  against the matching `solar42n-panel-1.png` crop before commit:
+  16. **DRONE VOICES keypad** (`23dacb5`): six round PushButtons became
+      square keycaps — dark shadow base, bevelled top face that rides
+      up-left until pressed, light LED notch at the top centre (lit =
+      gate on), voice numbers printed above the pads, tighter column
+      pitch. Param bindings/tooltips untouched (`KeycapButton` is a
+      paint-only ToggleButton subclass).
+  17. **Keyboard section** (`e5fa794`): plates got the print's ridged
+      slat texture and now cluster **6|6 around a centre control group**
+      in the wave stagger (peak 3rd-from-outer, inner plates low, printed
+      △ outlines under each peak plate's foot). Centre group per print:
+      white status-ring icon row (bound to gate L/R, ext clock, step,
+      offset L/R telemetry for now — manual icon meanings stay a backlog
+      item), big white ▽/△ transpose buttons flanking a grey-bezel
+      **red-centre push encoder**, **LCD recolored hardware blue** with
+      white text, sunburst logo print. Kept digital divergences: OCT
+      readout moved into the LCD status row, SETTINGS chip top-right;
+      twin/split border marker is now a short red L|R cue at top centre.
+      Interaction model (glissando, pressure, sticky plates, encoder
+      detents/long-press) and all bindings unchanged — geometry + paint
+      only.
+- Gate: `check.sh` ALL GREEN — tests, pluginval SUCCESS, render smoke.
+  **No sonic change.**
+- Eye-check artifact: `renders/m9b-p2-panel-screenshot.png` — **user eye
+  check pending** (covers P1.5 + P2). Next: M9b P3 silkscreen glyphs
+  (morph position dots, jack direction markers panel-wide, wave/curve
+  icons), then the fidelity backlog verifications.
