@@ -43,6 +43,11 @@ public:
           cables(bay)
     {
         setLookAndFeel(&lnf_);
+        // Also the process default: raw g.setFont(FontOptions(...)) calls in
+        // paint code resolve their typeface through the DEFAULT LookAndFeel,
+        // not the component one — this is what puts ABC Solar on every label
+        // (incl. desktop-space siblings like PresetBar / SettingsDrawer).
+        juce::LookAndFeel::setDefaultLookAndFeel(&lnf_);
         keyboard.onOpenSettings = [this]
         {
             if (onOpenKeyboardSettings)
@@ -63,7 +68,11 @@ public:
         startTimerHz(30);
     }
 
-    ~PanelView() override { setLookAndFeel(nullptr); }
+    ~PanelView() override
+    {
+        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+        setLookAndFeel(nullptr);
+    }
 
     void panByScreenDelta(juce::Point<float> d) override
     {
@@ -117,7 +126,7 @@ public:
         g.drawFittedText("MIXER", badgeInt.withTrimmedTop(badgeInt.getHeight() / 2),
                          juce::Justification::centred, 1);
         g.setColour(kInk);
-        g.setFont(juce::FontOptions(56.0f, juce::Font::bold));
+        g.setFont(fonts::display(56.0f));
         g.drawFittedText("S42N", mid.withTrimmedTop(230).withTrimmedBottom(40),
                          juce::Justification::centred, 2);
     }
@@ -242,7 +251,7 @@ private:
         // effector): black SOLAR, red 42, black superscript N — the print
         // lockup. Original branding replaces the Elta trade dress before
         // any public build (08-implementation-plan.md §Risks).
-        const juce::Font wordmark(juce::FontOptions(200.0f, juce::Font::bold));
+        const juce::Font wordmark = fonts::display(200.0f);
         juce::AttributedString ws;
         ws.append("SOLAR ", wordmark, kInk);
         ws.append("42", wordmark, kAccentRed);
@@ -252,7 +261,7 @@ private:
         ga.addLineOfText(wordmark, "SOLAR 42", 0.0f, 0.0f);
         const float nX = 60.0f + ga.getBoundingBox(0, -1, true).getRight() + 12.0f;
         g.setColour(kInk);
-        g.setFont(juce::FontOptions(120.0f, juce::Font::bold));
+        g.setFont(fonts::display(120.0f));
         g.drawText("N", (int) nX, 292, 140, 95, juce::Justification::centredLeft);
 
         // The print's diacritics (dot-A, macron-E) + a touch of tracking.

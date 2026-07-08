@@ -472,7 +472,7 @@ with M9c"); judgement calls are flagged inline for the user to veto.
   + CPU budget); new unit tests (alloc guard, MidiClockSource, CC map);
   hands-on KeyLab 37 clock + CC pass by the user. No intended sonic
   change → no new audition WAV unless the RT fixes alter the render.
-- **Backlog (post-plan)**: remaining 9 cartridges (MAGIC, FILTER, VIBE, PITCH SHIFTER, INFINITY, STRING RINGER, SYNTEX-1, DIGITAL, GENERATOR); webcam room-light; Windows/Linux builds; original branding pass before any public release.
+- **Backlog (post-plan)**: remaining 9 cartridges (MAGIC, FILTER, VIBE, PITCH SHIFTER, INFINITY, STRING RINGER, SYNTEX-1, DIGITAL, GENERATOR); webcam room-light; Windows/Linux builds; original branding pass before any public release — incl. licensing the ABC Solar fonts (panel typography ships on DINAMO **trial** cuts since 2026-07-08; buy at abcdinamo.com).
 
 ## Verification
 
@@ -488,7 +488,7 @@ with M9c"); judgement calls are flagged inline for the user to veto.
 2. **Patch feedback instability** → rail clamps at every inlet + 1-sub-block loop delay + hostile-patch fuzz; worst case loud-but-musical, like hardware.
 3. **GUI polish tar pit** → single `PanelLayout` table + small widget kit; screenshot-diff vs reference PNG defines "done"; timeboxed beauty passes (M5, post-M8).
 4. **Touch keyboard scope** (product-within-product) → pure logic, unit-tested, UI-independent; settings drawer is the functional path, faithful display emulation can trail; presets A–D and per-note editor are designated cut lines.
-5. **Trade dress** — layout/behavior are fair game; replace Elta wordmarks before anything distributed.
+5. **Trade dress** — layout/behavior are fair game; replace Elta wordmarks before anything distributed. Same gate covers fonts: panel typography uses ABC Solar **trial** cuts (evaluation-only license) — buy the DINAMO license before any public build.
 6. **CPU** — low risk (< 5 % budgeted); measured from M4 in `check.sh`.
 
 ## Critical files

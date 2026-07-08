@@ -729,3 +729,31 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
   kb CLOCK while the DAW plays; right-click a filter FREQ → learn →
   sweep a KeyLab encoder). M9 (a+b+c) is now fully landed — remaining
   backlog: 9 cartridges, webcam room-light, Win/Linux, branding.
+
+### 2026-07-08 — panel typography: ABC Solar (DINAMO) fonts
+
+- User dropped the DINAMO **ABC Solar** trial superfamily into `Solar/`;
+  wired it in as the panel typeface (fits the instrument's name too well
+  to pass up).
+- Three cuts embedded via `juce_add_binary_data` (`Solar42NFonts`,
+  copies live in `app/assets/fonts/`): **ABC Solar Regular** (plain
+  text), **ABC Solar Bold** (all silkscreen print), **ABC Solar Display
+  Ultra** (wordmark lockups only: SOLAR 42ᴺ header + S42N badge).
+- Mechanism: `SolarLookAndFeel::getTypefaceForFont` override maps every
+  default-sans font (all the bare `FontOptions(size, bold)` paint calls)
+  → Solar Regular/Bold; `PanelView` now also registers the LnF as the
+  **process default** so desktop-space siblings (PresetBar,
+  SettingsDrawer, popups) resolve through it. Named typefaces (the
+  monospaced LED readout) keep the stock path. `solar::fonts::display()`
+  exposes the Ultra cut.
+- Glyph audit (fonttools): trial cuts carry full Latin + the print's
+  Ȧ/Ē diacritics (no stroke-drawing fallback needed); **no Cyrillic** —
+  СОЛАР 42N renders via JUCE 8 system fallback, reads fine at print size.
+- **License**: trial = evaluation only. Buying the DINAMO license is now
+  part of the branding gate before any public build (08 §Risks 5 +
+  backlog updated).
+- No sonic change — no audition WAV. Gate: check.sh ALL GREEN (105/105,
+  pluginval 10, auval, CPU bench).
+- Eye-check artifact: `renders/fonts-abc-solar-panel-screenshot.png` —
+  **user eye check pending** (wordmark now heavy Display Ultra; all
+  panel print in ABC Solar).

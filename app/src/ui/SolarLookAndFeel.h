@@ -2,11 +2,50 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "SolarFonts.h" // embedded ABC Solar OTFs (see CMake Solar42NFonts)
+
 // Panel theme + widget drawing for the Solar 42N (panel UI phase 1).
 // Colors follow the hardware code (07 §0): knob caps black/blue/green/grey/
 // orange/red by function; panel cream; ink print. Positions are M5's job —
 // this file is only "how things look".
 namespace solar {
+
+// Panel typography: ABC Solar by DINAMO (trial cuts — evaluation only,
+// license before any public build). Regular/Bold carry all silkscreen text
+// through the LookAndFeel; Display Ultra is the wordmark/logo cut only.
+// Trial set covers Latin + the print's Ȧ/Ē diacritics but NOT Cyrillic —
+// СОЛАР falls back to the system font via JUCE's glyph fallback.
+namespace fonts {
+
+inline juce::Typeface::Ptr solarRegular()
+{
+    static const juce::Typeface::Ptr t = juce::Typeface::createSystemTypefaceFor(
+        SolarFonts::ABCSolarTrialRegular_otf, (size_t) SolarFonts::ABCSolarTrialRegular_otfSize);
+    return t;
+}
+
+inline juce::Typeface::Ptr solarBold()
+{
+    static const juce::Typeface::Ptr t = juce::Typeface::createSystemTypefaceFor(
+        SolarFonts::ABCSolarTrialBold_otf, (size_t) SolarFonts::ABCSolarTrialBold_otfSize);
+    return t;
+}
+
+inline juce::Typeface::Ptr solarDisplayUltra()
+{
+    static const juce::Typeface::Ptr t = juce::Typeface::createSystemTypefaceFor(
+        SolarFonts::ABCSolarDisplayTrialUltra_otf,
+        (size_t) SolarFonts::ABCSolarDisplayTrialUltra_otfSize);
+    return t;
+}
+
+// The wordmark cut, for logo lockups only (SOLAR 42 N / S42N).
+inline juce::Font display(float height)
+{
+    return juce::Font(juce::FontOptions(solarDisplayUltra()).withHeight(height));
+}
+
+} // namespace fonts
 
 // Sampled from reference-docs/solar42n-panel-1.png.
 inline const juce::Colour kCream { 0xffe9e4d8 };
@@ -148,6 +187,16 @@ public:
     juce::Font getPopupMenuFont() override
     {
         return juce::Font(juce::FontOptions(15.0f)); // popups live in desktop space, not panel space
+    }
+
+    // Every default-sans font in the UI (all the bare FontOptions(size, bold)
+    // calls) resolves here: bold print → ABC Solar Bold, the rest → Regular.
+    // Named typefaces (e.g. the monospaced LED readout) keep the stock path.
+    juce::Typeface::Ptr getTypefaceForFont(const juce::Font& font) override
+    {
+        if (font.getTypefaceName() == juce::Font::getDefaultSansSerifFontName())
+            return font.isBold() ? fonts::solarBold() : fonts::solarRegular();
+        return LookAndFeel_V4::getTypefaceForFont(font);
     }
 };
 

@@ -52,6 +52,19 @@ add_library(solar42n_engine STATIC
 )
 target_link_libraries(solar42n_engine PUBLIC solar42n_dsp solar42n_fv1)
 
+# ---------------------------------------------------------------- fonts
+# ABC Solar / ABC Solar Display (DINAMO) — the panel typeface, embedded as
+# binary data. TRIAL license: evaluation only — license at abcdinamo.com
+# before any public build (08-implementation-plan.md §Risks, trade dress).
+juce_add_binary_data(Solar42NFonts
+    HEADER_NAME SolarFonts.h
+    NAMESPACE SolarFonts
+    SOURCES
+        assets/fonts/ABCSolarTrial-Regular.otf
+        assets/fonts/ABCSolarTrial-Bold.otf
+        assets/fonts/ABCSolarDisplayTrial-Ultra.otf
+)
+
 # ---------------------------------------------------------------- plugin
 juce_add_plugin(Solar42N
     PRODUCT_NAME "Solar42N"
@@ -87,6 +100,7 @@ target_compile_definitions(Solar42N PRIVATE
 target_link_libraries(Solar42N
     PRIVATE
         solar42n_engine
+        Solar42NFonts
         juce::juce_audio_utils
     PUBLIC
         juce::juce_recommended_config_flags
@@ -142,6 +156,7 @@ if(SOLAR42N_BUILD_TOOLS)
     )
     target_link_libraries(solar42n_statecheck PRIVATE
         solar42n_engine
+        Solar42NFonts
         juce::juce_audio_utils
         juce::juce_recommended_config_flags
     )
@@ -165,6 +180,7 @@ if(SOLAR42N_BUILD_TOOLS)
     )
     target_link_libraries(solar42n_calib PRIVATE
         solar42n_engine
+        Solar42NFonts
         juce::juce_audio_utils
         juce::juce_recommended_config_flags
     )
