@@ -532,3 +532,42 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
 - No code changed; docs only (07 correction, 08 plan, this entry). Next
   session: implement P1.5 groups in order, one commit per group, tile-diff
   each against the reference before moving on.
+
+### 2026-07-07 — app M9b P1.5: fidelity corrections landed (screenshot-verified)
+- All 15 fix groups from the morning's eye-check plan implemented, one
+  commit per group (`58942b4`…`60ebf31`), each rebuilt + tile-diffed
+  against the same reference crop before moving on:
+  1/12/15. Classic drones now match the print: **MUTE/TUNE/MOD** rows
+  top-to-bottom with column numbers on top, rotated edge markers, **no
+  title band** (print has none — rows use the full height), LED bar as
+  red vertical segments. DRONE 3/6 + VCO A/B wear short top-right title
+  chips, envelopes top-left, DUAL EFFECTOR a centred chip; S&H box got
+  the print's corner badge and stopped striking through in/clock/out.
+  2/13. VCO pwm/pw captions freed from under the jack row; "low" printed
+  under oct+3.
+  3. Mixer print: PAN ◆ + L◄ ►R marks, black channel band (EXT.AUDIO),
+  VOL captions, separators; VOICE MIXER moved to the hardware's center
+  badge between the envelopes.
+  4. Effector/filter to print layout: MOD L/R black knobs above the
+  CV L/R jacks, strip re-slotted FREQ RES · CV L DIST link GAIN CV R ·
+  FREQ RES around the frozen jack fractions, BP/LP dotted bracket +
+  floating toggle, **headphones glyph/jack/level silkscreen** (behavior
+  = M9c decision), BLEND/MASTER VOLUME captions above.
+  5. Photo-sensor windows **white at idle** — telemetry now carries the
+  red LED's own vactrol-lagged glow (`PhotoSensor::ledGlow`), room light
+  no longer tints the window pink. Audio path untouched.
+  6. Envelope jack labels moved BELOW the nuts (row raised to fy 0.72,
+  ids frozen) — the P1 label-above compromise is gone.
+  7/8/9. Seq: striped voltage-ruler band print + cv-over-gate stacked at
+  the right edge; census grew a labelSide (below/above/left) field for
+  the print's beside-the-nut labels. Joystick X/Y outs stacked centre +
+  LED. Preamp gain to the print's medium knob.
+  10/11/14. SOLAR 42ᴺ lockup (red 42, black superscript N), ȦMBIĒNT
+  diacritics, СОЛАР 42N print, WET OUT bracket, EXT. AUDIO beside its
+  jack, dashed box marks the digital-only ROOM LIGHT/50 Hz corner,
+  KEYBOARD CV jack strip boxed, d-pad corner dots.
+- Gate: `check.sh` ALL GREEN — 94/94 tests, pluginval SUCCESS, render
+  smoke. **No sonic change** (only telemetry semantics changed).
+- Eye-check artifact: `renders/m9b-p15-panel-screenshot.png` — **user eye
+  check pending**. Next: M9b P2 (square keypad pads + keyboard rework,
+  blue LCD, red-ring encoder), P3 glyphs, backlog verifications.
