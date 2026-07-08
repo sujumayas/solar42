@@ -14,6 +14,9 @@
 // M5 added the VCO A/B DRY OUTs (the red "VCO A"/"VCO B" jacks flanking the
 // mixer logo in the render — 07 §1g flagged their position as unclear) and
 // the preamp's "ext. source" jack (07 §1e lists it; it was missing here).
+// M9b P4 added the Papa Srapa cv INPUTS (print: "▲cv" under the mod/divider
+// gap — the recount found our census had the modulator's cv out but not the
+// pitch-CV in).
 
 namespace s42 {
 
@@ -93,7 +96,9 @@ namespace s42 {
     X(KbClockIn,   "kb.clock.in",      None,       LfoAOut) \
     X(KbResetIn,   "kb.reset.in",      None,       LfoAOut) \
     X(ExtAudioIn,  "ext.audio.in",     HostInput,  LfoAOut) \
-    X(PreampExtIn, "pre.ext.in",       HostInput,  LfoAOut)
+    X(PreampExtIn, "pre.ext.in",       HostInput,  LfoAOut) \
+    X(D3CvIn,      "drone3.cv.in",     None,       LfoAOut) \
+    X(D6CvIn,      "drone6.cv.in",     None,       LfoAOut)
 
 enum class Outlet : int16_t
 {

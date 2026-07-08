@@ -85,9 +85,12 @@ VCO A · VCO B · PREAMP · DRONE 4 · DRONE 5 · DRONE 6**.
   **divider** · **PITCH** (audio Schmitt osc) · **NOISE**.
 - Switches: **fm** on/off · **am** on/off · **x1/x10** (rate mult) ·
   **hi/low** (pitch range).
-- Jacks: **cv** out (the square modulator, 0…+12 V) · **GATE** in ·
-  **S&H:** clock in + out (in is internally normalled from own white noise) ·
-  **env out** · **clock**.
+- Jacks (7 — recounted M9b P4 vs manual p8 + render spec): **cv out** (the
+  square modulator, 0…+12 V; print marks it red with no text, under the
+  rate/mod gap) · **cv in** (pitch CV into the audio osc, "▲cv" under the
+  mod/divider gap; law unspecified by the manual) · **GATE** in ·
+  **env out** · **S&H box:** in (normalled from own white noise) +
+  clock in + out.
 - **GATE/HOLD/ATT/RLS** row as classic voices. No photosensor, no VOLT.
 
 ### 1c. VCO voice ×2 (VCO A, VCO B) — manual p9

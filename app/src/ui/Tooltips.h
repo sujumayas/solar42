@@ -46,6 +46,8 @@ inline const char* inletHint(s42::Inlet i)
             return "Gate: fires the voice envelope above 2.5 V (keypad button in parallel)";
         case I::D1CvIn: case I::D2CvIn: case I::D4CvIn: case I::D5CvIn:
             return "Drives this voice's photo-sensor LED - generators with MOD down follow the light";
+        case I::D3CvIn: case I::D6CvIn:
+            return "Pitch CV into the audio oscillator (audio-rate capable; ~0.5 oct/V)";
         case I::D3ShIn: case I::D6ShIn:
             return "Sample & hold input";
         case I::D3ShClockIn: case I::D6ShClockIn:

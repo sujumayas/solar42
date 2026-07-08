@@ -106,14 +106,19 @@ inline constexpr Jack kJacks[] = {
     in(Inlet::D5CvIn, jx(kDrone5, 0.535), jy(kDrone5, 0.855), "CV"),
     out(Outlet::D5EnvOut, jx(kDrone5, 0.655), jy(kDrone5, 0.855), "env"),
 
-    // Papa Srapa voices (cv out mid-right; GATE . env . S&H in/clock/out row).
-    out(Outlet::D3CvOut, jx(kDrone3, 0.615), jy(kDrone3, 0.545), "cv"),
+    // Papa Srapa voices (M9b P4 recount): the modulator's cv OUT sits under
+    // the rate/mod gap with the print's marker-only legend (no text), the
+    // pitch-cv IN under the mod/divider gap; GATE . env . S&H in/clock/out
+    // row along the bottom.
+    out(Outlet::D3CvOut, jx(kDrone3, 0.225), jy(kDrone3, 0.60), ""),
+    in(Inlet::D3CvIn, jx(kDrone3, 0.425), jy(kDrone3, 0.60), "cv"),
     in(Inlet::D3GateIn, jx(kDrone3, 0.075), jy(kDrone3, 0.855), "GATE"),
     out(Outlet::D3EnvOut, jx(kDrone3, 0.435), jy(kDrone3, 0.855), "env out"),
     in(Inlet::D3ShIn, jx(kDrone3, 0.635), jy(kDrone3, 0.855), "in"),
     in(Inlet::D3ShClockIn, jx(kDrone3, 0.76), jy(kDrone3, 0.855), "clock"),
     out(Outlet::D3ShOut, jx(kDrone3, 0.885), jy(kDrone3, 0.855), "out"),
-    out(Outlet::D6CvOut, jx(kDrone6, 0.615), jy(kDrone6, 0.545), "cv"),
+    out(Outlet::D6CvOut, jx(kDrone6, 0.225), jy(kDrone6, 0.60), ""),
+    in(Inlet::D6CvIn, jx(kDrone6, 0.425), jy(kDrone6, 0.60), "cv"),
     in(Inlet::D6GateIn, jx(kDrone6, 0.075), jy(kDrone6, 0.855), "GATE"),
     out(Outlet::D6EnvOut, jx(kDrone6, 0.435), jy(kDrone6, 0.855), "env out"),
     in(Inlet::D6ShIn, jx(kDrone6, 0.635), jy(kDrone6, 0.855), "in"),

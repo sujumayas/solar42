@@ -56,8 +56,8 @@ void PapaSrapaVoice::setParams(const Params& p) noexcept
     noiseSm_.setTarget(p.noise01);
 }
 
-float PapaSrapaVoice::process(bool gateIn, bool shPatched, float shInVolts,
-                              float shClockVolts) noexcept
+float PapaSrapaVoice::process(bool gateIn, float cvInVolts, bool shPatched,
+                              float shInVolts, float shClockVolts) noexcept
 {
     envelope_.gate(gateIn || params_.hold);
     envValue_ = envelope_.process();
@@ -74,7 +74,8 @@ float PapaSrapaVoice::process(bool gateIn, bool shPatched, float shInVolts,
     const bool fmHigh = div <= 1 ? rateHigh : (divCount_ & ((unsigned) div >> 1)) != 0;
 
     // Audio oscillator; FM jumps its pitch by up to kSrapaFmDepthOct octaves.
-    float pitchV = pitchVSm_.next();
+    // The panel cv jack drives the same pitch node (audio-rate capable).
+    float pitchV = pitchVSm_.next() + cvInVolts * tuning::kSrapaCvOctPerVolt;
     if (params_.fmOn && fmHigh)
         pitchV += fmAmtSm_.next() * tuning::kSrapaFmDepthOct;
     else

@@ -46,9 +46,12 @@ public:
     void setParams(const Params& p) noexcept;
 
     // gateIn: keypad button or GATE jack (already thresholded).
+    // cvInVolts: the panel "cv" input — pitch CV into the audio oscillator
+    // (M9b P4 recount; the manual doesn't spec the law, see
+    // tuning::kSrapaCvOctPerVolt).
     // shPatched/shInVolts: the S&H input jack (Internal normal = own noise).
     // shClockVolts: the S&H clock jack.
-    float process(bool gateIn, bool shPatched, float shInVolts,
+    float process(bool gateIn, float cvInVolts, bool shPatched, float shInVolts,
                   float shClockVolts) noexcept; // voice out, volts
 
     float cvOutVolts() const noexcept { return cvOut_; }

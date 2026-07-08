@@ -85,6 +85,8 @@ inline constexpr float kSrapaAmSlewSec = 30.0e-6f; // AM chop edge (~30 us keeps
 inline constexpr float kSrapaDutySpread = 0.10f;   // Schmitt duty = 0.5 +- spread * unit tolerance... never 50 %
 inline constexpr float kSrapaDutyBias = 0.08f;     // ...plus a fixed charge/discharge asymmetry
 inline constexpr float kSrapaLevelVolts = 4.0f;    // voice peak level into the mixer
+inline constexpr float kSrapaCvOctPerVolt = 0.5f;  // panel cv-in pitch law (manual is silent; Schmitt
+                                                   // osc CV pull, gentler than V/oct — by ear, M8 style)
 
 // ---- VCO A/B (AS3340; base octave / FM gain / sub mix unspecified)
 inline constexpr float kVcoLowBaseV = 1.0f;        // "low" octave: knob min + V/oct 0 = C1

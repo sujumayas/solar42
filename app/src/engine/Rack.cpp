@@ -19,6 +19,7 @@ constexpr Outlet kDroneEnvOut[] = { Outlet::D1EnvOut, Outlet::D2EnvOut, Outlet::
 constexpr int kDroneNumber[] = { 1, 2, 4, 5 };
 
 constexpr Inlet kSrapaGateIn[] = { Inlet::D3GateIn, Inlet::D6GateIn };
+constexpr Inlet kSrapaCvIn[] = { Inlet::D3CvIn, Inlet::D6CvIn };
 constexpr Inlet kSrapaShIn[] = { Inlet::D3ShIn, Inlet::D6ShIn };
 constexpr Inlet kSrapaShClockIn[] = { Inlet::D3ShClockIn, Inlet::D6ShClockIn };
 constexpr Outlet kSrapaCvOut[] = { Outlet::D3CvOut, Outlet::D6CvOut };
@@ -190,6 +191,7 @@ void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
     for (int s = 0; s < kSrapaVoices; ++s)
     {
         const float* gateJack = bus_.in(kSrapaGateIn[s]);
+        const float* cvJack = bus_.in(kSrapaCvIn[s]);
         const float* shIn = bus_.in(kSrapaShIn[s]);
         const float* shClock = bus_.in(kSrapaShClockIn[s]);
         const bool shPatched = bus_.isPatched(kSrapaShIn[s]);
@@ -200,7 +202,7 @@ void Rack::processSubBlock(float* outL, float* outR, const float* extInL,
         for (int i = 0; i < n; ++i)
         {
             const bool gate = controls_.srapaKey[s] || gateJack[i] > 2.5f;
-            srapaOut[s][i] = srapas_[s].process(gate, shPatched,
+            srapaOut[s][i] = srapas_[s].process(gate, railLimit(cvJack[i]), shPatched,
                                                 railLimit(shIn[i]), shClock[i]);
             cvOut[i] = srapas_[s].cvOutVolts();
             envOut[i] = srapas_[s].envOutVolts();

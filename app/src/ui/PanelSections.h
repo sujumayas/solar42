@@ -735,7 +735,9 @@ public:
         place(*att, 0.21, 0.74, 0.105, 0.21);
         place(*rls, 0.315, 0.74, 0.105, 0.21);
 
-        cvLed_ = frac(0.502, 0.52, 0.05, 0.06);
+        // Modulator LED rides beside the cv out jack (P4: the jack moved to
+        // the print's rate/mod gap).
+        cvLed_ = frac(0.29, 0.585, 0.05, 0.06);
         // Box bottom rides the section border like the print, so the
         // in/clock/out labels sit inside it un-struck.
         shBox_ = frac(0.575, 0.75, 0.37, 0.238);

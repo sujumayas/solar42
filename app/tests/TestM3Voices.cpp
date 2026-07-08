@@ -22,7 +22,8 @@ constexpr double kSr = 48000.0;
 
 // Render a Papa Srapa voice (HOLD latched, no S&H clock) and drop the
 // parameter-smoother transient.
-std::vector<float> renderSrapa(const s42::PapaSrapaVoice::Params& p, double seconds = 1.5)
+std::vector<float> renderSrapa(const s42::PapaSrapaVoice::Params& p, double seconds = 1.5,
+                               float cvInVolts = 0.0f)
 {
     s42::Tolerances tol;
     s42::PapaSrapaVoice v;
@@ -35,7 +36,7 @@ std::vector<float> renderSrapa(const s42::PapaSrapaVoice::Params& p, double seco
     x.reserve((size_t) (total - skip));
     for (int i = 0; i < total; ++i)
     {
-        const float y = v.process(false, false, 0.0f, 0.0f);
+        const float y = v.process(false, cvInVolts, false, 0.0f, 0.0f);
         if (i >= skip)
             x.push_back(y);
     }
@@ -178,6 +179,17 @@ TEST_CASE("srapa mode 5: NOISE knob replaces the oscillator with white noise", "
     CHECK(noisyCycles > 20 * plainCycles); // aperiodic wideband, not a tone
 }
 
+TEST_CASE("srapa cv in pulls the audio oscillator pitch (M9b P4 jack)", "[engine][srapa]")
+{
+    const auto base = renderSrapa(srapaBase());
+    const auto pulled = renderSrapa(srapaBase(), 1.5, 4.0f); // +4 V at the cv jack
+
+    const int cBase = testutil::countCycles(base, 1.0f);
+    const int cPulled = testutil::countCycles(pulled, 1.0f);
+    // kSrapaCvOctPerVolt = 0.5 -> +4 V = +2 octaves = ~4x the cycle rate.
+    CHECK(cPulled > cBase * 2);
+}
+
 TEST_CASE("srapa cv out is a unipolar 0..12 V square", "[engine][srapa]")
 {
     s42::Tolerances tol;
@@ -189,7 +201,7 @@ TEST_CASE("srapa cv out is a unipolar 0..12 V square", "[engine][srapa]")
     float mn = 1.0e9f, mx = -1.0e9f;
     for (int i = 0; i < (int) kSr; ++i)
     {
-        v.process(false, false, 0.0f, 0.0f);
+        v.process(false, 0.0f, false, 0.0f, 0.0f);
         mn = std::min(mn, v.cvOutVolts());
         mx = std::max(mx, v.cvOutVolts());
     }
@@ -212,7 +224,7 @@ TEST_CASE("srapa S&H samples its own noise only on clock rising edges", "[engine
         const bool clockHigh = (i / half) % 2 == 1;
         if (clockHigh && !((i - 1) / half % 2 == 1))
             edges.push_back(i);
-        v.process(false, false, 0.0f, clockHigh ? 10.0f : 0.0f);
+        v.process(false, 0.0f, false, 0.0f, clockHigh ? 10.0f : 0.0f);
         held.push_back(v.shOutVolts());
     }
 
