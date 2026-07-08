@@ -335,7 +335,9 @@ enlargement — not per-label tweaking.
   - **Keyboard status icons**: when P2 adds the icon row, wire the ones
     that are real state displays (clock, arp/seq, hold) to telemetry
     rather than printing them as decoration.
-- *Verify (every phase)*: screenshot diff vs the reference PNG tiles; all
+- *Verify (every phase)*: screenshot diff vs the reference PNG tiles
+  (**`app/scripts/panel-shot.sh`** captures the standalone window; its
+  header documents the tile-crop math vs `solar42n-panel-1.png`); all
   interactive text legible at default window size; `check.sh` green;
   user eye check (the final gate).
 
