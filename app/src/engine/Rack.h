@@ -116,6 +116,11 @@ private:
     float filterFreqL_ = 900.0f, filterFreqR_ = 900.0f; // tolerance-skewed base cutoffs
     EffectorModule effector_;
     Smoother masterSm_;
+
+    // Reset-jack activity glow for the keyboard icon row (M9b P4): a raw
+    // edge pulse is one sub-block long, far under the UI's 30 Hz sampling,
+    // so it latches to 1 and decays over ~150 ms.
+    float kbResetGlow_ = 0.0f;
 };
 
 } // namespace s42

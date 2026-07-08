@@ -56,7 +56,11 @@ public:
                                    || std::abs(t.kbExtClock - tele_.kbExtClock) > 0.5f
                                    || t.kbOctave != tele_.kbOctave
                                    || std::abs(t.kbOffset[0] - tele_.kbOffset[0]) > 0.5f
-                                   || std::abs(t.kbOffset[1] - tele_.kbOffset[1]) > 0.5f;
+                                   || std::abs(t.kbOffset[1] - tele_.kbOffset[1]) > 0.5f
+                                   // Analog ring levels (P4: v/oct, pressure, reset glow).
+                                   || std::abs(t.kbVoct - tele_.kbVoct) > 0.2f
+                                   || std::abs(t.kbPress - tele_.kbPress) > 0.2f
+                                   || std::abs(t.kbReset - tele_.kbReset) > 0.05f;
         tele_ = t;
         if (platesChanged)
         {
@@ -385,23 +389,29 @@ private:
 
     // ------------------------------------------------------------- painting
 
-    // White status rings + printed glyphs (print's icon row; meanings bound
-    // to available telemetry until the backlog item nails the manual's set):
-    // left = gate L, gate R, ext clock; right = arp/seq step, offset L/R.
+    // White status rings + printed glyphs — the print's icon row IS the
+    // hardware keyboard's I/O jack row, in the manual's IN-OUT order (M9b
+    // P4): clock in 🕐 · v/oct out ⚡ · gate L out ⊓ | gate R out ⊓ ·
+    // pressure out ↓ · reset in ⏎. Our census keeps the actual jacks in the
+    // boxed KEYBOARD CV strip (documented divergence); these rings glow
+    // with each jack's live signal.
     void paintIconRow(juce::Graphics& g)
     {
-        const bool lit[6] = { tele_.kbGateL > 0.5f, tele_.kbGateR > 0.5f,
-                              tele_.kbExtClock > 0.5f, tele_.kbStep[0] >= 0,
-                              tele_.kbOffset[0] > 0.5f, tele_.kbOffset[1] > 0.5f };
+        const float level[6] = { tele_.kbExtClock,
+                                 juce::jlimit(0.0f, 1.0f, tele_.kbVoct * (1.0f / 8.0f)),
+                                 tele_.kbGateL,
+                                 tele_.kbGateR,
+                                 juce::jlimit(0.0f, 1.0f, tele_.kbPress * (1.0f / 8.0f)),
+                                 tele_.kbReset };
         for (int i = 0; i < 6; ++i)
         {
             const auto r = iconRingRect(i);
-            if (lit[i])
+            if (level[i] > 0.04f)
             {
-                g.setColour(juce::Colour(0xfff2df9a).withAlpha(0.55f));
+                g.setColour(juce::Colour(0xfff2df9a).withAlpha(0.55f * level[i]));
                 g.fillEllipse(r.expanded(9.0f));
             }
-            g.setColour(juce::Colours::white.withAlpha(lit[i] ? 1.0f : 0.92f));
+            g.setColour(juce::Colours::white.withAlpha(0.92f + 0.08f * level[i]));
             g.fillEllipse(r);
             g.setColour(juce::Colour(0xffa89f8c));
             g.drawEllipse(r.reduced(1.0f), 2.5f);

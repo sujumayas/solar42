@@ -35,6 +35,7 @@ struct TelemetryData
     uint16_t kbHeld = 0;                  // held/latched plates, global bits
     int32_t kbStep[2] = { -1, -1 };       // arp/seq position per side, -1 = keyboard mode
     float kbExtClock = 0.0f;              // clocking from the CLOCK jack, 0/1
+    float kbReset = 0.0f;                 // RESET jack pulse glow (decayed), 0..1
     int32_t kbOctave = 0;                 // single-behaviour octave shift
     float kbOffset[2] = {};               // transpose-offset toggles, 0/1
 

@@ -344,6 +344,12 @@ void Rack::publishTelemetry(float peakL, float peakR, int n) noexcept
     t.kbOctave = keyboard_.octaveShift();
     t.kbOffset[0] = keyboard_.offsetEnabled(0) ? 1.0f : 0.0f;
     t.kbOffset[1] = keyboard_.offsetEnabled(1) ? 1.0f : 0.0f;
+    // Reset-jack pulses are too short for the UI's frame rate: latch and
+    // decay ~150 ms (sub-blocks run ~750 Hz at 48 k).
+    kbResetGlow_ *= 0.97f;
+    if (bus_.in(Inlet::KbResetIn)[n - 1] > 2.5f)
+        kbResetGlow_ = 1.0f;
+    t.kbReset = kbResetGlow_;
     t.outL = peakL;
     t.outR = peakR;
     telemetry_.publish(t);
