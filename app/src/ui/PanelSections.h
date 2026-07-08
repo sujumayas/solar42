@@ -455,8 +455,9 @@ private:
 
 // ---------------------------------------------------------------- voice sections
 
-// Classic drone voice (DRONE 1/2/4/5): 5 gen columns MOD/TUNE/MUTE, red 5-LED
-// bar, VOLT, photo-sensor window; bottom row HOLD/ATT/RLS between the jacks.
+// Classic drone voice (DRONE 1/2/4/5): 5 gen columns MUTE/TUNE/MOD (hardware
+// top-to-bottom order), red 5-LED bar, VOLT, photo-sensor window; bottom row
+// HOLD/ATT/RLS between the jacks.
 class ClassicDroneSection : public Section
 {
 public:
@@ -467,7 +468,7 @@ public:
         {
             const auto base = id + ".gen" + juce::String(g + 1);
             mod[g] = std::make_unique<PushButton>(s, base + ".mod", "", kAccentRed);
-            tune[g] = std::make_unique<LabeledKnob>(s, base + ".tune", juce::String(g + 1), kKnobBlack);
+            tune[g] = std::make_unique<LabeledKnob>(s, base + ".tune", "", kKnobBlack);
             mute[g] = std::make_unique<PushButton>(s, base + ".mute", "", kKnobGrey);
             addAndMakeVisible(*mod[g]);
             addAndMakeVisible(*tune[g]);
@@ -484,12 +485,14 @@ public:
 
     void resized() override
     {
+        // Hardware row order (render spec + manual print): numbers 1-5 on top,
+        // then MUTE buttons / TUNE knobs / MOD buttons above the GATE block.
         for (int g = 0; g < 5; ++g)
         {
             const double x = 0.095 + 0.123 * g;
-            place(*mod[g], x, 0.13, 0.115, 0.115);
-            place(*tune[g], x, 0.25, 0.115, 0.30);
-            place(*mute[g], x, 0.57, 0.115, 0.11);
+            place(*mute[g], x, 0.19, 0.115, 0.11);
+            place(*tune[g], x, 0.31, 0.115, 0.30);
+            place(*mod[g], x, 0.635, 0.115, 0.115);
         }
         place(*volt, 0.755, 0.28, 0.19, 0.34);
         place(*hold, 0.125, 0.775, 0.09, 0.155);
@@ -544,12 +547,31 @@ private:
         g.setColour(kInk);
         g.drawEllipse(w, 4.0f);
 
-        // MOD / TUNE / MUTE row markers.
+        // Column numbers above the MUTE row, per the hardware print.
+        g.setColour(kInk);
+        g.setFont(juce::FontOptions(26.0f, juce::Font::bold));
+        for (int i = 0; i < 5; ++i)
+            g.drawText(juce::String(i + 1),
+                       frac(0.095 + 0.123 * i, 0.125, 0.115, 0.06),
+                       juce::Justification::centred);
+
+        // MUTE / TUNE / MOD row markers, rotated along the left edge like the
+        // print (reads bottom-to-top).
         g.setColour(kInk.withAlpha(0.8f));
-        g.setFont(juce::FontOptions(21.0f, juce::Font::bold));
-        g.drawText("MOD", frac(0.005, 0.13, 0.085, 0.115), juce::Justification::centred);
-        g.drawText("TUNE", frac(0.005, 0.30, 0.085, 0.20), juce::Justification::centred);
-        g.drawText("MUTE", frac(0.005, 0.57, 0.085, 0.11), juce::Justification::centred);
+        g.setFont(juce::FontOptions(24.0f, juce::Font::bold));
+        auto rowMarker = [&](const juce::String& t, double fy, double fh)
+        {
+            const auto area = frac(0.005, fy, 0.085, fh);
+            juce::Graphics::ScopedSaveState ss(g);
+            g.addTransform(juce::AffineTransform::rotation(
+                -juce::MathConstants<float>::halfPi,
+                (float) area.getCentreX(), (float) area.getCentreY()));
+            g.drawText(t, area.withSizeKeepingCentre(area.getHeight(), area.getWidth()),
+                       juce::Justification::centred);
+        };
+        rowMarker("MUTE", 0.19, 0.11);
+        rowMarker("TUNE", 0.34, 0.24);
+        rowMarker("MOD", 0.635, 0.115);
     }
 
     std::unique_ptr<PushButton> mod[5], mute[5], hold;
