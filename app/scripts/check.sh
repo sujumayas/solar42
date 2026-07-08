@@ -62,4 +62,8 @@ else
     echo "solar42n_render not built — skipped."
 fi
 
+echo "== cpu bench =="
+# M9c P3: full demo rig must stay under 10 % of one core @ 48 k / 128.
+"$BUILD_DIR/solar42n_render" --bench "${CPU_BUDGET_PCT:-10}"
+
 echo "== check.sh: ALL GREEN =="

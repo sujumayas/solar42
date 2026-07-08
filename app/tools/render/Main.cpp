@@ -3,8 +3,10 @@
 // demos of whatever the engine can do so milestones can be heard.
 //
 // usage: solar42n_render [out.wav] [seconds]
+//        solar42n_render --bench [budgetPct]   (CPU gate, M9c P3)
 #include "engine/Rack.h"
 
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -62,8 +64,12 @@ void writeWav16(const std::string& path, const std::vector<float>& l,
 
 int main(int argc, char** argv)
 {
-    const std::string out = argc > 1 ? argv[1] : "solar42n-m4-fullpath.wav";
-    const double seconds = argc > 2 ? std::atof(argv[2]) : 20.0;
+    // --bench [budgetPct]: CPU measurement instead of a WAV (M9c P3) —
+    // realtime ratio over the same full demo rig; nonzero exit over budget.
+    const bool bench = argc > 1 && std::strcmp(argv[1], "--bench") == 0;
+    const double budgetPct = bench && argc > 2 ? std::atof(argv[2]) : 0.0;
+    const std::string out = !bench && argc > 1 ? argv[1] : "solar42n-m4-fullpath.wav";
+    const double seconds = !bench && argc > 2 ? std::atof(argv[2]) : 20.0;
 
     s42::Rack rack;
     rack.prepare(kSr, 512);
@@ -180,6 +186,41 @@ int main(int argc, char** argv)
     rack.requestPatch(s42::Inlet::KbClockIn, s42::Outlet::SeqClockOut);
     rack.requestPatch(s42::Inlet::D4CvIn, s42::Outlet::LfoAOut);
     rack.requestPatch(s42::Inlet::FiltCvLIn, s42::Outlet::LfoBOut);
+
+    if (bench)
+    {
+        // The plan's reference config: 48 k / 128-sample blocks, fresh
+        // controls every block — the exact per-block work processBlock does.
+        constexpr int kBlock = 128;
+        constexpr double kBenchSec = 10.0;
+        const auto frames = (size_t) (kBenchSec * kSr);
+        std::vector<float> l(frames + kBlock), r(frames + kBlock);
+
+        for (size_t i = 0; i < (size_t) kSr; i += kBlock) // 1 s warm-up
+        {
+            rack.setControls(c);
+            rack.process(l.data(), r.data(), nullptr, nullptr, kBlock);
+        }
+        const auto t0 = std::chrono::steady_clock::now();
+        for (size_t i = 0; i < frames; i += kBlock)
+        {
+            rack.setControls(c);
+            rack.process(l.data() + i, r.data() + i, nullptr, nullptr, kBlock);
+        }
+        const auto elapsed =
+            std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        const double pct = 100.0 * elapsed / kBenchSec;
+        std::printf("solar42n_render --bench: %.0f s of audio in %.3f s"
+                    " = %.2f%% of one core (48 kHz / %d-sample blocks)\n",
+                    kBenchSec, elapsed, pct, kBlock);
+        if (budgetPct > 0.0 && pct > budgetPct)
+        {
+            std::fprintf(stderr, "FAIL: %.2f%% exceeds the %.1f%% CPU budget\n",
+                         pct, budgetPct);
+            return 1;
+        }
+        return 0;
+    }
 
     const auto total = (size_t) (seconds * kSr);
     std::vector<float> l(total), r(total);
