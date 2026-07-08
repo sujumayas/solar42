@@ -496,3 +496,39 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
   `m5-panel-screenshot.png` and the reference PNG). **User eye check
   pending.** P2 (square DRONE VOICES pads, keyboard-section fidelity
   rework) and P3 (silkscreen glyphs) remain, specs in 08.
+
+### 2026-07-07 — M9b P1 eye check (verdict: ITERATE) + P1.5 fidelity plan
+- **Method.** Cropped `renders/m9b-p1-panel-screenshot.png` and the reference
+  `reference-docs/solar42n-panel-1.png` into matched section tiles (sips) and
+  compared every section side by side at readable zoom; cross-checked each
+  suspected gap against `07-42n-panel-inventory.md` and the manual text
+  before calling it real.
+- **P1 verdict: the legibility pass held** — floor fonts, slide switches,
+  DIVIDER knob, cartridge bay, envelope/filter overlap fixes all confirmed
+  in the screenshot. But the tile review surfaced a second wave of fidelity
+  gaps → scoped as **M9b P1.5 (15 fixes, detailed where/what/how/verify in
+  08)** so nothing lands unreviewed or breaks layout invariants.
+- **Headline finds:**
+  - Classic drone sections draw **MOD/TUNE/MUTE top-to-bottom; hardware
+    prints MUTE/TUNE/MOD** (numbers 1–5 at top). `07` §1a had the same
+    error — the doc is now corrected (render spec + manual print agree).
+  - **VCO pwm/pw knob captions are invisible** — the caption strip sits
+    under the census jack-row nuts.
+  - **Headphones out (jack + level, inventory §1g) was never drawn** —
+    behavior decision (standalone monitor gain?) parked in the backlog.
+  - Mixer print details (PAN◆/L◄►R marks, black channel band, EXT.AUDIO),
+    MOD L/R knobs belong above the filter strip not in it, sensor windows
+    render pink at idle (hardware: white), missing СОЛАР 42N print, SOLAR
+    42ᴺ lockup colors/superscript, ĀMBIĒNT diacritics, seq voltage-ruler
+    stripe, S&H corner badge lost in P1.
+  - P2 enriched: keypad pads square w/ numbers above + LED notch; keyboard
+    LCD must be **blue** (ours green), encoder **red-ring**, ridged
+    staggered plates. P3 enriched: morph position dots 1–7/8–14, jack
+    direction markers (red ▲ out / black ▸ in) panel-wide.
+  - Backlog (evaluate before building): Papa Srapa jack recount vs manual
+    p8 (render shows two unplaced hex jacks; census append-only), effector
+    center element between 1-2-3 switches, "link" control type, MUTE
+    indicator polarity + Init defaults, keyboard status icons → telemetry.
+- No code changed; docs only (07 correction, 08 plan, this entry). Next
+  session: implement P1.5 groups in order, one commit per group, tile-diff
+  each against the reference before moving on.

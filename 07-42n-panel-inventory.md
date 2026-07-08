@@ -66,8 +66,11 @@ VCO A · VCO B · PREAMP · DRONE 4 · DRONE 5 · DRONE 6**.
 
 ### 1a. Classic drone voice ×4 (DRONE 1, 2, 4, 5) — manual p7
 
-- 5 generator columns × 3 rows labelled **MOD / TUNE / MUTE**: per generator a
-  MOD push-button (top), TUNE knob (black), MUTE push-button (bottom).
+- 5 generator columns × 3 rows labelled **MUTE / TUNE / MOD** top-to-bottom:
+  per generator a MUTE push-button (top, column numbers 1–5 printed above),
+  TUNE knob (black), MOD push-button (bottom, above the GATE/HOLD block).
+  (Corrected 2026-07-07 against the render-spec art + manual print — an
+  earlier revision of this doc had MOD/MUTE swapped.)
 - **Red 5-LED bar** "1 2 3 4 5" = generator activity.
 - **VOLT** knob (blue): transpose-all-down; past ~half = cross-FM dirty zone.
 - **Photo-sensor**: white circular window (LDR + red LED opto).

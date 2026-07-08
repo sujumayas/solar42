@@ -19,7 +19,7 @@
 | M7 — State, presets, conveniences | ✅ done | commit `5fe42d9` (2026-07-04); 87/87 tests (86 Catch2 incl. new effector loaded-slot semantics + `solar42n_statecheck` harness: randomized full-state round-trip → relaunched twins render sample-identical, all 6 factory presets load/render, click-free switch fades to true silence); pluginval SUCCESS; CARTRIDGES child persists what each FV-1 chip HOLDS (mid-swap slots survive), TOLERANCES child persists the unit serial (+ Swap Unit action), UI child persists editor size; PresetManager + preset bar (6 factory presets, user `.s42n` in ~/Library/Application Support/Solar42N/Presets, prev/next, faded loads keep *your* serial); tooltips on all 63 jacks (from the registry: direction/range/normal) + curated control hints; automation pass: parameter groups per section, real units (s/Hz/dB/V/%/L-R), knob value bubbles + double-click default; 1-2-3 combos → real 3-pos switches + cartridge-bay art; `renders/solar42n-m7-preset-srapa-aviary.wav`, `renders/solar42n-m7-preset-reverse-air.wav` — **ear check pending** |
 | M8 — Calibration by ear | 🔶 in progress | kit commit `73e959e` (2026-07-05): `solar42n_calib` renders 11 per-domain audition scenes through the real processor into `renders/calib/`; listening protocol + verdict table in `09-calibration-protocol.md`; 88/88 tests; pluginval SUCCESS. Same session: preset location fix + legacy migration (user preset preserved), cross-build state merge (+statecheck case), cable-wipe-on-re-prepare engine bug fixed (+TestRouting case), standalone Bluetooth TCC crash fixed. **Ear loop pending: per-scene verdicts vs SOUND DEMO 3** |
 | M9a — MIDI-in: keyboard + drone gates | ✅ done | commit `2d926f9` (2026-07-05): `MidiPerformer` (JUCE-free) + `KbTouch.plateShift`; C1–F1→drones (momentary or HOLD-latch via `midi.droneLatch` checkbox in the drawer), 36+→plates w/ per-note octave shift (60–71 native), velocity/AT→pressure, CC64/123; 94/94 tests (+6), pluginval SUCCESS; **hands-on KeyLab 37 verdict pending** |
-| M9b — UI legibility & fidelity pass | 🔶 P1 done | **P1 done, commit `41268ff` (2026-07-05)**: legibility floor, ChoiceSlideSwitch (LFO x6/x1/x10 + STAGES 4/5/3), DIVIDER knob, cartridge bay 2.5×, envelope rebuild + census `labelAbove`, filter-strip inset + BP/LP marks, all screenshot-verified (`renders/m9b-p1-panel-screenshot.png`), 94/94 + pluginval green; **user eye check pending**. P2 (square pads, keyboard rework) + P3 (glyphs) remain — list in **“M9 breakdown”** below |
+| M9b — UI legibility & fidelity pass | 🔶 P1 done, P1.5 scoped | **P1 done, commit `41268ff` (2026-07-05)**: legibility floor, ChoiceSlideSwitch (LFO x6/x1/x10 + STAGES 4/5/3), DIVIDER knob, cartridge bay 2.5×, envelope rebuild + census `labelAbove`, filter-strip inset + BP/LP marks, 94/94 + pluginval green. **Eye check done 2026-07-07 → ITERATE**: tile-by-tile review vs `solar42n-panel-1.png` confirmed the P1 fixes and found fidelity gaps → **P1.5 (15 detailed fixes), enriched P2/P3, + fidelity backlog — all in “M9 breakdown” below**. Headline finds: classic-drone MUTE/TUNE/MOD rows flipped (07 doc corrected too), VCO pwm/pw captions hidden by jack row, missing headphones out, mixer/effector print details, sensor idle tint |
 | M9c — RT-safety, performance, release | ⬜ | original M9 scope minus M9a (MIDI clock + CC-learn live here) |
 
 ## Context
@@ -191,16 +191,145 @@ enlargement — not per-label tweaking.
   7. Minor: joystick "offset X/X/Y/offset Y" label collisions; pulser→clock
      red arrow crosses the pulser knob; seq gate toggles/LEDs tiny; mixer
      channel labels tiny + PAN row missing L•R marks.
-- **P2 — hardware fidelity**:
-  8. DRONE VOICES keypad → six **square** pads, numbers printed above
-     (currently round knob-look buttons, numbers tiny below).
-  9. Keyboard section rework: plates clustered **around** the center control
-     group with staggered heights, round-button row, red-ring encoder, blue
-     LCD, printed triangles (reference look); keep the digital OCT readout.
-- **P3 — silkscreen art**: VCO morph waveform glyphs, LFO wave icons, Papa
-  Srapa red fm/am arrows, envelope-follower + mic glyphs.
-- *Verify*: screenshot diff vs the reference PNG; all interactive text
-  legible at default window size; user eye check (the final gate).
+- **P1 status: done** (commit `41268ff`). Eye check 2026-07-07 (tile-by-tile
+  sips crops of `renders/m9b-p1-panel-screenshot.png` vs the reference, all
+  claims re-checked against manual text + `07`): the P1 legibility fixes are
+  verified in; the side-by-side review found the fidelity gaps below.
+
+- **P1.5 — fidelity corrections (eye check 2026-07-07).** Each fix lists
+  *where / what / how / verify*. Ground rules so nothing breaks: work the
+  numbered groups **in order, one commit per group**; parameter attachments
+  and jack ids are never touched (layout/paint only — anything needing a
+  param or census change is explicitly flagged); after every group rebuild,
+  screenshot, crop the affected tile and diff it against the same reference
+  crop before moving on.
+  1. **Classic drone rows are vertically flipped** — `ClassicDroneSection`
+     (`PanelSections.h`). Hardware prints **MUTE (top) / TUNE / MOD (bottom)**
+     with column numbers 1–5 above the MUTE row (render spec + manual text
+     "MUTE TUNE MOD"; `07` §1a had it backwards — corrected this session).
+     Reorder the three rows + rotated edge labels + move numbers to the top;
+     MOD buttons end up directly above the GATE/HOLD block. Layout-only:
+     every widget keeps its param id. Verify: tile diff + click MOD/MUTE and
+     confirm the right params move (value bubbles), save/reload state.
+  2. **VCO pwm/pw knob captions invisible** — `VcoSection::resized()`. The
+     `LabeledKnob` caption strip (bottom ⅕ of bounds) sits under the census
+     jack-row hex nuts, so "pwm"/"pw" never show. Raise/shrink the two knob
+     bounds (y≈0.57→0.50) so caption clears the jacks, matching the print
+     (captions sit clearly above the jack row). Verify: captions legible at
+     default window, no collision with 1v/oct-row jack labels.
+  3. **Voice mixer print details** — `MixerSection`. Add "PAN ◆" caption
+     above each pan knob + "L◄ ►R" corner marks per cell; channel names go in
+     a **black band between PAN and VOL rows** (white text, "EXT.AUDIO" not
+     "EXT"); "VOL" caption above each grey knob; thin cell separators; move
+     "VOICE MIXER" from our full-width band to the small **center badge**
+     between the envelopes (where the print has it). Redraw only. Verify:
+     tile diff.
+  4. **Effector/filter block** — `EffectorSection` + `FilterSection`.
+     (a) MOD L / MOD R knobs move **up out of the filter strip** into the
+     effector body, above the CV L / CV R jacks (hardware position); strip
+     order becomes FREQ RES · CV L DIST link GAIN CV R · FREQ RES.
+     (b) BP/LP mode: current print reads as three stacked labels ("BP/BP/LP")
+     — replace with a compact 2-pos toggle, "BP" top / "LP" bottom, dotted
+     bracket arcing FREQ↔RES like the print (curve icons in P3).
+     (c) **Headphones out is missing entirely** (inventory §1g: jack +
+     level): draw glyph + jack + small orange level knob right of MASTER
+     VOLUME. Not a VoltBus/census jack (audio out, not patchable) → visual
+     now, behavior decision in backlog.
+     (d) BLEND + MASTER VOLUME captions above their knobs (print), keep the
+     P1-enlarged cartridge picker (deliberate divergence: we need a named
+     picker where hardware has a physical slot) but retitle it lowercase
+     "cartridge slot".
+     Risk: CV L/CV R/link jack positions shift → cables re-anchor by jack id
+     (safe), but re-check CableLayer hover/click targets. Verify: tile diff +
+     patch a cable onto CV L before/after the change.
+  5. **Photo-sensor idle tint** — classic drone sections render the sensor
+     window pink at idle; hardware is plain **white** (glow should appear
+     only with LED/room-light activity). Fix the glow compositing baseline.
+     Verify: white at Init, glows when a gate fires / room light raised.
+  6. **Envelope jack captions** — `EnvelopeSection`. P1 flipped them above
+     the nuts (49-unit gap below). Try the hardware-faithful position
+     (below) by shrinking nut size while respecting the 26-unit font floor;
+     if it can't fit, the label-above compromise stays and is documented
+     here as final. Verify: no clipping at default window size.
+  7. **Sequencer strip** — `SeqSection`. Add the signature striped
+     voltage-ruler print filling the title band right of "5 STEP SEQ.
+     VOLTAGE"; stack the cv (top) / gate (bottom) out jacks at the right
+     edge per print. clock-out keeps its census jack + red label even though
+     the render spec art hides it. Verify: tile diff.
+  8. **Joystick block** — `JoystickSection`. Stack X/Y out jacks
+     **vertically** between the offset knobs + small red LED (print);
+     curved red arrows land in P3. Verify: tile diff.
+  9. **Preamp** — `PreampSection`. gain becomes a medium red skirted knob
+     per print (currently small); mic glyph in P3. Verify: tile diff.
+  10. **Header & branding print** — `PanelView` paint.
+      "SOLAR 42ᴺ": **42 in red + superscript N in black**, tight kerning
+      (ours has black 42 + full-size red N); "ȦMBIĒNT MACHINE" diacritics
+      (dot over A, macrons — draw as strokes if the font lacks them) + wide
+      letterspacing; add the missing **"СОЛАР 42N"** print (black + red)
+      above the keyboard block, right side; WET OUT bracket line + two-line
+      "EXT. AUDIO" label; POWER polarity glyph in P3. ROOM LIGHT + 50 Hz
+      (digital-only additions) get a thin outline box so they read as
+      deliberate, clear of the POWER corner. Verify: header tile diff.
+  11. **Keyboard CV jack row** (V/OCT…RESET) — not on the reference art
+      (hardware wears these on the keyboard block itself). Box them in a
+      thin outlined sub-panel snugged to the synth block's top-right corner
+      so they read as part of the keyboard. Verify: bottom-right tile diff.
+  12. **Section title bands → print-accurate** — `Section` base gains a
+      band-style option. Hardware prints **no title** on DRONE 1/2/4/5
+      (number badges + mixer labels identify them — remove our bands);
+      DRONE 3/6 + VCO A/B use the **short top-right band** of the print
+      (ours are full-width top-left); restore the small **"S&H" corner
+      badge** on the Papa Srapa sample-hold box (lost in P1). Visual only,
+      but drone sections gain ~60 units of height — re-run the drone-row
+      layout after (do this group *after* fix 1). Verify: tile diffs.
+  13. **VCO switch sub-labels** — "low" under the oct+3 switch (down
+      position meaning), ⊓ glyph next to −1 sub in P3. Verify: tile diff.
+  14. **JoyPad d-pad print** — solid black triangles + the 4 diagonal corner
+      dots per print. Verify: bottom-left tile diff.
+  15. **Drone LED bar styling** — red vertical-bar segments in a light bezel
+      per print (currently round dots in a dark box); telemetry binding
+      unchanged. Verify: tile diff + LEDs animate with gates.
+- **P2 — hardware fidelity** (updated with 2026-07-07 findings):
+  16. DRONE VOICES keypad → six **square** pads, numbers printed **above**,
+      small top-center LED notch per pad, tighter pitch (hardware pads
+      nearly touch; ours are round + numbers below).
+  17. Keyboard section rework: **ridged** plate texture (horizontal slats),
+      plates clustered **around** the center control group with staggered
+      heights + tall edge plates, white round icon-button row (▽/△
+      transpose + status icons), **red-ring encoder with red center**
+      (ours grey), **LCD recolored blue with white text** (ours
+      green-on-black), sunburst logo print, printed △ outlines at the
+      plate-cluster feet; keep the digital OCT readout + SETTINGS button.
+- **P3 — silkscreen art** (updated): VCO morph waveform glyphs **+ numbered
+  position dots (1–7 VCO A, 8–14 VCO B)** around the big knob; LFO ∿/⊓ wave
+  icons; Papa Srapa red fm/am arrows + noise spark glyph; red routing arrows
+  (pulser→clock ✓ done, morph→pwm, joystick); **jack direction markers
+  panel-wide** (red ▲ = output, black ▸ = input, next to jack labels — the
+  print's I/O language); BP/LP response-curve icons; envelope-follower +
+  mic glyphs; −1 sub ⊓ glyph; POWER polarity glyph.
+- **M9b fidelity backlog — evaluate, then implement or document** (found by
+  the eye check; each needs a manual/engine check before UI work):
+  - **Headphones out behavior**: level knob → standalone monitoring gain?
+    (plugin builds: decorative). Decide in M9c alongside the RT audit.
+  - **Papa Srapa jack recount**: the render spec shows two hex jacks under
+    rate/mod that our panel doesn't place, and `07` §1b's jack list is
+    ambiguous about a distinct S&H "in" (normalled from own noise) vs our
+    exposed `in` jack. Recount vs manual p8; census corrections are
+    **append-only** (ids frozen).
+  - **Effector center element**: the print shows a round element between
+    the two 1-2-3 program switches — identify (button/window/screw) in
+    manual pp21–22; add if functional.
+  - **"link" control type**: we use a toggle; confirm switch-vs-jack on
+    hardware and match.
+  - **MUTE polarity + Init defaults**: our Init renders oscillators 4/5
+    lighter on all four classic drones — confirm which visual state means
+    "muted" and that Init matches hardware power-on (all five active).
+  - **Keyboard status icons**: when P2 adds the icon row, wire the ones
+    that are real state displays (clock, arp/seq, hold) to telemetry
+    rather than printing them as decoration.
+- *Verify (every phase)*: screenshot diff vs the reference PNG tiles; all
+  interactive text legible at default window size; `check.sh` green;
+  user eye check (the final gate).
 
 **M9c — RT-safety, performance, release pass** — the remainder of the
 original M9 bullet above: audio-thread audit, CPU measurement, pluginval
