@@ -120,8 +120,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout Solar42NProcessor::createLay
             grp->addChild(std::make_unique<P>(juce::ParameterID(id + ".gen" + n + ".tune", 1),
                                               name + " · Gen " + n + " Tune", range01,
                                               tuneDefaults[g], pct()));
+            // Hardware power-on: all five generators run (MUTE is a
+            // performance action; the OSC STATUS badge shows lit = active).
+            // Init shipped gens 4/5 muted until M9b P4 — an early-sketch
+            // default, not a hardware behavior.
             grp->addChild(std::make_unique<B>(juce::ParameterID(id + ".gen" + n + ".mute", 1),
-                                              name + " · Gen " + n + " Mute", g >= 3));
+                                              name + " · Gen " + n + " Mute", false));
             grp->addChild(std::make_unique<B>(juce::ParameterID(id + ".gen" + n + ".mod", 1),
                                               name + " · Gen " + n + " Mod", false));
         }
