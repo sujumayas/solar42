@@ -6,7 +6,7 @@ set -euo pipefail
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="$APP_DIR/build"
 CONFIG="${CONFIG:-RelWithDebInfo}"
-STRICTNESS="${PLUGINVAL_STRICTNESS:-5}"
+STRICTNESS="${PLUGINVAL_STRICTNESS:-10}"  # release gate (M9c P1)
 
 echo "== configure =="
 cmake -S "$APP_DIR" -B "$BUILD_DIR" \
@@ -37,6 +37,22 @@ else
     echo "WARNING: pluginval not found (or VST3 missing) — skipped."
     echo "  Install: download pluginval_macOS.zip from github.com/Tracktion/pluginval"
     echo "  and unzip into $APP_DIR/tools/pluginval/bin/"
+fi
+
+echo "== auval (AU) =="
+AU_SRC="$BUILD_DIR/Solar42N_artefacts/$CONFIG/AU/Solar42N.component"
+AU_DST="$HOME/Library/Audio/Plug-Ins/Components/Solar42N.component"
+if command -v auval > /dev/null && [ -d "$AU_SRC" ]; then
+    mkdir -p "$(dirname "$AU_DST")"
+    rsync -a --delete "$AU_SRC/" "$AU_DST/"
+    # A freshly copied component can hit a stale AudioComponentRegistrar
+    # cache ("didn't find the component") — reset it and retry once.
+    if ! auval -v aumu S42n S42p; then
+        killall -9 AudioComponentRegistrar 2> /dev/null || true
+        auval -v aumu S42n S42p
+    fi
+else
+    echo "WARNING: auval or AU component missing — skipped."
 fi
 
 echo "== render regression =="
