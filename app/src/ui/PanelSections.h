@@ -120,6 +120,14 @@ inline juce::Path waveGlyph(int kind)
 
 // ---------------------------------------------------------------- widget kit
 
+// CC learn (M9c P5): every parameter-bound widget stamps its param id on the
+// interactive component; the editor's global right-click listener walks up
+// from the clicked component to find it and offers MIDI learn / forget.
+inline void stampCcParam(juce::Component& c, const juce::String& paramId)
+{
+    c.getProperties().set("ccParam", paramId);
+}
+
 struct LabeledKnob : juce::Component
 {
     LabeledKnob(Apvts& s, const juce::String& paramId, const juce::String& text,
@@ -135,6 +143,7 @@ struct LabeledKnob : juce::Component
         label.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(label);
         attach = std::make_unique<Apvts::SliderAttachment>(s, paramId, slider);
+        stampCcParam(slider, paramId);
 
         // M7 conveniences: hint, value bubble in real units (the attachment
         // wires the parameter's text functions), double-click = default.
@@ -171,6 +180,7 @@ struct SlideSwitch : juce::Component
         button.getProperties().set("switch", 1);
         addAndMakeVisible(button);
         attach = std::make_unique<Apvts::ButtonAttachment>(s, paramId, button);
+        stampCcParam(button, paramId);
         if (auto* p = s.getParameter(paramId))
             button.setTooltip(tips::controlTooltip(paramId, p->getName(64)));
     }
@@ -191,6 +201,7 @@ struct PushButton : juce::Component
         button.setColour(juce::TextButton::buttonOnColourId, led);
         addAndMakeVisible(button);
         attach = std::make_unique<Apvts::ButtonAttachment>(s, paramId, button);
+        stampCcParam(button, paramId);
         if (auto* p = s.getParameter(paramId))
             button.setTooltip(tips::controlTooltip(paramId, p->getName(64)));
     }
@@ -259,6 +270,7 @@ struct ChoiceBox : juce::Component
         label.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(label);
         attach = std::make_unique<Apvts::ComboBoxAttachment>(s, paramId, box);
+        stampCcParam(box, paramId);
     }
 
     void resized() override
@@ -298,6 +310,7 @@ struct ChoiceSlideSwitch : juce::Component,
                    repaint();
                })
     {
+        stampCcParam(*this, paramId);
         if (auto* p = s.getParameter(paramId))
             setTooltip(tips::controlTooltip(paramId, p->getName(64)));
         att_.sendInitialUpdate();
@@ -405,6 +418,7 @@ struct Prog3Switch : juce::Component,
                    repaint();
                })
     {
+        stampCcParam(*this, paramId);
         if (auto* p = s.getParameter(paramId))
             setTooltip(tips::controlTooltip(paramId, p->getName(64)));
         att_.sendInitialUpdate();
@@ -1712,6 +1726,7 @@ public:
                 keys[i]->setTooltip(tips::controlTooltip(paramId, p->getName(64)));
             addAndMakeVisible(*keys[i]);
             attach[i] = std::make_unique<Apvts::ButtonAttachment>(s, paramId, *keys[i]);
+            stampCcParam(*keys[i], paramId);
             numbers[i] = juce::String(ids[i]).substring(1);
         }
     }

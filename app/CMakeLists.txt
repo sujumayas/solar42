@@ -108,6 +108,7 @@ if(SOLAR42N_BUILD_TESTS)
         tests/TestKeyboard.cpp
         tests/TestMidiPerformer.cpp
         tests/TestMidiClock.cpp
+        tests/TestMidiCcMap.cpp
         tests/TestRtSafety.cpp
     )
     target_link_libraries(solar42n_tests PRIVATE solar42n_engine Catch2::Catch2WithMain)

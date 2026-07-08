@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "engine/MidiCcMap.h"
 #include "engine/Rack.h"
 #include "engine/SeqlockBox.h"
 #include "engine/keyboard/MidiPerformer.h"
@@ -73,6 +74,15 @@ public:
     // up in controlsFromParams().
     void reloadCartridgeSlots();
 
+    // ---- CC learn (M9c P5; message thread). Params are addressed by ID;
+    // bindings persist in the MIDIMAP state child (absent child on load =
+    // keep the current map — a controller layout belongs to the desk).
+    void armCcLearn(const juce::String& paramId);
+    void cancelCcLearn() { ccMap_.cancelLearn(); }
+    bool ccLearnArmed() const noexcept { return ccMap_.armedSlot() >= 0; }
+    int ccBindingFor(const juce::String& paramId) const; // -1 = unbound
+    void clearCcBinding(const juce::String& paramId);
+
     // Saved-state format stamp (DAW blobs + .s42n). Loading is tolerant of
     // older/absent stamps (missing params -> defaults, unknown params ->
     // dropped); bump only for changes that need an explicit migration.
@@ -111,6 +121,12 @@ private:
     // the audio thread. getRawParameterValue() builds a juce::String (heap)
     // per call, so it must never run inside processBlock.
     std::vector<std::pair<std::string, std::atomic<float>*>> paramTable_;
+
+    // CC learn (M9c P5): audio thread pushes controller events into the
+    // map's ring; the 30 Hz timer drains and applies. Slots index paramList_.
+    int paramIndexOf(const juce::String& paramId) const;
+    std::vector<juce::RangedAudioParameter*> paramList_;
+    s42::MidiCcMap ccMap_;
 
     // Keyboard setup: message thread edits ride the KEYBOARD state tree and
     // land here through a seqlock; gestures are plain atomics.

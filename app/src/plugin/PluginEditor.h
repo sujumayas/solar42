@@ -25,7 +25,14 @@ public:
     void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
     void mouseMagnify(const juce::MouseEvent&, float scaleFactor) override;
 
+    // CC learn (M9c P5): the editor listens to every nested mouse event;
+    // a right-click on any widget stamped with a "ccParam" property offers
+    // MIDI learn / forget for that parameter.
+    void mouseDown(const juce::MouseEvent&) override;
+
 private:
+    void showCcMenu(const juce::String& paramId);
+
     static constexpr int kBarLogical = 140; // preset-bar height in panel units
 
     float baseScale() const noexcept;

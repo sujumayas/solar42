@@ -371,9 +371,37 @@ void Solar42NProcessor::buildParamTable()
 {
     for (auto* p : getParameters())
         if (auto* rp = dynamic_cast<juce::RangedAudioParameter*>(p))
+        {
             paramTable_.emplace_back(rp->paramID.toStdString(),
                                      apvts_.getRawParameterValue(rp->paramID));
+            paramList_.push_back(rp); // CC-learn slot = index in this list
+        }
     std::sort(paramTable_.begin(), paramTable_.end());
+}
+
+int Solar42NProcessor::paramIndexOf(const juce::String& paramId) const
+{
+    for (int i = 0; i < (int) paramList_.size(); ++i)
+        if (paramList_[(size_t) i]->paramID == paramId)
+            return i;
+    return -1;
+}
+
+void Solar42NProcessor::armCcLearn(const juce::String& paramId)
+{
+    const int slot = paramIndexOf(paramId);
+    if (slot >= 0)
+        ccMap_.armLearn(slot);
+}
+
+int Solar42NProcessor::ccBindingFor(const juce::String& paramId) const
+{
+    return ccMap_.ccForSlot(paramIndexOf(paramId));
+}
+
+void Solar42NProcessor::clearCcBinding(const juce::String& paramId)
+{
+    ccMap_.clearSlot(paramIndexOf(paramId));
 }
 
 float Solar42NProcessor::param(const char* id) const noexcept
@@ -633,6 +661,7 @@ void Solar42NProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
                 midiPerf_.sustain(d[2] >= 64);
             else if (d[1] == 120 || d[1] == 123) // all sound / all notes off
                 midiPerf_.reset();
+            ccMap_.onCcFromAudio(d[1], d[2]); // CC learn (drained at timer rate)
         }
     }
 
@@ -678,6 +707,19 @@ void Solar42NProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
 
 void Solar42NProcessor::timerCallback()
 {
+    // CC learn (M9c P5): drain controller events; while armed the first one
+    // binds, otherwise bound CCs drive their parameters (gesture-wrapped —
+    // no APVTS writes ever happen on the audio thread).
+    ccMap_.drain([this](int slot, float v01)
+    {
+        if (slot < 0 || slot >= (int) paramList_.size())
+            return;
+        auto* p = paramList_[(size_t) slot];
+        p->beginChangeGesture();
+        p->setValueNotifyingHost(v01);
+        p->endChangeGesture();
+    });
+
     // Latch mode: each MIDI note-on on C1-F1 bumped a counter on the audio
     // thread; an odd delta flips that voice's HOLD parameter here on the
     // message thread, so the panel button, host automation and MIDI agree.
@@ -720,6 +762,21 @@ void Solar42NProcessor::writeSessionChildren(juce::ValueTree& tree) const
     tol.setProperty("serial",
                     juce::String::toHexString((juce::int64) rack_.tolerances().serial()),
                     nullptr);
+
+    // CC-learn bindings (M9c P5), by parameter ID so they survive appends.
+    auto map = tree.getOrCreateChildWithName("MIDIMAP", nullptr);
+    map.removeAllChildren(nullptr);
+    for (int cc = 0; cc < s42::MidiCcMap::kNumCc; ++cc)
+    {
+        const int slot = ccMap_.slotForCc(cc);
+        if (slot >= 0 && slot < (int) paramList_.size())
+        {
+            juce::ValueTree m("MAP");
+            m.setProperty("cc", cc, nullptr);
+            m.setProperty("param", paramList_[(size_t) slot]->paramID, nullptr);
+            map.addChild(m, -1, nullptr);
+        }
+    }
 }
 
 juce::ValueTree Solar42NProcessor::currentFullState()
@@ -795,6 +852,17 @@ void Solar42NProcessor::applyState(juce::ValueTree v)
     const auto serialHex = tol.getProperty("serial").toString();
     if (serialHex.isNotEmpty())
         applyUnitSerial((uint64_t) serialHex.getHexValue64());
+
+    // CC bindings: missing child = keep the current map (factory presets
+    // carry none — a controller layout belongs to the desk, not the patch).
+    if (const auto map = apvts_.state.getChildWithName("MIDIMAP"); map.isValid())
+    {
+        ccMap_.clearAll();
+        for (const auto& m : map)
+            if (m.hasType("MAP"))
+                ccMap_.bind((int) m.getProperty("cc", -1),
+                            paramIndexOf(m.getProperty("param").toString()));
+    }
 
     patchBay_.rebind();
     kbState_.rebind();

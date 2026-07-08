@@ -41,6 +41,51 @@ Solar42NEditor::Solar42NEditor(Solar42NProcessor& p)
     const auto ui = proc_.apvts().state.getChildWithName("UI");
     const int w = juce::jlimit(900, 3200, (int) ui.getProperty("editorW", 1280));
     setSize(w, (int) std::lround((double) w / kAspect));
+
+    // CC learn: observe every nested mouse event (right-clicks only).
+    addMouseListener(this, true);
+}
+
+void Solar42NEditor::mouseDown(const juce::MouseEvent& e)
+{
+    if (!e.mods.isPopupMenu())
+        return;
+    // Climb from the clicked component to the stamped param widget.
+    for (auto* c = e.eventComponent; c != nullptr && c != (juce::Component*) this;
+         c = c->getParentComponent())
+    {
+        const auto id = c->getProperties()["ccParam"].toString();
+        if (id.isNotEmpty())
+        {
+            showCcMenu(id);
+            return;
+        }
+    }
+}
+
+void Solar42NEditor::showCcMenu(const juce::String& paramId)
+{
+    juce::String name = paramId;
+    if (auto* p = proc_.apvts().getParameter(paramId))
+        name = p->getName(64);
+    const int cc = proc_.ccBindingFor(paramId);
+
+    juce::PopupMenu m;
+    m.addSectionHeader(name);
+    m.addItem(1, "MIDI learn (then move a controller)");
+    m.addItem(2, cc >= 0 ? "Forget CC " + juce::String(cc) : "No CC bound", cc >= 0);
+    if (proc_.ccLearnArmed())
+        m.addItem(3, "Cancel pending learn");
+    m.showMenuAsync(juce::PopupMenu::Options(),
+                    [this, paramId](int choice)
+                    {
+                        if (choice == 1)
+                            proc_.armCcLearn(paramId);
+                        else if (choice == 2)
+                            proc_.clearCcBinding(paramId);
+                        else if (choice == 3)
+                            proc_.cancelCcLearn();
+                    });
 }
 
 void Solar42NEditor::paint(juce::Graphics& g)
