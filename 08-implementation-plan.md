@@ -403,9 +403,73 @@ enlargement — not per-label tweaking.
   interactive text legible at default window size; `check.sh` green;
   user eye check (the final gate).
 
-**M9c — RT-safety, performance, release pass** — the remainder of the
-original M9 bullet above: audio-thread audit, CPU measurement, pluginval
-strictness 10 + auval, MIDI clock + CC learn, signing/notarization notes.
+**M9c — RT-safety, performance, release pass (broken down 2026-07-08)** —
+the remainder of the original M9 bullet above. The phase decisions below
+were derived autonomously from that approved one-line scope ("continue
+with M9c"); judgement calls are flagged inline for the user to veto.
+
+- **M9c P1 — validation gate to release strictness.** `check.sh` default
+  pluginval strictness 5 → 10 (baseline 2026-07-08: the VST3 already
+  passes 10 clean); add **auval**: copy the built AU into
+  `~/Library/Audio/Plug-Ins/Components` each run, then
+  `auval -v aumu S42n S42p` (graceful skip when unavailable, same
+  pattern as the pluginval lookup).
+- **M9c P2 — RT-safety audit + malloc guard + headphones-out.**
+  - Audit the audio path (`processBlock` → `controlsFromParams` →
+    `Rack::process` → every module): no allocation, locks, system calls,
+    unbounded loops. Known fix going in: `param()` resolves an APVTS
+    string-map lookup per call (~150 per block) → cache the raw atomic
+    pointers once at construction.
+  - FV-1 program latching on the audio thread stays as is:
+    `CartridgeLibrary` words are pre-assembled static arrays and
+    `loadProgram` copies into fixed VM storage (no allocation).
+  - **Malloc guard**: test-side `new`/`delete` counting hooks wrapped
+    around a full `Rack::process` run (all voices sounding, FV-1 latch
+    mid-run, patch commands draining) — any audio-thread allocation
+    fails ctest.
+  - **Headphones out (deferred from M9b) — decision**: the panel jack
+    stays **decorative in all builds**; standalone monitoring is the OS
+    output device at MASTER volume, no extra headphone gain stage
+    (JUCE's standalone already routes to the chosen device; a second
+    gain would double-apply). Tooltip states this; 07 note added.
+- **M9c P3 — CPU measurement.** `solar42n_render --bench`: run the full
+  demo rig at 48 k in 128-sample blocks for ~10 s of audio, report the
+  realtime ratio as % of one core; `check.sh` runs it and **fails above
+  10 %** (the original M9 budget). Number printed every run.
+- **M9c P4 — MIDI clock → clock ins.** MIDI real-time clock (0xF8,
+  24 ppqn) becomes a patchable pulse source:
+  - Registry: append outlet `MidiClockOut` ("midi.clock.out") — the
+    append-only rule holds; a digital-only jack at the right end of the
+    KEYBOARD CV strip (the documented divergence zone), label MIDI CLK.
+  - Engine: JUCE-free `MidiClockSource`, fed per block with tick
+    sample-offsets + run state via `Controls` (fixed array, no alloc);
+    emits 10 V pulses (`kGateVolts`; downstream Schmitts trip at 2.5 V)
+    at 50 % duty of the divided interval. Divider is a settings-drawer
+    choice (1/32…1/4 ≙ 3…24 ticks, default 1/16 = 6); START/CONTINUE
+    reset divider phase, STOP ends the train. Unit tests: divider math,
+    duty, start/stop/continue, tick jitter tolerance.
+  - Processor: F8/FA/FB/FC parsed from the same `MidiBuffer` as the M9a
+    note handling. Patch MIDI CLK → seq/kb/S&H clock ins with a normal
+    cable; everything downstream is unchanged.
+- **M9c P5 — CC learn.** Right-click any parameter-bound control →
+  popup: **MIDI learn**, current binding readout, **Clear**. Learn arms;
+  the next CC on any channel binds cc# → that parameter (7-bit absolute
+  → normalized). Audio thread pushes CC events into a lock-free FIFO;
+  the existing 30 Hz message-thread timer drains it and applies via
+  `setValueNotifyingHost` (gesture-wrapped) — no APVTS writes on the
+  audio thread. Mappings live in a `MIDIMAP` state child: saved in DAW
+  blobs + `.s42n`, but preset/factory loads **preserve** the current map
+  (session-child semantics like TOLERANCES — a controller mapping is a
+  property of your desk, not of a patch). Mapping table unit-tested.
+- **M9c P6 — signing/notarization notes.** `10-release-signing.md`:
+  Developer ID codesign + hardened runtime + timestamp, notarytool
+  submit/staple, AU/VST3 install paths, auval/pluginval as release
+  gates, and the trade-dress reminder (risk #5: replace Elta wordmarks
+  before anything distributed). Docs only.
+- *Verify*: `check.sh` green with the raised gate (strictness 10 + auval
+  + CPU budget); new unit tests (alloc guard, MidiClockSource, CC map);
+  hands-on KeyLab 37 clock + CC pass by the user. No intended sonic
+  change → no new audition WAV unless the RT fixes alter the render.
 - **Backlog (post-plan)**: remaining 9 cartridges (MAGIC, FILTER, VIBE, PITCH SHIFTER, INFINITY, STRING RINGER, SYNTEX-1, DIGITAL, GENERATOR); webcam room-light; Windows/Linux builds; original branding pass before any public release.
 
 ## Verification
