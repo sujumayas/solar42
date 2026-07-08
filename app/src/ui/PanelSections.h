@@ -683,14 +683,16 @@ public:
 
     void resized() override
     {
-        place(*cvamt, 0.04, 0.14, 0.23, 0.28);
+        place(*cvamt, 0.04, 0.14, 0.23, 0.26);
         place(*oct, 0.29, 0.15, 0.20, 0.11);
         place(*sub, 0.51, 0.15, 0.20, 0.11);
-        place(*tune, 0.72, 0.14, 0.23, 0.28);
-        place(*exp, 0.04, 0.46, 0.21, 0.11);
+        place(*tune, 0.72, 0.14, 0.23, 0.26);
+        place(*exp, 0.04, 0.42, 0.21, 0.10);
         place(*wave, 0.31, 0.27, 0.38, 0.46);
-        place(*pwm, 0.04, 0.57, 0.23, 0.26);
-        place(*pw, 0.72, 0.57, 0.23, 0.26);
+        // pwm/pw end above the census jack row (nut tops ~0.80) so the
+        // LabeledKnob caption strip stays visible.
+        place(*pwm, 0.04, 0.53, 0.23, 0.25);
+        place(*pw, 0.72, 0.53, 0.23, 0.25);
     }
 
 private:
