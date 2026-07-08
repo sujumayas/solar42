@@ -353,10 +353,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout Solar42NProcessor::createLay
 
     // ---- MIDI-in behaviour (M9a). Off = the C1-F1 drone keys gate like the
     // DRONE VOICES keypad; on = each note-on flips that voice's HOLD latch.
+    // clockDiv (M9c P4): MIDI CLK jack pulse rate, in 24-ppqn ticks.
     {
         auto grp = std::make_unique<Group>("midi", "MIDI", " | ");
         grp->addChild(std::make_unique<B>(juce::ParameterID("midi.droneLatch", 1),
                                           "MIDI · Drone Keys Latch Hold", false));
+        grp->addChild(std::make_unique<C>(juce::ParameterID("midi.clockDiv", 1),
+                                          "MIDI · Clock Jack Rate",
+                                          juce::StringArray { "1/32", "1/16", "1/8", "1/4" }, 1));
         layout.add(std::move(grp));
     }
 
@@ -559,6 +563,9 @@ s42::Rack::Controls Solar42NProcessor::controlsFromParams() const noexcept
     c.kb = kbConfigCache_;
     c.kbTouch = kbTouch_.snapshot();
 
+    static constexpr int kClockDivTicks[] = { 3, 6, 12, 24 }; // 1/32..1/4 at 24 ppqn
+    c.midiClockDivTicks = kClockDivTicks[(int) param("midi.clockDiv") % 4];
+
     c.roomLight = param("room.light");
     c.mainsFlicker = param("room.flicker") > 0.5f;
     const float mv = param("master.vol");
@@ -592,12 +599,23 @@ void Solar42NProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     // hosts — the wrapper delivers both through this buffer. Events are
     // applied at block granularity, same as the panel's touch atomics.
     midiPerf_.setLatch(param("midi.droneLatch") > 0.5f);
+    s42::MidiClockFeed clockFeed;
     for (const auto metadata : midi)
     {
         // Raw bytes, omni: getMessage() copies into a MidiMessage, which
         // heap-allocates for sysex — never construct one on the audio thread.
         const juce::uint8* d = metadata.data;
         const int n = metadata.numBytes;
+        if (n == 1) // real-time bytes -> the MIDI CLK jack (M9c P4)
+        {
+            if (d[0] == 0xF8 && clockFeed.numTicks < s42::MidiClockFeed::kMaxTicks)
+                clockFeed.tickAt[clockFeed.numTicks++] = metadata.samplePosition;
+            else if (d[0] == 0xFA || d[0] == 0xFB) // START / CONTINUE
+                clockFeed.start = true;
+            else if (d[0] == 0xFC) // STOP
+                clockFeed.stop = true;
+            continue;
+        }
         if (n < 2)
             continue;
         const int status = d[0] & 0xF0;
@@ -619,6 +637,7 @@ void Solar42NProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     }
 
     auto controls = controlsFromParams();
+    controls.midiClock = clockFeed;
     bool droneGate[6] = {};
     midiPerf_.apply(controls.kbTouch, droneGate);
     controls.droneKey[0] |= droneGate[0]; // voices 1,2,4,5 = classic array
@@ -826,7 +845,7 @@ void Solar42NProcessor::scheduleApply(int token, int attempt)
             const bool audioRunning =
                 p->blocksProcessed_.load(std::memory_order_relaxed) != p->blocksAtLoadRequest_;
             const bool faded =
-                p->fadeGainShared_.load(std::memory_order_relaxed) <= 0.02f;
+                p->fadeGainShared_.load(std::memory_order_relaxed) <= 0.005f;
             if (!(faded || (!audioRunning && elapsed >= 30.0) || elapsed >= 250.0))
             {
                 p->scheduleApply(token, attempt + 1);
@@ -834,7 +853,17 @@ void Solar42NProcessor::scheduleApply(int token, int attempt)
             }
             p->applyState(p->pendingLoad_);
             p->pendingLoad_ = juce::ValueTree();
-            p->fadeTarget_.store(1.0f, std::memory_order_relaxed);
+            // Hold the silence briefly before fading back: the swap must be
+            // inaudible even when the apply fired the instant the fade
+            // landed (M9c: makes the statecheck 5 ms quiet-window gate
+            // deterministic instead of a timer-vs-blocks race).
+            juce::Timer::callAfterDelay(6,
+                [wr, token]
+                {
+                    auto* q = wr.get();
+                    if (q != nullptr && token == q->loadToken_)
+                        q->fadeTarget_.store(1.0f, std::memory_order_relaxed);
+                });
         });
 }
 
