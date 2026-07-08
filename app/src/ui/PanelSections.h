@@ -974,7 +974,10 @@ public:
         resL = std::make_unique<LabeledKnob>(s, "filt.resL", "RES", kKnobOrange);
         bpL = std::make_unique<SlideSwitch>(s, "filt.bpL", "");
         dist = std::make_unique<LabeledKnob>(s, "filt.dist", "DIST", kKnobOrange);
-        link = std::make_unique<SlideSwitch>(s, "filt.link", "");
+        // Hardware link is a latching push button, not a toggle (manual:
+        // "when switched on"; the print draws the flat black circle). The
+        // cream LED is our state cue for the latch position.
+        link = std::make_unique<PushButton>(s, "filt.link", "", kCream);
         gain = std::make_unique<LabeledKnob>(s, "filt.gain", "GAIN", kKnobOrange);
         freqR = std::make_unique<LabeledKnob>(s, "filt.freqR", "FREQ", kKnobOrange);
         resR = std::make_unique<LabeledKnob>(s, "filt.resR", "RES", kKnobOrange);
@@ -1001,7 +1004,7 @@ public:
         knob(*resR, 0.905);
         place(*bpL, 0.132, 0.02, 0.046, 0.30);
         place(*bpR, 0.822, 0.02, 0.046, 0.30);
-        place(*link, 0.477, 0.22, 0.046, 0.32);
+        place(*link, 0.477, 0.22, 0.046, 0.32); // round button (print), "link" prints below
     }
 
 private:
@@ -1063,7 +1066,8 @@ private:
     }
 
     std::unique_ptr<LabeledKnob> freqL, resL, dist, gain, freqR, resR;
-    std::unique_ptr<SlideSwitch> bpL, link, bpR;
+    std::unique_ptr<SlideSwitch> bpL, bpR;
+    std::unique_ptr<PushButton> link;
 };
 
 // 10-channel voice mixer: PAN over VOL per channel; PAN is the filter routing.

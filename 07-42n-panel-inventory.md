@@ -107,8 +107,9 @@ VCO A · VCO B · PREAMP · DRONE 4 · DRONE 5 · DRONE 6**.
 ### 1d. Filter + effector (center) — manual pp21–22
 
 - **FILTER L / R**: FREQ, RES (orange), BP/LP switch each. Shared center:
-  **CV L** in · **DIST** · **link** · **GAIN** · **CV R** in · **MOD L / MOD R**
-  (CV amount per channel).
+  **CV L** in · **DIST** · **link** (latching **push button** — manual "when
+  switched on"; flat black circle on the print, M9b P4) · **GAIN** ·
+  **CV R** in · **MOD L / MOD R** (CV amount per channel).
 - **DUAL EFFECTOR**: cartridge slot; **cv x / cv y / cv z** in jacks; **X, Y, Z**
   knobs; two **1‑2‑3** program toggles (one per channel — flipping loads that
   program from the inserted cartridge); **BLEND** (wet level, shared); **MASTER
