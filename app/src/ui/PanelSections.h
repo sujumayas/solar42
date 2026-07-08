@@ -88,7 +88,7 @@ struct SlideSwitch : juce::Component
     std::unique_ptr<Apvts::ButtonAttachment> attach;
 };
 
-// Round push button with an LED dot (MUTE / MOD / HOLD / keypad).
+// Round push button with an LED dot (MUTE / MOD / HOLD).
 struct PushButton : juce::Component
 {
     PushButton(Apvts& s, const juce::String& paramId, const juce::String& text,
@@ -1370,6 +1370,8 @@ private:
 };
 
 // DRONE VOICES keypad: 6 gates in the hardware's column order 1,4 / 2,5 / 3,6.
+// Print look (M9b P2): square dark keycaps with a bevelled top face and a
+// light LED notch at the top centre; the voice number prints ABOVE each pad.
 class KeypadSection : public juce::Component
 {
 public:
@@ -1378,10 +1380,13 @@ public:
         const char* ids[6] = { "d1", "d4", "d2", "d5", "d3", "d6" }; // row-major
         for (int i = 0; i < 6; ++i)
         {
-            keys[i] = std::make_unique<PushButton>(s, juce::String(ids[i]) + ".gate",
-                                                   juce::String(ids[i]).substring(1),
-                                                   juce::Colours::white);
+            const auto paramId = juce::String(ids[i]) + ".gate";
+            keys[i] = std::make_unique<KeycapButton>();
+            if (auto* p = s.getParameter(paramId))
+                keys[i]->setTooltip(tips::controlTooltip(paramId, p->getName(64)));
             addAndMakeVisible(*keys[i]);
+            attach[i] = std::make_unique<Apvts::ButtonAttachment>(s, paramId, *keys[i]);
+            numbers[i] = juce::String(ids[i]).substring(1);
         }
     }
 
@@ -1389,22 +1394,71 @@ public:
     {
         g.setColour(kInk);
         g.setFont(juce::FontOptions(52.0f, juce::Font::bold));
-        g.drawText("DRONE VOICES", getLocalBounds().removeFromTop(70),
+        g.drawText("DRONE VOICES", getLocalBounds().removeFromTop(kTitleH),
                    juce::Justification::centred);
+        g.setFont(juce::FontOptions(46.0f, juce::Font::bold));
+        for (int i = 0; i < 6; ++i)
+        {
+            const auto cell = padRect(i);
+            g.drawText(numbers[i],
+                       cell.withY(cell.getY() - kNumberH).withHeight(kNumberH),
+                       juce::Justification::centred);
+        }
     }
 
     void resized() override
     {
-        auto r = getLocalBounds().withTrimmedTop(90);
-        const int bw = r.getWidth() / 2, bh = r.getHeight() / 3;
         for (int i = 0; i < 6; ++i)
-            keys[i]->setBounds(juce::Rectangle<int>(r.getX() + (i % 2) * bw,
-                                                    r.getY() + (i / 2) * bh, bw, bh)
-                                   .reduced(24));
+            keys[i]->setBounds(padRect(i));
     }
 
 private:
-    std::unique_ptr<PushButton> keys[6];
+    // Square keycap with the print's up-left bevelled face + LED notch.
+    struct KeycapButton : juce::ToggleButton
+    {
+        void paintButton(juce::Graphics& g, bool highlighted, bool down) override
+        {
+            auto r = getLocalBounds().toFloat();
+            const float sq = juce::jmin(r.getWidth(), r.getHeight());
+            const auto pad = juce::Rectangle<float>(sq, sq).withCentre(r.getCentre());
+            g.setColour(juce::Colour(0xff0d0d10)); // shadow edge (bottom/right)
+            g.fillRoundedRectangle(pad, sq * 0.08f);
+            auto face = pad.reduced(sq * 0.09f);
+            if (!down) // keycap top face rides up-left until pressed
+                face.translate(-sq * 0.035f, -sq * 0.035f);
+            g.setColour(highlighted ? juce::Colour(0xff35353b) : juce::Colour(0xff2a2a2f));
+            g.fillRoundedRectangle(face, sq * 0.06f);
+            g.setColour(juce::Colours::white.withAlpha(0.16f));
+            g.drawRoundedRectangle(face, sq * 0.06f, 2.5f);
+
+            const bool on = getToggleState();
+            const juce::Rectangle<float> led(face.getCentreX() - sq * 0.07f,
+                                             face.getY() + sq * 0.03f,
+                                             sq * 0.14f, sq * 0.16f);
+            if (on)
+            {
+                g.setColour(juce::Colours::white.withAlpha(0.35f));
+                g.fillRoundedRectangle(led.expanded(8.0f), 8.0f);
+            }
+            g.setColour(on ? juce::Colours::white : juce::Colours::white.withAlpha(0.35f));
+            g.fillRoundedRectangle(led, 4.0f);
+        }
+    };
+
+    // 3 rows x 2 columns; number band above each pad. Tight column gap per
+    // the print (pads nearly touch side to side, rows leave room for numbers).
+    static constexpr int kTitleH = 64, kNumberH = 52, kPadSz = 168, kRowPitch = 232;
+    juce::Rectangle<int> padRect(int i) const
+    {
+        const int col = i % 2, row = i / 2;
+        const int x0 = (getWidth() - 2 * kPadSz - 30) / 2;
+        return { x0 + col * (kPadSz + 30), kTitleH + kNumberH + row * kRowPitch,
+                 kPadSz, kPadSz };
+    }
+
+    std::unique_ptr<KeycapButton> keys[6];
+    std::unique_ptr<Apvts::ButtonAttachment> attach[6];
+    juce::String numbers[6];
 };
 
 } // namespace solar
