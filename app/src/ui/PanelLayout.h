@@ -129,14 +129,16 @@ inline constexpr Jack kJacks[] = {
     out(Outlet::VcoBOscOut, jx(kVcoB, 0.865), jy(kVcoB, 0.865), "osc"),
 
     // Envelope A/B jack rows; the red VCO A/B DRY OUTs flank the mixer logo.
-    in(Inlet::EnvAGateIn, jx(kEnvA, 0.16), jy(kEnvA, 0.78), "gate", true),
-    out(Outlet::EnvAOut, jx(kEnvA, 0.40), jy(kEnvA, 0.78), "env", true),
-    in(Inlet::EnvAVcaCvIn, jx(kEnvA, 0.64), jy(kEnvA, 0.78), "vca cv", true),
-    out(Outlet::VcoADryOut, jx(kEnvA, 0.88), jy(kEnvA, 0.78), "VCO A", true),
-    out(Outlet::VcoBDryOut, jx(kEnvB, 0.12), jy(kEnvB, 0.78), "VCO B", true),
-    in(Inlet::EnvBGateIn, jx(kEnvB, 0.36), jy(kEnvB, 0.78), "gate", true),
-    out(Outlet::EnvBOut, jx(kEnvB, 0.60), jy(kEnvB, 0.78), "env", true),
-    in(Inlet::EnvBVcaCvIn, jx(kEnvB, 0.84), jy(kEnvB, 0.78), "vca cv", true),
+    // Row raised to fy 0.72 (M9b P1.5) so the labels fit BELOW the nuts like
+    // every other row on the hardware print.
+    in(Inlet::EnvAGateIn, jx(kEnvA, 0.16), jy(kEnvA, 0.72), "gate"),
+    out(Outlet::EnvAOut, jx(kEnvA, 0.40), jy(kEnvA, 0.72), "env"),
+    in(Inlet::EnvAVcaCvIn, jx(kEnvA, 0.64), jy(kEnvA, 0.72), "vca cv"),
+    out(Outlet::VcoADryOut, jx(kEnvA, 0.88), jy(kEnvA, 0.72), "VCO A"),
+    out(Outlet::VcoBDryOut, jx(kEnvB, 0.12), jy(kEnvB, 0.72), "VCO B"),
+    in(Inlet::EnvBGateIn, jx(kEnvB, 0.36), jy(kEnvB, 0.72), "gate"),
+    out(Outlet::EnvBOut, jx(kEnvB, 0.60), jy(kEnvB, 0.72), "env"),
+    in(Inlet::EnvBVcaCvIn, jx(kEnvB, 0.84), jy(kEnvB, 0.72), "vca cv"),
 
     // Filter strip (13 columns; CV L / CV R sit between the knobs).
     in(Inlet::FiltCvLIn, jx(kFilter, 4.5 / 13.0), jy(kFilter, 0.60), "CV L"),

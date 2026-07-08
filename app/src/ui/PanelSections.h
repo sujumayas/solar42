@@ -730,13 +730,13 @@ public:
 
     void resized() override
     {
-        // Clear of the 64-unit title band above AND of the jack row's
-        // above-the-nut labels (jacks at fy 0.78 print at ~fy 0.55-0.63;
-        // envelope B's leftmost jack label reaches into this column).
+        // Clear of the 64-unit title band above and of the jack row below
+        // (jacks at fy 0.72, ring tops ~0.62; labels print below the nuts
+        // like the hardware).
         place(*hold, 0.02, 0.19, 0.10, 0.16);
         place(*loop, 0.02, 0.37, 0.10, 0.16);
         for (int i = 0; i < 4; ++i)
-            place(*adsr[i], 0.17 + 0.205 * i, 0.24, 0.19, 0.36);
+            place(*adsr[i], 0.17 + 0.205 * i, 0.22, 0.19, 0.36);
     }
 
 private:

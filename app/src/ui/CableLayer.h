@@ -42,8 +42,7 @@ public:
             // Label tucked close under the nut: bottom-row jacks sit ~92
             // units above their section border, so anything lower gets cut
             // by the border stroke (the M9b "half-clipped GATE/env" bug).
-            // The short envelope sections have no room below at all — their
-            // census entries flip the label to sit above the nut.
+            // labelAbove stays available for jacks with no room below.
             g.setColour(j.isInlet ? kInk : kAccentRed);
             g.setFont(juce::FontOptions(32.0f, juce::Font::bold));
             const float ly = j.labelAbove ? c.y - r * 1.55f - 16.0f
