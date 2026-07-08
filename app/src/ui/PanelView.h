@@ -94,14 +94,25 @@ public:
         paintHeader(g);
         paintPerformanceZone(g);
 
-        // Center badge between the envelopes (the render's logo spot).
+        // Center column between the envelopes: "VOICE MIXER" badge over the
+        // logo stand-in, matching the hardware print (badge above the logo).
+        const juce::Rectangle<int> mid(layout::kEnvA.x + layout::kEnvA.w,
+                                       layout::kEnvA.y,
+                                       layout::kEnvB.x - layout::kEnvA.x - layout::kEnvA.w,
+                                       layout::kEnvA.h);
+        const auto badge = mid.reduced(26, 0).withY(mid.getY() + 24).withHeight(170).toFloat();
+        g.setColour(kInk);
+        g.fillRoundedRectangle(badge, 14.0f);
+        g.setColour(kCream);
+        g.setFont(juce::FontOptions(46.0f, juce::Font::bold));
+        const auto badgeInt = badge.toNearestInt().reduced(8, 12);
+        g.drawFittedText("VOICE", badgeInt.withHeight(badgeInt.getHeight() / 2),
+                         juce::Justification::centred, 1);
+        g.drawFittedText("MIXER", badgeInt.withTrimmedTop(badgeInt.getHeight() / 2),
+                         juce::Justification::centred, 1);
         g.setColour(kInk);
         g.setFont(juce::FontOptions(56.0f, juce::Font::bold));
-        g.drawFittedText("S42N",
-                         juce::Rectangle<int>(layout::kEnvA.x + layout::kEnvA.w,
-                                              layout::kEnvA.y + 60,
-                                              layout::kEnvB.x - layout::kEnvA.x - layout::kEnvA.w,
-                                              layout::kEnvA.h - 120),
+        g.drawFittedText("S42N", mid.withTrimmedTop(230).withTrimmedBottom(40),
                          juce::Justification::centred, 2);
     }
 

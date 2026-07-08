@@ -824,19 +824,20 @@ private:
 };
 
 // 10-channel voice mixer: PAN over VOL per channel; PAN is the filter routing.
+// Hardware print: "PAN ◆" caption + L◄ ►R marks above, black channel-name band
+// between the rows, "VOL" caption over the grey knobs; the "VOICE MIXER" title
+// itself is the small center badge between the envelopes (PanelView).
 class MixerSection : public Section
 {
 public:
-    explicit MixerSection(Apvts& s) : Section("VOICE MIXER")
+    explicit MixerSection(Apvts& s) : Section("VOICE MIXER", Band::None)
     {
         const char* ids[] = { "d1", "d2", "d3", "ext", "vcoA", "vcoB", "pre", "d4", "d5", "d6" };
-        const char* names[] = { "DRONE 1", "DRONE 2", "DRONE 3", "EXT", "VCO A",
-                                "VCO B", "PREAMP", "DRONE 4", "DRONE 5", "DRONE 6" };
         for (int c = 0; c < 10; ++c)
         {
             const auto base = "mix." + juce::String(ids[c]);
-            pan[c] = std::make_unique<LabeledKnob>(s, base + ".pan", names[c], kKnobBlack);
-            vol[c] = std::make_unique<LabeledKnob>(s, base + ".vol", "VOL", kKnobGrey);
+            pan[c] = std::make_unique<LabeledKnob>(s, base + ".pan", "", kKnobBlack);
+            vol[c] = std::make_unique<LabeledKnob>(s, base + ".vol", "", kKnobGrey);
             addAndMakeVisible(*pan[c]);
             addAndMakeVisible(*vol[c]);
         }
@@ -846,12 +847,79 @@ public:
     {
         for (int c = 0; c < 10; ++c)
         {
-            place(*pan[c], 0.004 + 0.0996 * c, 0.20, 0.092, 0.38);
-            place(*vol[c], 0.004 + 0.0996 * c, 0.60, 0.092, 0.36);
+            place(*pan[c], 0.004 + 0.0996 * c, 0.14, 0.092, 0.28);
+            place(*vol[c], 0.004 + 0.0996 * c, 0.685, 0.092, 0.30);
         }
     }
 
 private:
+    void paintExtras(juce::Graphics& g) override
+    {
+        static const char* names[] = { "DRONE 1", "DRONE 2", "DRONE 3", "EXT.AUDIO",
+                                       "VCO A", "VCO B", "PREAMP", "DRONE 4",
+                                       "DRONE 5", "DRONE 6" };
+        // Cell separators first (the name band paints over their middle).
+        g.setColour(kInk.withAlpha(0.28f));
+        for (int c = 1; c < 10; ++c)
+            g.drawVerticalLine(frac(0.004 + 0.0996 * c, 0.0, 0.0, 0.0).getX() - 2,
+                               (float) frac(0.0, 0.05, 0.0, 0.0).getY(),
+                               (float) frac(0.0, 0.96, 0.0, 0.0).getY());
+
+        const auto diamond = [&g](juce::Point<float> c, float r)
+        {
+            juce::Path p;
+            p.addQuadrilateral(c.x, c.y - r, c.x + r, c.y, c.x, c.y + r, c.x - r, c.y);
+            g.fillPath(p);
+        };
+        const auto arrow = [&g](juce::Point<float> tip, float dir, float r)
+        {
+            juce::Path p;
+            p.addTriangle(tip.x + dir * r, tip.y,
+                          tip.x, tip.y - r * 0.8f, tip.x, tip.y + r * 0.8f);
+            g.fillPath(p);
+        };
+
+        g.setColour(kInk);
+        for (int c = 0; c < 10; ++c)
+        {
+            const auto cell = frac(0.004 + 0.0996 * c, 0.0, 0.092, 1.0);
+            // "PAN ◆" over the black knob.
+            g.setFont(juce::FontOptions(24.0f, juce::Font::bold));
+            g.drawText("PAN", cell.withY(frac(0.0, 0.035, 0.0, 0.075).getY())
+                                  .withHeight(frac(0.0, 0.0, 0.0, 0.075).getHeight())
+                                  .translated(-12, 0),
+                       juce::Justification::centred);
+            diamond({ (float) cell.getCentreX() + 34.0f,
+                      (float) frac(0.0, 0.073, 0.0, 0.0).getY() }, 9.0f);
+            // L◄ ►R at the pan cell's lower corners.
+            const float ly = (float) frac(0.0, 0.47, 0.0, 0.0).getY();
+            g.setFont(juce::FontOptions(21.0f, juce::Font::bold));
+            g.drawText("L", cell.getX() + 6, (int) ly - 14, 22, 28, juce::Justification::centred);
+            g.drawText("R", cell.getRight() - 28, (int) ly - 14, 22, 28, juce::Justification::centred);
+            arrow({ (float) cell.getX() + 30.0f, ly }, -1.0f, 8.0f);
+            arrow({ (float) cell.getRight() - 30.0f, ly }, 1.0f, 8.0f);
+        }
+
+        // Black channel-name band between PAN and VOL rows.
+        const auto band = frac(0.006, 0.53, 0.988, 0.115).toFloat();
+        g.setColour(kInk);
+        g.fillRoundedRectangle(band, 6.0f);
+        g.setColour(kCream);
+        for (int c = 0; c < 10; ++c)
+        {
+            const auto cell = frac(0.004 + 0.0996 * c, 0.53, 0.092, 0.115);
+            g.setFont(juce::FontOptions(26.0f, juce::Font::bold));
+            g.drawFittedText(names[c], cell.reduced(4, 0), juce::Justification::centred, 1);
+        }
+
+        // "VOL" over each grey knob.
+        g.setColour(kInk);
+        g.setFont(juce::FontOptions(24.0f, juce::Font::bold));
+        for (int c = 0; c < 10; ++c)
+            g.drawText("VOL", frac(0.004 + 0.0996 * c, 0.632, 0.092, 0.05),
+                       juce::Justification::centred);
+    }
+
     std::unique_ptr<LabeledKnob> pan[10], vol[10];
 };
 
