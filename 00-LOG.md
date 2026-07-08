@@ -601,3 +601,36 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
   check pending** (covers P1.5 + P2). Next: M9b P3 silkscreen glyphs
   (morph position dots, jack direction markers panel-wide, wave/curve
   icons), then the fidelity backlog verifications.
+
+### 2026-07-08 — app M9b P3: silkscreen art pass (screenshot-verified)
+- All three P3 fix groups landed, one commit each, each rebuilt +
+  tile-diffed against the matching `solar42n-panel-1.png` crop first:
+  18. **Jack I/O markers panel-wide** (`4e25d41`): the print's direction
+      language — black ▸ = input, red ▲ = output — now prints beside every
+      census jack label (all three labelSide variants), colour-matched to
+      the existing red-out/ink-in label code.
+  19. **VCO silkscreen** (`27b949d`): six morph waveform glyphs
+      (sine→triangle→saw→pulse→crossed→scribble) on radial ticks around
+      the big knob — the knob dropped to the print's lower position so the
+      ring clears the oct+3/−1 sub switch row; numbered screw dots
+      scattered per the print (1–7 VCO A, 8–14 VCO B; the plan said
+      "around the knob" but the print scatters them — print wins); red
+      routing arrow pwm-jack→pwm-depth-knob; ⊓ glyph after "−1 sub".
+  20. **Mod strip + srapa + filter + header** (`24c44d4`): LFO ∧/⊓ icons
+      flanking "wave"; srapa red rate→fm/am arrows + "LFO" dotted run +
+      noise spark glyph; joystick curved knob→jack arrows + second LED;
+      BP hump / LP shelf curve icons; preamp mic glyph ("ext. source"
+      went two-line like the print so its marker stays in-section —
+      JackLayer now splits labels on newline); envelope-follower red
+      bell over black burst; POWER 12V DC polarity glyph + curled bracket.
+- Documented divergence: the print's S&H random-dot cluster (drone 3/6
+  right edge) has no home — our NOISE knob owns that corner. Revisit only
+  if the Papa Srapa jack recount (backlog) reshuffles that region.
+- Gate: `check.sh` ALL GREEN — 94/94 tests, pluginval SUCCESS, render
+  smoke. **No sonic change** (paint + one knob-position shift only).
+- Eye-check artifact: `renders/m9b-p3-panel-screenshot.png` — **user eye
+  check pending** (covers P1.5 + P2 + P3; note the screenshot carries the
+  standalone's saved patch cables, not part of the print). Next: the M9b
+  fidelity backlog verifications (srapa jack recount, effector centre
+  element, link control type, MUTE polarity, keyboard status icons,
+  headphones behavior in M9c), then M9c.
