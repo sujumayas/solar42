@@ -744,7 +744,10 @@ private:
     std::unique_ptr<PushButton> hold, loop;
 };
 
-// Dual Polivoks filter strip: 13 columns, CV L / CV R jacks in slots 4 and 8.
+// Dual Polivoks filter strip. Hardware print: FREQ RES · CV L DIST link GAIN
+// CV R · FREQ RES, with the BP/LP toggle floating above each FREQ↔RES pair on
+// a dotted bracket. MOD L/R belong to the effector body above (EffectorSection
+// draws them; the params stay filt.*).
 class FilterSection : public Section
 {
 public:
@@ -752,37 +755,36 @@ public:
     {
         freqL = std::make_unique<LabeledKnob>(s, "filt.freqL", "FREQ", kKnobOrange);
         resL = std::make_unique<LabeledKnob>(s, "filt.resL", "RES", kKnobOrange);
-        bpL = std::make_unique<SlideSwitch>(s, "filt.bpL", "BP");
-        modL = std::make_unique<LabeledKnob>(s, "filt.modL", "MOD L", kKnobOrange);
+        bpL = std::make_unique<SlideSwitch>(s, "filt.bpL", "");
         dist = std::make_unique<LabeledKnob>(s, "filt.dist", "DIST", kKnobOrange);
-        link = std::make_unique<SlideSwitch>(s, "filt.link", "link");
+        link = std::make_unique<SlideSwitch>(s, "filt.link", "");
         gain = std::make_unique<LabeledKnob>(s, "filt.gain", "GAIN", kKnobOrange);
-        modR = std::make_unique<LabeledKnob>(s, "filt.modR", "MOD R", kKnobOrange);
         freqR = std::make_unique<LabeledKnob>(s, "filt.freqR", "FREQ", kKnobOrange);
         resR = std::make_unique<LabeledKnob>(s, "filt.resR", "RES", kKnobOrange);
-        bpR = std::make_unique<SlideSwitch>(s, "filt.bpR", "BP");
+        bpR = std::make_unique<SlideSwitch>(s, "filt.bpR", "");
         for (juce::Component* c : std::initializer_list<juce::Component*> {
-                 freqL.get(), resL.get(), bpL.get(), modL.get(), dist.get(), link.get(),
-                 gain.get(), modR.get(), freqR.get(), resR.get(), bpR.get() })
+                 freqL.get(), resL.get(), bpL.get(), dist.get(), link.get(),
+                 gain.get(), freqR.get(), resR.get(), bpR.get() })
             addAndMakeVisible(c);
     }
 
     void resized() override
     {
-        // Slots 4 and 8 stay empty — the CV L / CV R jacks live there. The
-        // 13-slot row is inset so the rotated FILTER L/R side tags get their
-        // own margin instead of colliding with the outer FREQ knobs.
-        juce::Component* slots[13] = { freqL.get(), resL.get(), bpL.get(), modL.get(),
-                                       nullptr, dist.get(), link.get(), gain.get(),
-                                       nullptr, modR.get(), bpR.get(), freqR.get(), resR.get() };
-        for (int i = 0; i < 13; ++i)
+        // Columns re-slotted around the frozen CV L / CV R census jacks
+        // (fx 4.5/13 ≈ 0.346 and 8.5/13 ≈ 0.654).
+        const auto knob = [this](juce::Component& c, double cx)
         {
-            if (slots[i] == nullptr)
-                continue;
-            const bool sw = dynamic_cast<SlideSwitch*>(slots[i]) != nullptr;
-            place(*slots[i], 0.028 + (i + (sw ? 0.18 : 0.02)) * 0.945 / 13.0,
-                  sw ? 0.34 : 0.13, (sw ? 0.66 : 0.94) * 0.945 / 13.0, sw ? 0.32 : 0.72);
-        }
+            place(c, cx - 0.0525, 0.16, 0.105, 0.74);
+        };
+        knob(*freqL, 0.095);
+        knob(*resL, 0.215);
+        knob(*dist, 0.425);
+        knob(*gain, 0.575);
+        knob(*freqR, 0.785);
+        knob(*resR, 0.905);
+        place(*bpL, 0.132, 0.02, 0.046, 0.30);
+        place(*bpR, 0.822, 0.02, 0.046, 0.30);
+        place(*link, 0.477, 0.22, 0.046, 0.32);
     }
 
 private:
@@ -804,22 +806,32 @@ private:
             g.restoreState();
         }
 
-        // BP above / LP below each mode switch (the hardware prints the two
-        // response icons there; the glyphs proper are the P3 art pass).
+        // BP … LP dotted bracket over each FREQ↔RES pair, toggle in the
+        // middle (response-curve glyphs land in P3).
         g.setFont(juce::FontOptions(26.0f, juce::Font::bold));
-        for (int slot : { 2, 10 })
+        const float dashes[2] = { 7.0f, 9.0f };
+        for (int side = 0; side < 2; ++side)
         {
-            const auto sw = frac(0.028 + (slot + 0.18) * 0.945 / 13.0, 0.34,
-                                 0.66 * 0.945 / 13.0, 0.32);
-            g.setColour(kInk.withAlpha(0.85f));
-            g.drawText("BP", sw.withY(sw.getY() - 34).withHeight(30),
+            const double fFreq = side == 0 ? 0.095 : 0.785;
+            const double fRes = side == 0 ? 0.215 : 0.905;
+            const float bx1 = (float) frac(fFreq, 0.0, 0.0, 0.0).getX();
+            const float bx2 = (float) frac(fRes, 0.0, 0.0, 0.0).getX();
+            const float by = (float) frac(0.0, 0.15, 0.0, 0.0).getY();
+            g.setColour(kInk.withAlpha(0.55f));
+            g.drawDashedLine({ bx1, by, bx2, by }, dashes, 2, 3.0f);
+            g.setColour(kInk.withAlpha(0.9f));
+            g.drawText("BP", juce::Rectangle<int>((int) bx1 - 30, 3, 60, 30),
                        juce::Justification::centred);
-            g.drawText("LP", sw.withY(sw.getBottom() + 4).withHeight(30),
+            g.drawText("LP", juce::Rectangle<int>((int) bx2 - 30, 3, 60, 30),
                        juce::Justification::centred);
         }
+
+        // "link" print under the center toggle.
+        g.setColour(kInk);
+        g.drawText("link", frac(0.44, 0.58, 0.12, 0.14), juce::Justification::centred);
     }
 
-    std::unique_ptr<LabeledKnob> freqL, resL, modL, dist, gain, modR, freqR, resR;
+    std::unique_ptr<LabeledKnob> freqL, resL, dist, gain, freqR, resR;
     std::unique_ptr<SlideSwitch> bpL, link, bpR;
 };
 
@@ -924,7 +936,8 @@ private:
 };
 
 // DUAL EFFECTOR: cv x/y/z jacks over X/Y/Z knobs, cartridge slot with the two
-// 1-2-3 program toggles, BLEND, MASTER VOLUME.
+// 1-2-3 program toggles, MOD L/R (filter CV amounts — the print puts them
+// here, above the CV L/R jacks), BLEND, MASTER VOLUME, headphones print.
 class EffectorSection : public Section
 {
 public:
@@ -936,11 +949,13 @@ public:
         x = std::make_unique<LabeledKnob>(s, "fx.x", "X", kKnobOrange);
         y = std::make_unique<LabeledKnob>(s, "fx.y", "Y", kKnobOrange);
         z = std::make_unique<LabeledKnob>(s, "fx.z", "Z", kKnobOrange);
-        blend = std::make_unique<LabeledKnob>(s, "fx.blend", "BLEND", kKnobOrange);
-        master = std::make_unique<LabeledKnob>(s, "master.vol", "MASTER VOLUME", kKnobOrange);
+        modL = std::make_unique<LabeledKnob>(s, "filt.modL", "MOD L", kKnobBlack);
+        modR = std::make_unique<LabeledKnob>(s, "filt.modR", "MOD R", kKnobBlack);
+        blend = std::make_unique<LabeledKnob>(s, "fx.blend", "", kKnobOrange);
+        master = std::make_unique<LabeledKnob>(s, "master.vol", "", kKnobOrange);
         for (juce::Component* c : std::initializer_list<juce::Component*> {
                  cart.get(), progL.get(), progR.get(), x.get(), y.get(), z.get(),
-                 blend.get(), master.get() })
+                 modL.get(), modR.get(), blend.get(), master.get() })
             addAndMakeVisible(c);
     }
 
@@ -952,10 +967,14 @@ public:
         place(*y, 0.085, 0.52, 0.08, 0.40);
         place(*z, 0.165, 0.52, 0.08, 0.40);
         place(*progL, 0.25, 0.24, 0.085, 0.52);
-        place(*cart, 0.36, 0.29, 0.245, 0.36);
+        place(*cart, 0.36, 0.26, 0.245, 0.34);
         place(*progR, 0.625, 0.24, 0.085, 0.52);
-        place(*blend, 0.725, 0.30, 0.10, 0.44);
-        place(*master, 0.83, 0.22, 0.16, 0.60);
+        // MOD L/R centred over the filter strip's CV L / CV R jacks
+        // (kEffector and kFilter share x/w, so the fractions line up).
+        place(*modL, 0.30, 0.755, 0.09, 0.235);
+        place(*modR, 0.61, 0.755, 0.09, 0.235);
+        place(*blend, 0.725, 0.34, 0.10, 0.42);
+        place(*master, 0.80, 0.28, 0.14, 0.56);
     }
 
 private:
@@ -963,29 +982,56 @@ private:
     {
         // Cartridge bay: a slot frame around the inserted-cartridge selector,
         // flanked by the two 1-2-3 program toggles.
-        const auto bay = frac(0.345, 0.20, 0.275, 0.56).toFloat();
+        const auto bay = frac(0.345, 0.18, 0.275, 0.50).toFloat();
         g.setColour(juce::Colour(0xff2b2b30));
         g.fillRoundedRectangle(bay, 12.0f);
         g.setColour(kInk);
         g.drawRoundedRectangle(bay, 12.0f, 4.0f);
         g.setColour(kCream.withAlpha(0.85f));
-        g.setFont(juce::FontOptions(32.0f, juce::Font::bold));
-        g.drawText("CARTRIDGE", bay.withTrimmedBottom(bay.getHeight() * 0.74f),
+        g.setFont(juce::FontOptions(30.0f, juce::Font::bold));
+        g.drawText("cartridge slot", bay.withTrimmedBottom(bay.getHeight() * 0.72f),
                    juce::Justification::centred);
         g.setColour(kCream.withAlpha(0.6f));
         g.setFont(juce::FontOptions(27.0f, juce::Font::bold));
-        g.drawText("flip 1-2-3 to load", bay.withTrimmedTop(bay.getHeight() * 0.76f),
+        g.drawText("flip 1-2-3 to load", bay.withTrimmedTop(bay.getHeight() * 0.74f),
                    juce::Justification::centred);
 
-        g.setColour(kAccentRed);
+        // BLEND / MASTER VOLUME captions above their knobs, like the print.
+        g.setColour(kInk);
         g.setFont(juce::FontOptions(28.0f, juce::Font::bold));
-        g.drawText("1-2-3", frac(0.25, 0.79, 0.085, 0.08), juce::Justification::centred);
-        g.drawText("1-2-3", frac(0.625, 0.79, 0.085, 0.08), juce::Justification::centred);
+        g.drawText("BLEND", frac(0.70, 0.25, 0.15, 0.08), juce::Justification::centred);
+        g.drawFittedText("MASTER\nVOLUME", frac(0.795, 0.13, 0.15, 0.14),
+                         juce::Justification::centred, 2);
+
+        // Headphones out: glyph + jack + level print (inventory §1g). The
+        // behavior (standalone monitor level) is an M9c decision; until then
+        // this is silkscreen, not a control.
+        const float hx = (float) frac(0.966, 0.0, 0.0, 0.0).getX();
+        const float hy = (float) frac(0.0, 0.20, 0.0, 0.0).getY();
+        juce::Path band;
+        band.addCentredArc(hx, hy, 30.0f, 30.0f, 0.0f,
+                           -juce::MathConstants<float>::halfPi * 1.1f,
+                           juce::MathConstants<float>::halfPi * 1.1f, true);
+        g.setColour(kInk);
+        g.strokePath(band, juce::PathStrokeType(8.0f));
+        g.fillRoundedRectangle(hx - 38.0f, hy - 8.0f, 15.0f, 32.0f, 5.0f);
+        g.fillRoundedRectangle(hx + 23.0f, hy - 8.0f, 15.0f, 32.0f, 5.0f);
+        const float jy = hy + 90.0f;
+        g.drawEllipse(hx - 28.0f, jy - 28.0f, 56.0f, 56.0f, 6.0f);
+        g.setColour(juce::Colour(0xff17171a));
+        g.fillEllipse(hx - 20.0f, jy - 20.0f, 40.0f, 40.0f);
+        const float ky = jy + 92.0f;
+        g.setColour(kInk);
+        g.fillEllipse(hx - 34.0f, ky - 34.0f, 68.0f, 68.0f);
+        g.setColour(kKnobOrange);
+        g.fillEllipse(hx - 27.0f, ky - 27.0f, 54.0f, 54.0f);
+        g.setColour(kCream);
+        g.drawLine(hx, ky - 24.0f, hx, ky - 6.0f, 5.0f);
     }
 
     std::unique_ptr<ChoiceBox> cart;
     std::unique_ptr<Prog3Switch> progL, progR;
-    std::unique_ptr<LabeledKnob> x, y, z, blend, master;
+    std::unique_ptr<LabeledKnob> x, y, z, modL, modR, blend, master;
 };
 
 // ---------------------------------------------------------------- mod strip
