@@ -39,6 +39,16 @@ else
     echo "  and unzip into $APP_DIR/tools/pluginval/bin/"
 fi
 
+echo "== install VST3 (DAW smoke, M9d) =="
+VST3_DST="$HOME/Library/Audio/Plug-Ins/VST3/Solar42N.vst3"
+if [ -d "$VST3" ]; then
+    mkdir -p "$(dirname "$VST3_DST")"
+    rsync -a --delete "$VST3/" "$VST3_DST/"
+    echo "installed → $VST3_DST"
+else
+    echo "WARNING: VST3 bundle missing — install skipped."
+fi
+
 echo "== auval (AU) =="
 AU_SRC="$BUILD_DIR/Solar42N_artefacts/$CONFIG/AU/Solar42N.component"
 AU_DST="$HOME/Library/Audio/Plug-Ins/Components/Solar42N.component"

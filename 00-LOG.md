@@ -757,3 +757,28 @@ gate" carries over — see the Listening protocol in `CLAUDE.md`.
 - Eye-check artifact: `renders/fonts-abc-solar-panel-screenshot.png` —
   **user eye check pending** (wordmark now heavy Display Ultra; all
   panel print in ABC Solar).
+
+### 2026-07-11 — M9d scoped: VST3 → Ableton Live 11 (installer landed)
+
+- Goal: play the instrument inside **Ableton Live 11** (user has 11, not
+  12). VST3 status reviewed first: built + pluginval-10 green since M0,
+  arm64, ad-hoc signed (fine for local use), ~200 host params, handles
+  any host block size (Rack re-chunks into 64-sample sub-blocks) — but
+  it had **never been installed or loaded in a real DAW**.
+- Compat pre-checks: Live 11 Suite in /Applications is a universal
+  binary → runs arm64-native, so the arm64-only VST3 loads (if Live is
+  launched under Rosetta it will be invisible — first thing to check if
+  the scan misses it). Live 11.0+ speaks VST3. No Developer ID signing
+  needed for same-machine use.
+- Landed: `check.sh` now rsync-installs the validated VST3 to
+  `~/Library/Audio/Plug-Ins/VST3/Solar42N.vst3` right after pluginval
+  (mirrors the AU install; `COPY_PLUGIN_AFTER_BUILD` stays FALSE — only
+  the green gate installs). M9d row added to 08 §Milestones.
+- Gate: check.sh ALL GREEN (105/105, pluginval 10, auval PASS, CPU
+  bench 4.16 %). VST3 verified present in the system folder.
+- No sonic change — no audition WAV.
+- **Pending: hands-on Live 11 session** (checklist in the M9d row:
+  instantiate/GUI, KeyLab 37 play — doubles as the M9a hands-on —
+  sound parity vs standalone, set save→quit→reopen state, automation,
+  CC-learn, MIDI clock, buffers 64–1024, multi-instance CPU,
+  Freeze/Flatten). Verdict to be logged here.
