@@ -1,0 +1,5 @@
+Hi friend, the variable font file here contains a superfamily -- that is e.v.e.r.y.t.h.i.n.g (aka the entire design space). It lets you move freely across all available axes like weight, width, slant... all at once, in a single file. For a trial, this gives you the most complete picture of what the typeface can do.
+
+Open the file in any app that supports variable fonts like Figma, Adobe CC apps, a browser via CSS, or https://fontgauntlet.com. Look for a sliders panel or "Variable Font" controls. From there you can drag through different parameters to find the combinations that feel right.
+
+When you're ready to buy, you'll choose the axes that matter for your use case. To find out more about what's available, go to http://abcdinamo.com/buy.
