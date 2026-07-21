@@ -70,6 +70,7 @@ juce_add_plugin(Solar42N
     PRODUCT_NAME "Solar42N"
     COMPANY_NAME "Solar42 Project"
     BUNDLE_ID com.solar42project.solar42n
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.png"
     PLUGIN_MANUFACTURER_CODE S42p
     PLUGIN_CODE S42n
     FORMATS Standalone AU VST3
